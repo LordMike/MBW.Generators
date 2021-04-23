@@ -29,7 +29,7 @@ namespace MBW.Generators.NonTryMethods.Helpers
             {
                 foreach (AttributeSyntax listAttribute in attributeList.Attributes)
                 {
-                    string? attributeName = listAttribute.Name.TryGetInferredMemberName();
+                    string attributeName = listAttribute.Name.TryGetInferredMemberName();
                     if (attributeName == name)
                         return true;
                 }

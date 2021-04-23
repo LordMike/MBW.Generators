@@ -2,10 +2,11 @@
 
   <!-- Package as analyzer -->
   <PropertyGroup>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
 
-    <!-- Do not include the generator as a lib dependency -->
-    <IncludeBuildOutput>false</IncludeBuildOutput> 
+    <!-- Analyzers do not need symbols packages -->
+    <IncludeSymbols>false</IncludeSymbols>
   </PropertyGroup>
 
   <ItemGroup>
