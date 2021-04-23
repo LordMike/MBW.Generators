@@ -8,10 +8,11 @@ This generator automatically creates new extension methods that repliace existin
 
 * New classes maintain the same modifiers and namespace as existing classes
 * New non-try methods maintain the same modifiers as existing methods
+* Attribute classes with `GenerateNonTryMethod` to enable wrapping for them - this attribute is not compiled into the code
 * Only method patterns that qualify are wrapped:
-  * Must be `static` (ofc.)
+  * Must be `static` (ofcourse)
   * Must return a `bool`
-  * Must have 0..1 `out` parameter, which must be the last parameter
+  * Must have 0..1 `out` parameters, which must be the last parameter
 
 #### Install 
 
