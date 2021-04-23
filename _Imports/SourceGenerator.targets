@@ -1,19 +1,16 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
-  <!-- Package -->
+  <!-- Package as analyzer -->
   <PropertyGroup>
-    <Product>MBW.Libraries.DeviceObjectLib</Product>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/LordMike/MBW.Client.BlueRiiotApi</PackageProjectUrl>
-  </PropertyGroup>
-  
-  <PropertyGroup>
-    <RepositoryUrl>https://github.com/LordMike/MBW.Client.BlueRiiotApi</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+
+    <!-- Do not include the generator as a lib dependency -->
+    <IncludeBuildOutput>false</IncludeBuildOutput> 
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="JetBrains.Annotations" Version="2020.1.0" PrivateAssets="all" />
+    <!-- Package the generator in the analyzer directory of the nuget package -->
+    <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
   </ItemGroup>
 
 </Project>

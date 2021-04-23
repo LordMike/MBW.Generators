@@ -16,6 +16,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_Imports", "_Imports", "{E95539ED-0430-4763-824A-2F70AEF0FF56}"
 	ProjectSection(SolutionItems) = preProject
+		_Imports\Local.targets = _Imports\Local.targets
 		_Imports\SourceGenerator.targets = _Imports\SourceGenerator.targets
 	EndProjectSection
 EndProject
