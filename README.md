@@ -2,7 +2,7 @@
 
 Various source code generators I have created
 
-### NonTryMethods [![NuGet](https://img.shields.io/nuget/v/MBW.Generators.svg)](https://www.nuget.org/packages/MBW.Generators) [![GHPackages](https://img.shields.io/badge/package-alpha-green)](https://github.com/LordMike/MBW.Generators/packages/748396)
+### NonTryMethods [![NuGet](https://img.shields.io/nuget/v/MBW.Generators.NonTryMethods.svg)](https://www.nuget.org/packages/MBW.Generators.NonTryMethods) [![GHPackages](https://img.shields.io/badge/package-alpha-green)](https://github.com/LordMike/MBW.Generators/packages/748396)
 
 This generator automatically creates new extension methods that repliace existing Try-methods, with non-Try variants.
 
