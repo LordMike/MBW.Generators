@@ -6,6 +6,13 @@ Various source code generators I have created
 
 This generator automatically creates new extension methods that repliace existing Try-methods, with non-Try variants.
 
+* New classes maintain the same modifiers and namespace as existing classes
+* New non-try methods maintain the same modifiers as existing methods
+* Only method patterns that qualify are wrapped:
+  * Must be `static` (ofc.)
+  * Must return a `bool`
+  * Must have 0..1 `out` parameter, which must be the last parameter
+
 #### Install 
 
 Reference the nuget package, the rest should come that way around
