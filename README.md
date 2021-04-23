@@ -2,7 +2,7 @@
 
 Various source code generators I have created
 
-### NonTryMethods [![NuGet](https://img.shields.io/nuget/v/MBW.Generators.svg)](https://www.nuget.org/packages/MBW.Generators) [![GHPackages](https://img.shields.io/badge/package-alpha-green)](https://github.com/LordMike/MBW.Generators/packages/)
+### NonTryMethods [![NuGet](https://img.shields.io/nuget/v/MBW.Generators.svg)](https://www.nuget.org/packages/MBW.Generators) [![GHPackages](https://img.shields.io/badge/package-alpha-green)](https://github.com/LordMike/MBW.Generators/packages/748396)
 
 This generator automatically creates new extension methods that repliace existing Try-methods, with non-Try variants.
 
@@ -14,15 +14,15 @@ Reference the nuget package, the rest should come that way around
 
 ```csharp
 // Existing code
-static class ExistingExtensions 
+public static class ExistingExtensions 
 {
-	bool TryNNN(this MyClass instance, out object someProperty)
+	public static bool TryNNN(this MyClass instance, out object someProperty)
 }
 
 // Auto-generated code
-static class ExistingExtensions_AutogenNonTry
+public static class ExistingExtensions_AutogenNonTry
 {
-	object NNN(this MyClass instance)
+	public static object NNN(this MyClass instance)
 	{
 		if (!instance.TryNNN(out object result))
 			throw new Exception();

@@ -35,7 +35,9 @@ namespace MBW.Generators.NonTryMethods
 
                 sb.Append("namespace ").AppendLine(@class.Namespace.Name.ToString());
                 sb.AppendLine("{");
-                sb.Append("    public static class ")
+                sb.Append("    ")
+                    .Append(@class.Class.Modifiers.ToString())
+                    .AppendLine(" class ")
                     .AppendLine(newClassName);
                 sb.AppendLine("    {");
 
@@ -63,7 +65,9 @@ namespace MBW.Generators.NonTryMethods
                     else
                         outType = "void";
 
-                    sb.Append("        public static ")
+                    sb.Append("        ")
+                        .Append(method.Modifiers.ToString())
+                        .Append(" ")
                         .Append(outType)
                         .Append(" ")
                         .Append(method.Identifier.Text.Substring("Try".Length))
