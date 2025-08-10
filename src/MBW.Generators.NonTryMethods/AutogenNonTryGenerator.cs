@@ -63,17 +63,18 @@ public class AutogenNonTryGenerator : IIncrementalGenerator
 
         StringBuilder sb = new StringBuilder();
 
-        sb.AppendLine("using System;");
+        sb.Append("using System;").Append('\n');
         foreach (UsingDirectiveSyntax usingDirectiveSyntax in @class.Usings)
             sb.Append(usingDirectiveSyntax.ToFullString());
 
-        sb.Append("namespace ").AppendLine(@class.Namespace.Name.ToString());
-        sb.AppendLine("{");
+        sb.Append("namespace ").Append(@class.Namespace.Name.ToString()).Append('\n');
+        sb.Append("{").Append('\n');
         sb.Append("    ")
             .Append(@class.Class.Modifiers.ToString())
-            .AppendLine(" class ")
-            .AppendLine(newClassName);
-        sb.AppendLine("    {");
+            .Append(" class ")
+            .Append(newClassName)
+            .Append('\n');
+        sb.Append("    {").Append('\n');
 
         foreach (MethodDeclarationSyntax method in @class.Methods)
         {
@@ -105,19 +106,22 @@ public class AutogenNonTryGenerator : IIncrementalGenerator
                 .Append(outType)
                 .Append(" ")
                 .Append(method.Identifier.Text.Substring("Try".Length))
-                .Append("(").Append(thisParam.ToFullString()).Append(argumentsCommaStr).Append(argumentsStr).AppendLine(")");
+                .Append("(").Append(thisParam.ToFullString())
+                .Append(argumentsCommaStr)
+                .Append(argumentsStr)
+                .Append(")")
+                .Append('\n');
 
-            sb.AppendLine("        {");
-            sb.AppendLine(
-                $"            if (!{thisParam.Identifier.Text}.{method.Identifier.Text}({argumentsNamesStr}{argumentsCommaStr}out {outType} result))");
-            sb.AppendLine("                throw new Exception();");
-            sb.AppendLine();
-            sb.AppendLine("            return result;");
-            sb.AppendLine("        }");
+            sb.Append("        {").Append('\n');
+            sb.Append($"            if (!{thisParam.Identifier.Text}.{method.Identifier.Text}({argumentsNamesStr}{argumentsCommaStr}out {outType} result))").Append('\n');
+            sb.Append("                throw new Exception();").Append('\n');
+            sb.Append('\n');
+            sb.Append("            return result;").Append('\n');
+            sb.Append("        }").Append('\n');
         }
 
-        sb.AppendLine("    }");
-        sb.AppendLine("}");
+        sb.Append("    }").Append('\n');
+        sb.Append("}").Append('\n');
 
         context.AddSource(newClassName, SourceText.From(sb.ToString(), Encoding.UTF8));
     }

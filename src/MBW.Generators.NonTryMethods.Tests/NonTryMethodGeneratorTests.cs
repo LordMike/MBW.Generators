@@ -28,8 +28,7 @@ namespace Test
 using MBW.Generators.NonTryMethods.Abstracts.Attributes;
 namespace Test
 {
-    public static class 
-Sample_AutogenNonTry
+    public static class Sample_AutogenNonTry
     {
         public static int ParsePublic(this string value)
         {
@@ -67,8 +66,7 @@ namespace Test
 using MBW.Generators.NonTryMethods.Abstracts.Attributes;
 namespace Test
 {
-    public static class 
-Sample_AutogenNonTry
+    public static class Sample_AutogenNonTry
     {
         internal static int ParseInternal(this string value)
         {
@@ -106,8 +104,7 @@ namespace Test
 using MBW.Generators.NonTryMethods.Abstracts.Attributes;
 namespace Test
 {
-    public static class 
-Sample_AutogenNonTry
+    public static class Sample_AutogenNonTry
     {
         private static int ParsePrivate(this string value)
         {
@@ -145,8 +142,7 @@ namespace Test
 using MBW.Generators.NonTryMethods.Abstracts.Attributes;
 namespace Test
 {
-    public static class 
-Sample_AutogenNonTry
+    public static class Sample_AutogenNonTry
     {
         public static int WithRef(this string value, ref int position)
         {
@@ -184,8 +180,7 @@ namespace Test
 using MBW.Generators.NonTryMethods.Abstracts.Attributes;
 namespace Test
 {
-    public static class 
-Sample_AutogenNonTry
+    public static class Sample_AutogenNonTry
     {
         public static int WithOut(this string value)
         {
@@ -222,8 +217,7 @@ namespace Test
 using MBW.Generators.NonTryMethods.Abstracts.Attributes;
 namespace Test
 {
-    public static class 
-Sample_AutogenNonTry
+    public static class Sample_AutogenNonTry
     {
         public static void NoOut(this string value)
         {
@@ -261,8 +255,7 @@ namespace Test
 using MBW.Generators.NonTryMethods.Abstracts.Attributes;
 namespace Test
 {
-    public static class 
-Sample_AutogenNonTry
+    public static class Sample_AutogenNonTry
     {
         public static void TwoOut(this string value, out int first, out int second)
         {
