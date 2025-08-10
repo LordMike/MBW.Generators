@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -12,19 +13,19 @@ public static class GeneratorTestHelper
     public static (IReadOnlyDictionary<string, string> Sources, IReadOnlyList<Diagnostic> Diagnostics) Run<TGenerator>(string source, params Type[] referencedTypes)
         where TGenerator : IIncrementalGenerator, new()
     {
-        var syntaxTree = CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(LanguageVersion.Latest));
+        SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(LanguageVersion.Latest));
 
-        var references = new List<MetadataReference>
+        List<MetadataReference> references = new List<MetadataReference>
         {
             MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(Enumerable).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(Task).Assembly.Location)
         };
 
-        foreach (var type in referencedTypes)
+        foreach (Type type in referencedTypes)
             references.Add(MetadataReference.CreateFromFile(type.Assembly.Location));
 
-        var compilation = CSharpCompilation.Create(
+        CSharpCompilation compilation = CSharpCompilation.Create(
             "Tests",
             new[] { syntaxTree },
             references,
@@ -34,10 +35,10 @@ public static class GeneratorTestHelper
 
         GeneratorDriver driver = CSharpGeneratorDriver.Create(generator);
         driver = driver.RunGenerators(compilation);
-        var result = driver.GetRunResult().Results.Single();
+        GeneratorRunResult result = driver.GetRunResult().Results.Single();
 
-        var sources = result.GeneratedSources.ToDictionary(x => x.HintName, x => x.SourceText.ToString());
-        var diags = result.Diagnostics;
+        Dictionary<string, string> sources = result.GeneratedSources.ToDictionary(x => x.HintName, x => x.SourceText.ToString());
+        ImmutableArray<Diagnostic> diags = result.Diagnostics;
         return (sources, diags);
     }
 }

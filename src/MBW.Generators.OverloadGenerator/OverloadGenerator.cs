@@ -18,14 +18,14 @@ public sealed class OverloadGenerator : IIncrementalGenerator
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        var methods = context.SyntaxProvider.CreateSyntaxProvider(
+        IncrementalValueProvider<ImmutableArray<MethodModel>> methods = context.SyntaxProvider.CreateSyntaxProvider(
                 static (node, _) => IsCandidate(node),
                 static (ctx, _) => GetMethod(ctx))
             .Where(static m => m is not null)
             .Select((m, _) => m!)
             .Collect();
 
-        var compilationAndMethods = context.CompilationProvider.Combine(methods);
+        IncrementalValueProvider<(Compilation Left, ImmutableArray<MethodModel> Right)> compilationAndMethods = context.CompilationProvider.Combine(methods);
 
         context.RegisterSourceOutput(compilationAndMethods,
             static (spc, source) => Execute(spc, source.Left, source.Right));
@@ -46,10 +46,10 @@ public sealed class OverloadGenerator : IIncrementalGenerator
 
     private static bool HasOurAttribute(SyntaxList<AttributeListSyntax> lists)
     {
-        foreach (var list in lists)
-        foreach (var attr in list.Attributes)
+        foreach (AttributeListSyntax list in lists)
+        foreach (AttributeSyntax attr in list.Attributes)
         {
-            var name = attr.Name.ToString();
+            string name = attr.Name.ToString();
             if (name.Contains("TransformOverload") || name.Contains("DefaultOverload"))
                 return true;
         }
@@ -59,31 +59,31 @@ public sealed class OverloadGenerator : IIncrementalGenerator
 
     private static MethodModel? GetMethod(GeneratorSyntaxContext context)
     {
-        var methodSyntax = (MethodDeclarationSyntax)context.Node;
+        MethodDeclarationSyntax methodSyntax = (MethodDeclarationSyntax)context.Node;
         if (context.SemanticModel.GetDeclaredSymbol(methodSyntax) is not IMethodSymbol methodSymbol)
             return null;
 
-        var rules = new List<Rule>();
+        List<Rule> rules = new List<Rule>();
 
         // class-level attributes
-        foreach (var attr in methodSymbol.ContainingType.GetAttributes())
+        foreach (AttributeData? attr in methodSymbol.ContainingType.GetAttributes())
         {
             if (attr.AttributeClass?.ToDisplayString() == TransformAttributeName)
             {
-                var rule = ParseTransform(attr);
+                TransformRule? rule = ParseTransform(attr);
                 if (rule != null)
                     rules.Add(rule);
             }
             else if (attr.AttributeClass?.ToDisplayString() == DefaultAttributeName)
             {
-                var rule = ParseDefault(attr);
+                DefaultRule? rule = ParseDefault(attr);
                 if (rule != null)
                     rules.Add(rule);
             }
         }
 
         // method-level attributes override
-        foreach (var attr in methodSymbol.GetAttributes())
+        foreach (AttributeData? attr in methodSymbol.GetAttributes())
         {
             Rule? rule = null;
             if (attr.AttributeClass?.ToDisplayString() == TransformAttributeName)
@@ -108,9 +108,9 @@ public sealed class OverloadGenerator : IIncrementalGenerator
     {
         if (attr.ConstructorArguments.Length < 3) return null;
         string parameter = attr.ConstructorArguments[0].Value as string ?? string.Empty;
-        var accept = attr.ConstructorArguments[1].Value as INamedTypeSymbol;
+        INamedTypeSymbol? accept = attr.ConstructorArguments[1].Value as INamedTypeSymbol;
         string transform = attr.ConstructorArguments[2].Value as string ?? string.Empty;
-        var usings = GetUsings(attr);
+        ImmutableArray<string> usings = GetUsings(attr);
         return new TransformRule(parameter, accept, transform, usings);
     }
 
@@ -119,14 +119,14 @@ public sealed class OverloadGenerator : IIncrementalGenerator
         if (attr.ConstructorArguments.Length < 2) return null;
         string parameter = attr.ConstructorArguments[0].Value as string ?? string.Empty;
         string expr = attr.ConstructorArguments[1].Value as string ?? string.Empty;
-        var usings = GetUsings(attr);
+        ImmutableArray<string> usings = GetUsings(attr);
         return new DefaultRule(parameter, expr, usings);
     }
 
 
     private static ImmutableArray<string> GetUsings(AttributeData attr)
     {
-        foreach (var kv in attr.NamedArguments)
+        foreach (KeyValuePair<string, TypedConstant> kv in attr.NamedArguments)
         {
             if (kv.Key == nameof(TransformOverloadAttribute.Usings) ||
                 kv.Key == nameof(DefaultOverloadAttribute.Usings))
@@ -146,11 +146,11 @@ public sealed class OverloadGenerator : IIncrementalGenerator
         if (methods.IsDefaultOrEmpty)
             return;
 
-        foreach (var group in methods.GroupBy(m => m.Method.ContainingType, SymbolEqualityComparer.Default))
+        foreach (IGrouping<ISymbol?, MethodModel>? group in methods.GroupBy(m => m.Method.ContainingType, SymbolEqualityComparer.Default))
         {
-            var type = (INamedTypeSymbol)group.Key;
-            var fileText = BuildFileForType(context, type, group);
-            var hint = GetHintName(type);
+            INamedTypeSymbol? type = (INamedTypeSymbol)group.Key;
+            string fileText = BuildFileForType(context, type, group);
+            string hint = GetHintName(type);
             context.AddSource(hint, fileText);
         }
     }
@@ -161,7 +161,7 @@ public sealed class OverloadGenerator : IIncrementalGenerator
         IEnumerable<MethodModel> group)
     {
         // Collect distinct, sorted usings from all rules
-        var usings = group
+        string[] usings = group
             .SelectMany(m => m.Rules)
             .SelectMany(r => r.Usings)
             .Where(u => !string.IsNullOrWhiteSpace(u))
@@ -169,24 +169,24 @@ public sealed class OverloadGenerator : IIncrementalGenerator
             .OrderBy(u => u)
             .ToArray();
 
-        var usingSection = string.Join("\n", usings.Select(u => $"using {u};"));
-        var ns = type.ContainingNamespace;
+        string usingSection = string.Join("\n", usings.Select(u => $"using {u};"));
+        INamespaceSymbol? ns = type.ContainingNamespace;
 
-        var (typeOpeners, typeClosers, methodIndent) = BuildTypeBlocks(type, ns);
-        var methodsText = new StringBuilder();
+        (string typeOpeners, string typeClosers, string methodIndent) = BuildTypeBlocks(type, ns);
+        StringBuilder methodsText = new StringBuilder();
 
-        foreach (var method in group)
+        foreach (MethodModel? method in group)
         {
-            foreach (var rule in method.Rules)
+            foreach (Rule? rule in method.Rules)
             {
-                var generated = GenerateMethodSource(context, method.Method, rule, methodIndent);
+                string? generated = GenerateMethodSource(context, method.Method, rule, methodIndent);
                 if (generated is not null)
                     methodsText.Append(generated);
             }
         }
 
-        var nsOpen = ns.IsGlobalNamespace ? "" : $"namespace {ns.ToDisplayString()}\n{{";
-        var nsClose = ns.IsGlobalNamespace ? "" : "}";
+        string nsOpen = ns.IsGlobalNamespace ? "" : $"namespace {ns.ToDisplayString()}\n{{";
+        string nsClose = ns.IsGlobalNamespace ? "" : "}";
 
         // One big, readable file as a raw string
         return $"""
@@ -214,8 +214,8 @@ public sealed class OverloadGenerator : IIncrementalGenerator
             return null;
         }
 
-        var trRule = rule as TransformRule;
-        var drRule = rule as DefaultRule;
+        TransformRule? trRule = rule as TransformRule;
+        DefaultRule? drRule = rule as DefaultRule;
 
         if (trRule is not null)
         {
@@ -243,11 +243,11 @@ public sealed class OverloadGenerator : IIncrementalGenerator
             }
         }
 
-        var parameters = new List<string>();
-        var arguments = new List<string>();
-        var signature = new List<(ITypeSymbol type, RefKind kind, bool isParams)>();
+        List<string> parameters = new List<string>();
+        List<string> arguments = new List<string>();
+        List<(ITypeSymbol type, RefKind kind, bool isParams)> signature = new List<(ITypeSymbol type, RefKind kind, bool isParams)>();
 
-        foreach (var p in method.Parameters)
+        foreach (IParameterSymbol? p in method.Parameters)
         {
             if (drRule != null && p.Name == drRule.Parameter)
             {
@@ -255,11 +255,11 @@ public sealed class OverloadGenerator : IIncrementalGenerator
                 continue;
             }
 
-            var modifier = p.RefKind switch
+            string modifier = p.RefKind switch
             {
                 RefKind.Ref => "ref ", RefKind.Out => "out ", RefKind.In => "in ", _ => string.Empty
             };
-            var paramsPrefix = p.IsParams ? "params " : string.Empty;
+            string paramsPrefix = p.IsParams ? "params " : string.Empty;
 
             string typeName;
             string arg;
@@ -288,20 +288,20 @@ public sealed class OverloadGenerator : IIncrementalGenerator
             return null;
         }
 
-        var accessibility = GetAccessibility(method.DeclaredAccessibility);
-        var modifiers = method.IsStatic ? " static" : string.Empty;
-        var returnType = method.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        var methodName = method.Name;
-        var typeParams = method.IsGenericMethod
+        string accessibility = GetAccessibility(method.DeclaredAccessibility);
+        string modifiers = method.IsStatic ? " static" : string.Empty;
+        string returnType = method.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        string methodName = method.Name;
+        string typeParams = method.IsGenericMethod
             ? "<" + string.Join(", ", method.TypeParameters.Select(tp => tp.Name)) + ">"
             : string.Empty;
-        var constraints = BuildConstraints(method);
+        string constraints = BuildConstraints(method);
 
-        var paramList = string.Join(", ", parameters);
-        var argList = string.Join(", ", arguments);
+        string paramList = string.Join(", ", parameters);
+        string argList = string.Join(", ", arguments);
 
         // Put constraints on the following line if present
-        var constraintsText = string.IsNullOrWhiteSpace(constraints)
+        string constraintsText = string.IsNullOrWhiteSpace(constraints)
             ? ""
             : $"\n{indent}    {constraints}";
 
@@ -316,15 +316,15 @@ public sealed class OverloadGenerator : IIncrementalGenerator
         INamedTypeSymbol type,
         INamespaceSymbol ns)
     {
-        var types = GetTypeChain(type); // outermost -> innermost
-        var nsIndent = ns.IsGlobalNamespace ? 0 : 1;
+        List<INamedTypeSymbol> types = GetTypeChain(type); // outermost -> innermost
+        int nsIndent = ns.IsGlobalNamespace ? 0 : 1;
 
-        var open = new StringBuilder();
+        StringBuilder open = new StringBuilder();
         for (int i = 0; i < types.Count; i++)
         {
-            var t = types[i];
-            var indent = new string(' ', 4 * (nsIndent + i));
-            var typeParams = t.TypeParameters.Length > 0
+            INamedTypeSymbol? t = types[i];
+            string indent = new string(' ', 4 * (nsIndent + i));
+            string typeParams = t.TypeParameters.Length > 0
                 ? "<" + string.Join(", ", t.TypeParameters.Select(tp => tp.Name)) + ">"
                 : string.Empty;
 
@@ -332,20 +332,20 @@ public sealed class OverloadGenerator : IIncrementalGenerator
             open.AppendLine($"{indent}{{");
         }
 
-        var close = new StringBuilder();
+        StringBuilder close = new StringBuilder();
         for (int i = types.Count - 1; i >= 0; i--)
         {
-            var indent = new string(' ', 4 * (nsIndent + i));
+            string indent = new string(' ', 4 * (nsIndent + i));
             close.AppendLine($"{indent}}}");
         }
 
-        var methodIndent = new string(' ', 4 * (nsIndent + types.Count)); // one level deeper than last type
+        string methodIndent = new string(' ', 4 * (nsIndent + types.Count)); // one level deeper than last type
         return (open.ToString(), close.ToString(), methodIndent);
     }
 
     private static List<INamedTypeSymbol> GetTypeChain(INamedTypeSymbol type)
     {
-        var stack = new Stack<INamedTypeSymbol>();
+        Stack<INamedTypeSymbol> stack = new Stack<INamedTypeSymbol>();
         INamedTypeSymbol? current = type;
         while (current is not null)
         {
@@ -359,7 +359,7 @@ public sealed class OverloadGenerator : IIncrementalGenerator
     private static bool SignatureExists(INamedTypeSymbol type, IMethodSymbol original,
         List<(ITypeSymbol type, RefKind kind, bool isParams)> signature)
     {
-        foreach (var member in type.GetMembers(original.Name).OfType<IMethodSymbol>())
+        foreach (IMethodSymbol? member in type.GetMembers(original.Name).OfType<IMethodSymbol>())
         {
             if (SymbolEqualityComparer.Default.Equals(member, original))
                 continue;
@@ -369,8 +369,8 @@ public sealed class OverloadGenerator : IIncrementalGenerator
             bool match = true;
             for (int i = 0; i < signature.Count; i++)
             {
-                var mp = member.Parameters[i];
-                var np = signature[i];
+                IParameterSymbol mp = member.Parameters[i];
+                (ITypeSymbol type, RefKind kind, bool isParams) np = signature[i];
                 if (mp.RefKind != np.kind || mp.IsParams != np.isParams ||
                     !SymbolEqualityComparer.Default.Equals(mp.Type, np.type))
                 {
@@ -402,10 +402,10 @@ public sealed class OverloadGenerator : IIncrementalGenerator
         if (!method.IsGenericMethod)
             return string.Empty;
 
-        var clauses = new List<string>();
-        foreach (var tp in method.TypeParameters)
+        List<string> clauses = new List<string>();
+        foreach (ITypeParameterSymbol? tp in method.TypeParameters)
         {
-            var c = new List<string>();
+            List<string> c = new List<string>();
             if (tp.HasReferenceTypeConstraint)
                 c.Add("class");
             if (tp.HasValueTypeConstraint)
@@ -440,7 +440,7 @@ public sealed class OverloadGenerator : IIncrementalGenerator
 
     private static string GetHintName(INamedTypeSymbol type)
     {
-        var name = type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        string name = type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         if (name.StartsWith("global::", StringComparison.Ordinal))
             name = name.Substring(8);
         name = name.Replace('<', '_').Replace('>', '_').Replace('.', '_');

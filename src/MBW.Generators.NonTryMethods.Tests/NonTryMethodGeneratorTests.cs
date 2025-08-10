@@ -1,6 +1,8 @@
+using System.Collections.Generic;
 using MBW.Generators.NonTryMethods;
 using MBW.Generators.NonTryMethods.Abstracts.Attributes;
 using MBW.Generators.Tests.Common;
+using Microsoft.CodeAnalysis;
 using Xunit;
 
 namespace MBW.Generators.NonTryMethods.Tests;
@@ -40,7 +42,7 @@ namespace Test
     }
 }
 ";
-        var (output, diags) = GeneratorTestHelper.Run<AutogenNonTryGenerator>(input, typeof(GenerateNonTryMethodAttribute));
+        (IReadOnlyDictionary<string, string> output, IReadOnlyList<Diagnostic> diags) = GeneratorTestHelper.Run<AutogenNonTryGenerator>(input, typeof(GenerateNonTryMethodAttribute));
         Assert.Empty(diags);
         Assert.Equal(expected, Assert.Single(output).Value);
     }
@@ -78,7 +80,7 @@ namespace Test
     }
 }
 ";
-        var (output, diags) = GeneratorTestHelper.Run<AutogenNonTryGenerator>(input, typeof(GenerateNonTryMethodAttribute));
+        (IReadOnlyDictionary<string, string> output, IReadOnlyList<Diagnostic> diags) = GeneratorTestHelper.Run<AutogenNonTryGenerator>(input, typeof(GenerateNonTryMethodAttribute));
         Assert.Empty(diags);
         Assert.Equal(expected, Assert.Single(output).Value);
     }
@@ -116,7 +118,7 @@ namespace Test
     }
 }
 ";
-        var (output, diags) = GeneratorTestHelper.Run<AutogenNonTryGenerator>(input, typeof(GenerateNonTryMethodAttribute));
+        (IReadOnlyDictionary<string, string> output, IReadOnlyList<Diagnostic> diags) = GeneratorTestHelper.Run<AutogenNonTryGenerator>(input, typeof(GenerateNonTryMethodAttribute));
         Assert.Empty(diags);
         Assert.Equal(expected, Assert.Single(output).Value);
     }
@@ -154,7 +156,7 @@ namespace Test
     }
 }
 ";
-        var (output, diags) = GeneratorTestHelper.Run<AutogenNonTryGenerator>(input, typeof(GenerateNonTryMethodAttribute));
+        (IReadOnlyDictionary<string, string> output, IReadOnlyList<Diagnostic> diags) = GeneratorTestHelper.Run<AutogenNonTryGenerator>(input, typeof(GenerateNonTryMethodAttribute));
         Assert.Empty(diags);
         Assert.Equal(expected, Assert.Single(output).Value);
     }
@@ -192,7 +194,7 @@ namespace Test
     }
 }
 ";
-        var (output, diags) = GeneratorTestHelper.Run<AutogenNonTryGenerator>(input, typeof(GenerateNonTryMethodAttribute));
+        (IReadOnlyDictionary<string, string> output, IReadOnlyList<Diagnostic> diags) = GeneratorTestHelper.Run<AutogenNonTryGenerator>(input, typeof(GenerateNonTryMethodAttribute));
         Assert.Empty(diags);
         Assert.Equal(expected, Assert.Single(output).Value);
     }
@@ -229,7 +231,7 @@ namespace Test
     }
 }
 ";
-        var (output, diags) = GeneratorTestHelper.Run<AutogenNonTryGenerator>(input, typeof(GenerateNonTryMethodAttribute));
+        (IReadOnlyDictionary<string, string> output, IReadOnlyList<Diagnostic> diags) = GeneratorTestHelper.Run<AutogenNonTryGenerator>(input, typeof(GenerateNonTryMethodAttribute));
         Assert.Empty(diags);
         Assert.Equal(expected, Assert.Single(output).Value);
     }
@@ -267,7 +269,7 @@ namespace Test
     }
 }
 ";
-        var (output, diags) = GeneratorTestHelper.Run<AutogenNonTryGenerator>(input, typeof(GenerateNonTryMethodAttribute));
+        (IReadOnlyDictionary<string, string> output, IReadOnlyList<Diagnostic> diags) = GeneratorTestHelper.Run<AutogenNonTryGenerator>(input, typeof(GenerateNonTryMethodAttribute));
         Assert.Empty(diags);
         Assert.Equal(expected, Assert.Single(output).Value);
     }
@@ -290,7 +292,7 @@ namespace Test
     }
 }
 ";
-        var (output, diags) = GeneratorTestHelper.Run<AutogenNonTryGenerator>(input, typeof(GenerateNonTryMethodAttribute));
+        (IReadOnlyDictionary<string, string> output, IReadOnlyList<Diagnostic> diags) = GeneratorTestHelper.Run<AutogenNonTryGenerator>(input, typeof(GenerateNonTryMethodAttribute));
         Assert.Empty(diags);
         Assert.Empty(output);
     }
