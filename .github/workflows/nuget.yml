@@ -20,7 +20,7 @@ jobs:
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-quality: ga
+        dotnet-version: STS
 
     - name: Pack
       run: dotnet pack -c Release -o Build
