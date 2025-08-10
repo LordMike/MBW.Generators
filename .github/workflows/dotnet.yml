@@ -21,7 +21,9 @@ jobs:
     - run: git fetch --tags
 
     - name: Setup .NET Core
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-quality: ga
 
     - name: Restore dependencies
       run: dotnet restore
