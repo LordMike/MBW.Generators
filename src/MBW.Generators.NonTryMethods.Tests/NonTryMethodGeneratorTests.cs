@@ -3,14 +3,14 @@ using MBW.Generators.NonTryMethods.Abstracts.Attributes;
 using MBW.Generators.Tests.Common;
 using Xunit;
 
-namespace MBW.Generators.NonTryMethods.Tests
+namespace MBW.Generators.NonTryMethods.Tests;
+
+public class NonTryMethodGeneratorTests
 {
-    public class NonTryMethodGeneratorTests
+    [Fact]
+    public void GeneratesForPublicTryMethod()
     {
-        [Fact]
-        public void GeneratesForPublicTryMethod()
-        {
-            const string input = @"using MBW.Generators.NonTryMethods.Abstracts.Attributes;
+        const string input = @"using MBW.Generators.NonTryMethods.Abstracts.Attributes;
 namespace Test
 {
     [GenerateNonTryMethod]
@@ -24,7 +24,7 @@ namespace Test
     }
 }
 ";
-            const string expected = @"using System;
+        const string expected = @"using System;
 using MBW.Generators.NonTryMethods.Abstracts.Attributes;
 namespace Test
 {
@@ -40,15 +40,15 @@ namespace Test
     }
 }
 ";
-            var (output, diags) = GeneratorTestHelper.Run<AutogenNonTryGenerator>(input, typeof(GenerateNonTryMethodAttribute));
-            Assert.Empty(diags);
-            Assert.Equal(expected, Assert.Single(output).Value);
-        }
+        var (output, diags) = GeneratorTestHelper.Run<AutogenNonTryGenerator>(input, typeof(GenerateNonTryMethodAttribute));
+        Assert.Empty(diags);
+        Assert.Equal(expected, Assert.Single(output).Value);
+    }
 
-        [Fact]
-        public void GeneratesForInternalTryMethod()
-        {
-            const string input = @"using MBW.Generators.NonTryMethods.Abstracts.Attributes;
+    [Fact]
+    public void GeneratesForInternalTryMethod()
+    {
+        const string input = @"using MBW.Generators.NonTryMethods.Abstracts.Attributes;
 namespace Test
 {
     [GenerateNonTryMethod]
@@ -62,7 +62,7 @@ namespace Test
     }
 }
 ";
-            const string expected = @"using System;
+        const string expected = @"using System;
 using MBW.Generators.NonTryMethods.Abstracts.Attributes;
 namespace Test
 {
@@ -78,15 +78,15 @@ namespace Test
     }
 }
 ";
-            var (output, diags) = GeneratorTestHelper.Run<AutogenNonTryGenerator>(input, typeof(GenerateNonTryMethodAttribute));
-            Assert.Empty(diags);
-            Assert.Equal(expected, Assert.Single(output).Value);
-        }
+        var (output, diags) = GeneratorTestHelper.Run<AutogenNonTryGenerator>(input, typeof(GenerateNonTryMethodAttribute));
+        Assert.Empty(diags);
+        Assert.Equal(expected, Assert.Single(output).Value);
+    }
 
-        [Fact]
-        public void GeneratesForPrivateTryMethod()
-        {
-            const string input = @"using MBW.Generators.NonTryMethods.Abstracts.Attributes;
+    [Fact]
+    public void GeneratesForPrivateTryMethod()
+    {
+        const string input = @"using MBW.Generators.NonTryMethods.Abstracts.Attributes;
 namespace Test
 {
     [GenerateNonTryMethod]
@@ -100,7 +100,7 @@ namespace Test
     }
 }
 ";
-            const string expected = @"using System;
+        const string expected = @"using System;
 using MBW.Generators.NonTryMethods.Abstracts.Attributes;
 namespace Test
 {
@@ -116,15 +116,15 @@ namespace Test
     }
 }
 ";
-            var (output, diags) = GeneratorTestHelper.Run<AutogenNonTryGenerator>(input, typeof(GenerateNonTryMethodAttribute));
-            Assert.Empty(diags);
-            Assert.Equal(expected, Assert.Single(output).Value);
-        }
+        var (output, diags) = GeneratorTestHelper.Run<AutogenNonTryGenerator>(input, typeof(GenerateNonTryMethodAttribute));
+        Assert.Empty(diags);
+        Assert.Equal(expected, Assert.Single(output).Value);
+    }
 
-        [Fact]
-        public void GeneratesForRefArgument()
-        {
-            const string input = @"using MBW.Generators.NonTryMethods.Abstracts.Attributes;
+    [Fact]
+    public void GeneratesForRefArgument()
+    {
+        const string input = @"using MBW.Generators.NonTryMethods.Abstracts.Attributes;
 namespace Test
 {
     [GenerateNonTryMethod]
@@ -138,7 +138,7 @@ namespace Test
     }
 }
 ";
-            const string expected = @"using System;
+        const string expected = @"using System;
 using MBW.Generators.NonTryMethods.Abstracts.Attributes;
 namespace Test
 {
@@ -154,15 +154,15 @@ namespace Test
     }
 }
 ";
-            var (output, diags) = GeneratorTestHelper.Run<AutogenNonTryGenerator>(input, typeof(GenerateNonTryMethodAttribute));
-            Assert.Empty(diags);
-            Assert.Equal(expected, Assert.Single(output).Value);
-        }
+        var (output, diags) = GeneratorTestHelper.Run<AutogenNonTryGenerator>(input, typeof(GenerateNonTryMethodAttribute));
+        Assert.Empty(diags);
+        Assert.Equal(expected, Assert.Single(output).Value);
+    }
 
-        [Fact]
-        public void GeneratesForOutArgument()
-        {
-            const string input = @"using MBW.Generators.NonTryMethods.Abstracts.Attributes;
+    [Fact]
+    public void GeneratesForOutArgument()
+    {
+        const string input = @"using MBW.Generators.NonTryMethods.Abstracts.Attributes;
 namespace Test
 {
     [GenerateNonTryMethod]
@@ -176,7 +176,7 @@ namespace Test
     }
 }
 ";
-            const string expected = @"using System;
+        const string expected = @"using System;
 using MBW.Generators.NonTryMethods.Abstracts.Attributes;
 namespace Test
 {
@@ -192,15 +192,15 @@ namespace Test
     }
 }
 ";
-            var (output, diags) = GeneratorTestHelper.Run<AutogenNonTryGenerator>(input, typeof(GenerateNonTryMethodAttribute));
-            Assert.Empty(diags);
-            Assert.Equal(expected, Assert.Single(output).Value);
-        }
+        var (output, diags) = GeneratorTestHelper.Run<AutogenNonTryGenerator>(input, typeof(GenerateNonTryMethodAttribute));
+        Assert.Empty(diags);
+        Assert.Equal(expected, Assert.Single(output).Value);
+    }
 
-        [Fact]
-        public void GeneratesForNoOutArgument()
-        {
-            const string input = @"using MBW.Generators.NonTryMethods.Abstracts.Attributes;
+    [Fact]
+    public void GeneratesForNoOutArgument()
+    {
+        const string input = @"using MBW.Generators.NonTryMethods.Abstracts.Attributes;
 namespace Test
 {
     [GenerateNonTryMethod]
@@ -213,7 +213,7 @@ namespace Test
     }
 }
 ";
-            const string expected = @"using System;
+        const string expected = @"using System;
 using MBW.Generators.NonTryMethods.Abstracts.Attributes;
 namespace Test
 {
@@ -229,15 +229,15 @@ namespace Test
     }
 }
 ";
-            var (output, diags) = GeneratorTestHelper.Run<AutogenNonTryGenerator>(input, typeof(GenerateNonTryMethodAttribute));
-            Assert.Empty(diags);
-            Assert.Equal(expected, Assert.Single(output).Value);
-        }
+        var (output, diags) = GeneratorTestHelper.Run<AutogenNonTryGenerator>(input, typeof(GenerateNonTryMethodAttribute));
+        Assert.Empty(diags);
+        Assert.Equal(expected, Assert.Single(output).Value);
+    }
 
-        [Fact]
-        public void GeneratesForTwoOutArguments()
-        {
-            const string input = @"using MBW.Generators.NonTryMethods.Abstracts.Attributes;
+    [Fact]
+    public void GeneratesForTwoOutArguments()
+    {
+        const string input = @"using MBW.Generators.NonTryMethods.Abstracts.Attributes;
 namespace Test
 {
     [GenerateNonTryMethod]
@@ -251,7 +251,7 @@ namespace Test
     }
 }
 ";
-            const string expected = @"using System;
+        const string expected = @"using System;
 using MBW.Generators.NonTryMethods.Abstracts.Attributes;
 namespace Test
 {
@@ -267,15 +267,15 @@ namespace Test
     }
 }
 ";
-            var (output, diags) = GeneratorTestHelper.Run<AutogenNonTryGenerator>(input, typeof(GenerateNonTryMethodAttribute));
-            Assert.Empty(diags);
-            Assert.Equal(expected, Assert.Single(output).Value);
-        }
+        var (output, diags) = GeneratorTestHelper.Run<AutogenNonTryGenerator>(input, typeof(GenerateNonTryMethodAttribute));
+        Assert.Empty(diags);
+        Assert.Equal(expected, Assert.Single(output).Value);
+    }
 
-        [Fact]
-        public void GeneratesForTaskBool()
-        {
-            const string input = @"using MBW.Generators.NonTryMethods.Abstracts.Attributes;
+    [Fact]
+    public void GeneratesForTaskBool()
+    {
+        const string input = @"using MBW.Generators.NonTryMethods.Abstracts.Attributes;
 using System.Threading.Tasks;
 namespace Test
 {
@@ -290,9 +290,8 @@ namespace Test
     }
 }
 ";
-            var (output, diags) = GeneratorTestHelper.Run<AutogenNonTryGenerator>(input, typeof(GenerateNonTryMethodAttribute));
-            Assert.Empty(diags);
-            Assert.Empty(output);
-        }
+        var (output, diags) = GeneratorTestHelper.Run<AutogenNonTryGenerator>(input, typeof(GenerateNonTryMethodAttribute));
+        Assert.Empty(diags);
+        Assert.Empty(output);
     }
 }

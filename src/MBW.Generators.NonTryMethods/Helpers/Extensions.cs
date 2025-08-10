@@ -3,40 +3,39 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace MBW.Generators.NonTryMethods.Helpers
+namespace MBW.Generators.NonTryMethods.Helpers;
+
+static class Extensions
 {
-    static class Extensions
+    public static TKind GetParentOfType<TKind>(this SyntaxNode item) where TKind : class
     {
-        public static TKind GetParentOfType<TKind>(this SyntaxNode item) where TKind : class
+        while (item.Parent != null)
         {
-            while (item.Parent != null)
-            {
-                item = item.Parent;
+            item = item.Parent;
 
-                if (item is TKind asKind)
-                    return asKind;
-            }
-
-            return default;
+            if (item is TKind asKind)
+                return asKind;
         }
 
-        public static bool HasAttribute(this ClassDeclarationSyntax @class, string name)
-        {
-            if (name.EndsWith(nameof(Attribute)))
-                name = name.Substring(0, name.Length - nameof(Attribute).Length);
-
-            foreach (AttributeListSyntax attributeList in @class.AttributeLists)
-            {
-                foreach (AttributeSyntax listAttribute in attributeList.Attributes)
-                {
-                    string attributeName = listAttribute.Name.TryGetInferredMemberName();
-                    if (attributeName == name)
-                        return true;
-                }
-            }
-
-            return false;
-        }
-
+        return default;
     }
+
+    public static bool HasAttribute(this ClassDeclarationSyntax @class, string name)
+    {
+        if (name.EndsWith(nameof(Attribute)))
+            name = name.Substring(0, name.Length - nameof(Attribute).Length);
+
+        foreach (AttributeListSyntax attributeList in @class.AttributeLists)
+        {
+            foreach (AttributeSyntax listAttribute in attributeList.Attributes)
+            {
+                string attributeName = listAttribute.Name.TryGetInferredMemberName();
+                if (attributeName == name)
+                    return true;
+            }
+        }
+
+        return false;
+    }
+
 }

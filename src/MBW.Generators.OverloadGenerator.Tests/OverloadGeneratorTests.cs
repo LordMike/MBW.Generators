@@ -1,5 +1,6 @@
 using System.Linq;
 using MBW.Generators.OverloadGenerator;
+using MBW.Generators.OverloadGenerator.Attributes;
 using MBW.Generators.Tests.Common;
 using Xunit;
 
