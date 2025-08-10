@@ -1,13 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  
+
+  <Import Project="..\..\_Imports\SourceGenerator.targets" />
+
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <Description>Overload source generator driven by attributes</Description>
     <Nullable>enable</Nullable>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <IncludeBuildOutput>false</IncludeBuildOutput>
-    <PackageId>MBW.Generators.OverloadGenerator</PackageId>
-    <Description>Overload source generator driven by attributes.</Description>
-    <Authors>MBW</Authors>
   </PropertyGroup>
   
   <ItemGroup>
@@ -17,10 +15,6 @@
   
   <ItemGroup>
     <ProjectReference Include="..\MBW.Generators.OverloadGenerator.Attributes\MBW.Generators.OverloadGenerator.Attributes.csproj" />
-  </ItemGroup>
-  
-  <ItemGroup>
-    <None Include="$(OutputPath)$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" />
   </ItemGroup>
   
 </Project>

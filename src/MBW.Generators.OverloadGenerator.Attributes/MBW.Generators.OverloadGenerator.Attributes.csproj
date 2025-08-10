@@ -3,11 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <Nullable>enable</Nullable>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Description>Attributes for MBW.Generators.OverloadGenerator source generator.</Description>
-    <PackageId>MBW.Generators.OverloadGenerator.Attributes</PackageId>
-    <Authors>MBW</Authors>
-    <AssemblyName>MBW.Generators.OverloadGenerator.Attributes</AssemblyName>
+    <Description>Attributes for MBW.Generators.OverloadGenerator source generator</Description>
   </PropertyGroup>
   
 </Project>
