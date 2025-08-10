@@ -1,8 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
+  
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
     <PackageReference Include="xunit" Version="2.5.3" />
@@ -12,9 +14,11 @@
     </PackageReference>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
   </ItemGroup>
+  
   <ItemGroup>
     <ProjectReference Include="..\MBW.Generators.OverloadGenerator\MBW.Generators.OverloadGenerator.csproj" />
     <ProjectReference Include="..\MBW.Generators.OverloadGenerator.Attributes\MBW.Generators.OverloadGenerator.Attributes.csproj" />
     <ProjectReference Include="..\MBW.Generators.Tests.Common\MBW.Generators.Tests.Common.csproj" />
   </ItemGroup>
+  
 </Project>

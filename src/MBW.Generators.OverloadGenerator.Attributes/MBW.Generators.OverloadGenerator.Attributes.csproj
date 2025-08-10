@@ -1,4 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <Nullable>enable</Nullable>
@@ -8,4 +9,5 @@
     <Authors>MBW</Authors>
     <AssemblyName>MBW.Generators.OverloadGenerator.Attributes</AssemblyName>
   </PropertyGroup>
+  
 </Project>
