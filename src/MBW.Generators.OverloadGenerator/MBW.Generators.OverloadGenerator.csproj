@@ -6,7 +6,7 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <PackageId>MBW.Generators.OverloadGenerator</PackageId>
-    <Description>Overload source generator (incremental) driven by attributes.</Description>
+    <Description>Overload source generator driven by attributes.</Description>
     <Authors>MBW</Authors>
   </PropertyGroup>
   
