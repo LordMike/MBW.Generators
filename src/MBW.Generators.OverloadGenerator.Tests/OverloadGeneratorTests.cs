@@ -1,4 +1,6 @@
 using System.Linq;
+using MBW.Generators.OverloadGenerator;
+using MBW.Generators.Tests.Common;
 using Xunit;
 
 namespace MBW.Generators.OverloadGenerator.Tests;
@@ -36,7 +38,7 @@ partial class Orders
 }
 """;
 
-        var (sources, diags) = TestHelper.Run(input);
+        var (sources, diags) = GeneratorTestHelper.Run<OverloadGenerator>(input, typeof(DefaultOverloadAttribute));
         Assert.Empty(diags);
         Assert.True(sources.ContainsKey("Orders.Overloads.g.cs"));
         Assert.Equal(expected.Replace("\r\n", "\n"), sources["Orders.Overloads.g.cs"].Replace("\r\n", "\n"));
@@ -66,7 +68,7 @@ partial class Client
 }
 """;
 
-        var (sources, diags) = TestHelper.Run(input);
+        var (sources, diags) = GeneratorTestHelper.Run<OverloadGenerator>(input, typeof(DefaultOverloadAttribute));
         Assert.Empty(diags);
         Assert.True(sources.ContainsKey("Client.Overloads.g.cs"));
         Assert.Equal(expected.Replace("\r\n", "\n"), sources["Client.Overloads.g.cs"].Replace("\r\n", "\n"));
@@ -90,7 +92,7 @@ public partial class Billing
 public enum MyEnum { A, B }
 """;
 
-        var (sources, diags) = TestHelper.Run(input);
+        var (sources, diags) = GeneratorTestHelper.Run<OverloadGenerator>(input, typeof(DefaultOverloadAttribute));
         Assert.Empty(diags);
         Assert.True(sources.ContainsKey("Billing.Overloads.g.cs"));
         var generated = sources["Billing.Overloads.g.cs"].Replace("\r\n", "\n");
@@ -114,7 +116,7 @@ public partial class Sample
 }
 """;
 
-        var (sources, diags) = TestHelper.Run(input);
+        var (sources, diags) = GeneratorTestHelper.Run<OverloadGenerator>(input, typeof(DefaultOverloadAttribute));
         Assert.Single(diags);
         Assert.Equal("OG001", diags[0].Id);
         Assert.Empty(sources);

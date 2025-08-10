@@ -1,3 +1,6 @@
+using MBW.Generators.NonTryMethods;
+using MBW.Generators.NonTryMethods.Abstracts.Attributes;
+using MBW.Generators.Tests.Common;
 using Xunit;
 
 namespace MBW.Generators.NonTryMethods.Tests
@@ -38,7 +41,8 @@ Sample_AutogenNonTry
     }
 }
 ";
-            var output = TestHelper.Run(input);
+            var (output, diags) = GeneratorTestHelper.Run<AutogenNonTryGenerator>(input, typeof(GenerateNonTryMethodAttribute));
+            Assert.Empty(diags);
             Assert.Equal(expected, Assert.Single(output).Value);
         }
 
@@ -76,7 +80,8 @@ Sample_AutogenNonTry
     }
 }
 ";
-            var output = TestHelper.Run(input);
+            var (output, diags) = GeneratorTestHelper.Run<AutogenNonTryGenerator>(input, typeof(GenerateNonTryMethodAttribute));
+            Assert.Empty(diags);
             Assert.Equal(expected, Assert.Single(output).Value);
         }
 
@@ -114,7 +119,8 @@ Sample_AutogenNonTry
     }
 }
 ";
-            var output = TestHelper.Run(input);
+            var (output, diags) = GeneratorTestHelper.Run<AutogenNonTryGenerator>(input, typeof(GenerateNonTryMethodAttribute));
+            Assert.Empty(diags);
             Assert.Equal(expected, Assert.Single(output).Value);
         }
 
@@ -152,7 +158,8 @@ Sample_AutogenNonTry
     }
 }
 ";
-            var output = TestHelper.Run(input);
+            var (output, diags) = GeneratorTestHelper.Run<AutogenNonTryGenerator>(input, typeof(GenerateNonTryMethodAttribute));
+            Assert.Empty(diags);
             Assert.Equal(expected, Assert.Single(output).Value);
         }
 
@@ -190,7 +197,8 @@ Sample_AutogenNonTry
     }
 }
 ";
-            var output = TestHelper.Run(input);
+            var (output, diags) = GeneratorTestHelper.Run<AutogenNonTryGenerator>(input, typeof(GenerateNonTryMethodAttribute));
+            Assert.Empty(diags);
             Assert.Equal(expected, Assert.Single(output).Value);
         }
 
@@ -227,7 +235,8 @@ Sample_AutogenNonTry
     }
 }
 ";
-            var output = TestHelper.Run(input);
+            var (output, diags) = GeneratorTestHelper.Run<AutogenNonTryGenerator>(input, typeof(GenerateNonTryMethodAttribute));
+            Assert.Empty(diags);
             Assert.Equal(expected, Assert.Single(output).Value);
         }
 
@@ -265,7 +274,8 @@ Sample_AutogenNonTry
     }
 }
 ";
-            var output = TestHelper.Run(input);
+            var (output, diags) = GeneratorTestHelper.Run<AutogenNonTryGenerator>(input, typeof(GenerateNonTryMethodAttribute));
+            Assert.Empty(diags);
             Assert.Equal(expected, Assert.Single(output).Value);
         }
 
@@ -287,7 +297,8 @@ namespace Test
     }
 }
 ";
-            var output = TestHelper.Run(input);
+            var (output, diags) = GeneratorTestHelper.Run<AutogenNonTryGenerator>(input, typeof(GenerateNonTryMethodAttribute));
+            Assert.Empty(diags);
             Assert.Empty(output);
         }
     }
