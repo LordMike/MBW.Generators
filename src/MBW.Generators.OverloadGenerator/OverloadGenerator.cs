@@ -13,8 +13,8 @@ namespace MBW.Generators.OverloadGenerator;
 [Generator]
 public sealed class OverloadGenerator : IIncrementalGenerator
 {
-    private const string TransformAttributeName = "MBW.Generators.OverloadGenerator.TransformOverloadAttribute";
-    private const string DefaultAttributeName = "MBW.Generators.OverloadGenerator.DefaultOverloadAttribute";
+    private const string TransformAttributeName = "MBW.Generators.OverloadGenerator.Attributes.TransformOverloadAttribute";
+    private const string DefaultAttributeName = "MBW.Generators.OverloadGenerator.Attributes.DefaultOverloadAttribute";
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
