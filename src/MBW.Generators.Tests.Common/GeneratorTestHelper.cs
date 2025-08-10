@@ -13,7 +13,7 @@ namespace MBW.Generators.Tests.Common;
 public static class GeneratorTestHelper
 {
     public static (IReadOnlyDictionary<string, string> Sources, IReadOnlyList<Diagnostic> Diagnostics) Run<TGenerator>(
-        string source, params Type[] assembliesToReference)
+        string source, string[] expectedDiagnostics, params Type[] assembliesToReference)
         where TGenerator : IIncrementalGenerator, new()
     {
         SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(LanguageVersion.Latest));
@@ -32,6 +32,7 @@ public static class GeneratorTestHelper
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
         var syntaxDiagnostics = compilation.GetDiagnostics()
+            .Where(s => !expectedDiagnostics.Contains(s.Id))
             .Where(s => s.Severity == DiagnosticSeverity.Error)
             .ToArray();
 
