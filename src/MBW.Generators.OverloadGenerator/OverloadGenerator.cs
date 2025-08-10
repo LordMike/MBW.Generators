@@ -538,14 +538,9 @@ public sealed class OverloadGenerator : IIncrementalGenerator
     {
         if (!p.HasExplicitDefaultValue)
             return string.Empty;
-        if (p.ExplicitDefaultValue == null)
-            return " = null";
-        return p.ExplicitDefaultValue switch
-        {
-            string s => " = \"" + s.Replace("\"", "\\\"") + "\"",
-            bool b => " = " + (b ? "true" : "false"),
-            _ => " = " + p.ExplicitDefaultValue.ToString()
-        };
+
+        // p.ExplicitDefaultValue is an object? representing the constant.
+        return " = " + ToCSharpLiteral(p.ExplicitDefaultValue);
     }
 
     private static string GetHintName(INamedTypeSymbol type)
@@ -578,6 +573,17 @@ public sealed class OverloadGenerator : IIncrementalGenerator
         return null; // looks fine
     }
 
+    private static string ToCSharpLiteral(object? value)
+    {
+        return value switch
+        {
+            null => "null",
+            string s => SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal(s)).ToFullString(),
+            char ch => SyntaxFactory.LiteralExpression(SyntaxKind.CharacterLiteralExpression, SyntaxFactory.Literal(ch)).ToFullString(),
+            _ => SymbolDisplay.FormatPrimitive(value, quoteStrings: true, useHexadecimalNumbers: false)
+        };
+    }
+    
     private sealed class MethodModel
     {
         public MethodModel(IMethodSymbol method, ImmutableArray<Rule> rules)
