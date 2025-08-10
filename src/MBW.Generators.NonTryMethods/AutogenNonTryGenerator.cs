@@ -89,6 +89,5 @@ namespace MBW.Generators.NonTryMethods
                 context.AddSource(newClassName, SourceText.From(sb.ToString(), Encoding.UTF8));
             }
         }
-
     }
 }

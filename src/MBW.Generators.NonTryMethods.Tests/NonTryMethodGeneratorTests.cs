@@ -38,6 +38,7 @@ Sample_AutogenNonTry
     }
 }
 ";
+            TestHelper.GetGeneratedOutput<AutogenNonTryGenerator>(input);
             var output = TestHelper.Run(input);
             Assert.Equal(expected, Assert.Single(output).Value);
         }

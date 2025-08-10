@@ -1,40 +1,79 @@
+using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.ComponentModel.DataAnnotations;
+using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
-using MBW.Generators.NonTryMethods;
-using MBW.Generators.NonTryMethods.Abstracts.Attributes;
+using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Xunit;
 
-namespace MBW.Generators.NonTryMethods.Tests
+namespace MBW.Generators.NonTryMethods.Tests;
+
+internal static class TestHelper
 {
-    internal static class TestHelper
+    private static string? _headerCache;
+    private static readonly string _resourcesDir = AppContext.BaseDirectory + "../../../Resources";
+
+    private static readonly HashSet<string> _ignore =
+    [
+        "CS8019"
+    ];
+
+    public static string GetGeneratedOutput<T>(string source, bool checkForErrors = true) where T : IIncrementalGenerator, new()
     {
-        public static IReadOnlyDictionary<string, string> Run(string source)
-        {
-            SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(source);
+        string res = GetGeneratedOutput<T>(source, out ImmutableArray<Diagnostic> codeGenDiag, out IEnumerable<Diagnostic> compilerDiag);
 
-            var references = new[]
-            {
-                MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
-                MetadataReference.CreateFromFile(typeof(Enumerable).Assembly.Location),
-                MetadataReference.CreateFromFile(typeof(Task).Assembly.Location),
-                MetadataReference.CreateFromFile(typeof(GenerateNonTryMethodAttribute).Assembly.Location)
-            };
+        if (checkForErrors)
+            Assert.Empty(codeGenDiag);
 
-            CSharpCompilation compilation = CSharpCompilation.Create(
-                "Tests",
-                new[] { syntaxTree },
-                references,
-                new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+        if (checkForErrors)
+            Assert.Empty(compilerDiag);
 
-            ISourceGenerator generator = new AutogenNonTryGenerator();
+        return res;
+    }
 
-            GeneratorDriver driver = CSharpGeneratorDriver.Create(generator);
-            driver = driver.RunGenerators(compilation);
-            GeneratorDriverRunResult runResult = driver.GetRunResult();
+    public static string GetGeneratedOutput<T>(string source, out ImmutableArray<Diagnostic> codeGenDiag, out IEnumerable<Diagnostic> compilerDiag) where T : IIncrementalGenerator, new()
+    {
+        //Add a few headers by default
+        source = GetHeader() + "\n" + source;
 
-            return runResult.GeneratedSources.ToDictionary(x => x.HintName, x => x.SourceText.ToString());
-        }
+        SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(source);
+        IEnumerable<PortableExecutableReference> refs = AppDomain.CurrentDomain.GetAssemblies()
+            .Where(x => !x.IsDynamic && !string.IsNullOrWhiteSpace(x.Location))
+            .Select(x => MetadataReference.CreateFromFile(x.Location))
+            .Concat([
+                MetadataReference.CreateFromFile(typeof(T).Assembly.Location),
+                MetadataReference.CreateFromFile(typeof(DisplayAttribute).Assembly.Location),
+                MetadataReference.CreateFromFile(typeof(FlagsAttribute).Assembly.Location)
+            ]);
+
+        CSharpCompilation compilation = CSharpCompilation.Create(
+            "generator",
+            [syntaxTree],
+            refs,
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+        T generator = new T();
+
+        CSharpGeneratorDriver driver = CSharpGeneratorDriver.Create(generator);
+
+        driver.RunGeneratorsAndUpdateCompilation(compilation, out Compilation outputCompilation, out codeGenDiag);
+        compilerDiag = outputCompilation.GetDiagnostics().Where(x => !_ignore.Contains(x.Id));
+
+        List<SyntaxTree> trees = outputCompilation.SyntaxTrees.ToList();
+
+        StringBuilder sb = new StringBuilder();
+
+        foreach (SyntaxTree tree in trees.Skip(1))
+            sb.AppendLine(tree.ToString());
+
+        return sb.ToString();
+    }
+
+    private static string GetHeader()
+    {
+        return _headerCache ??= File.ReadAllText(Path.Combine(_resourcesDir, "_Header.dat"));
     }
 }
