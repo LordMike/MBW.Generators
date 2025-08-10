@@ -23,7 +23,7 @@ jobs:
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: STS
+        dotnet-version: 9.x
 
     - name: Restore dependencies
       run: dotnet restore
