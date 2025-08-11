@@ -1,129 +1,129 @@
+using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
-using System.Text;
-using MBW.Generators.NonTryMethods.Helpers;
-using MBW.Generators.NonTryMethods.Objects;
+using System.Text.RegularExpressions;
+using MBW.Generators.NonTryMethods.Models;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Text;
 
 namespace MBW.Generators.NonTryMethods;
 
 [Generator]
-public class AutogenNonTryGenerator : IIncrementalGenerator
+public sealed class AutogenNonTryGenerator : IIncrementalGenerator
 {
-    private const string AttributeName = "MBW.Generators.NonTryMethods.Abstracts.Attributes.GenerateNonTryMethodAttribute";
-
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        IncrementalValuesProvider<EligibleClassContainer> classes = context.SyntaxProvider
-            .ForAttributeWithMetadataName(AttributeName,
-                static (node, _) => node is ClassDeclarationSyntax,
-                static (ctx, _) => GetEligibleClass(ctx))
-            .Where(static c => c != null)!;
+        // Known types by reference
+        IncrementalValueProvider<KnownSymbols?> knownSymbolsProvider =
+            context.CompilationProvider.Select((comp, _) => KnownSymbols.CreateInstance(comp));
 
-        context.RegisterSourceOutput(classes, static (spc, @class) => Generate(spc, @class));
-    }
+        // All classes+interfaces
+        IncrementalValuesProvider<INamedTypeSymbol> typesProvider = context.SyntaxProvider.CreateSyntaxProvider(
+                static (node, _) => node is TypeDeclarationSyntax asType &&
+                                    asType.Kind() is SyntaxKind.ClassDeclaration or SyntaxKind.InterfaceDeclaration,
+                static (ctx, _) => (INamedTypeSymbol?)ctx.SemanticModel.GetDeclaredSymbol(ctx.Node))
+            .Where(static t => t is not null)
+            .Select((s, _) => s!);
 
-    private static EligibleClassContainer? GetEligibleClass(GeneratorAttributeSyntaxContext context)
-    {
-        ClassDeclarationSyntax cds = (ClassDeclarationSyntax)context.TargetNode;
+        // Assembly-level attributes
+        IncrementalValueProvider<ImmutableArray<(GenerateNonTryMethodAttributeInfo info, Location origin)>> assemblyRuleProvider =
+            knownSymbolsProvider.Combine(context.CompilationProvider)
+                .Select((tuple, _) => AttributesCollection.From(tuple.Left, tuple.Right.Assembly));
 
-        if (!cds.Modifiers.Any(SyntaxKind.StaticKeyword))
-            return null;
+        IncrementalValuesProvider<TypeSpec> perType = typesProvider.Combine(knownSymbolsProvider)
+            .Combine(assemblyRuleProvider)
+            .Where(static tuple =>
+            {
+                KnownSymbols? knownSymbols = tuple.Left.Right;
+                INamedTypeSymbol typeSymbol = tuple.Left.Left;
+                ImmutableArray<(GenerateNonTryMethodAttributeInfo, Location)> assemblyAttributes = tuple.Right;
 
-        CompilationUnitSyntax root = cds.SyntaxTree.GetCompilationUnitRoot();
-        NamespaceDeclarationSyntax @namespace = cds.GetParentOfType<NamespaceDeclarationSyntax>();
+                if (knownSymbols == null)
+                    return false;
 
-        EligibleClassContainer eligibleClass = new EligibleClassContainer
+                // If assembly has attribute => include
+                if (assemblyAttributes.Length > 0)
+                    return true;
+
+                // If type has attribute => include
+                if (typeSymbol.GetAttributes()
+                    .Any(a => a.AttributeClass?.Equals(knownSymbols.GenerateNonTryMethodAttribute,
+                        SymbolEqualityComparer.Default) ?? false))
+                    return true;
+
+                // if type has any method with attribute => include
+                if (typeSymbol.GetMembers()
+                    .Any(m => m is IMethodSymbol asMethod && asMethod.GetAttributes().Any(a =>
+                        a.AttributeClass?.Equals(knownSymbols.GenerateNonTryMethodAttribute,
+                            SymbolEqualityComparer.Default) ?? false)))
+                    return true;
+
+                // Else, ignore
+                return false;
+            })
+            .Select(static (tuple, _) =>
+            {
+                KnownSymbols knownSymbols = tuple.Left.Right!;
+                INamedTypeSymbol typeSymbol = tuple.Left.Left;
+                ImmutableArray<(GenerateNonTryMethodAttributeInfo info, Location origin)> assemblyAttributes = tuple.Right;
+                ImmutableArray<(GenerateNonTryMethodAttributeInfo info, Location origin)> classAttributes = AttributesCollection.From(knownSymbols, typeSymbol);
+
+                // Discover which attribute(s) applies to this type
+                List<MethodSpec>? res = null;
+                foreach (IMethodSymbol? method in typeSymbol.GetMembers().OfType<IMethodSymbol>())
+                {
+                    // Discover methods to convert in this type (based on attribute regexes, use inner most attribute first)
+                    if (method.Name.Length == 0)
+                        continue;
+
+                    // Method level
+                    ImmutableArray<(GenerateNonTryMethodAttributeInfo info, Location origin)> attribs =
+                        AttributesCollection.From(knownSymbols, method);
+                    if (attribs.Any(a => a.info.Pattern.IsMatch(method.Name)))
+                    {
+                        res ??= [];
+                        res.Add(new MethodSpec(method, attribs));
+
+                        continue;
+                    }
+
+                    // Class level
+                    if (classAttributes.Any(a => a.info.Pattern.IsMatch(method.Name)))
+                    {
+                        res ??= [];
+                        res.Add(new MethodSpec(method, classAttributes));
+
+                        continue;
+                    }
+
+                    // Assembly level
+                    if (assemblyAttributes.Any(a => a.info.Pattern.IsMatch(method.Name)))
+                    {
+                        res ??= [];
+                        res.Add(new MethodSpec(method, assemblyAttributes));
+
+                        continue;
+                    }
+
+                    // Ignore method
+                }
+
+                // If no methods => null
+                if (res == null)
+                    return null;
+
+                // Emit a spec with (symbols, type, (method, info)[])
+                return new TypeSpec(knownSymbols, typeSymbol, res.ToImmutableArray());
+            })
+            .Where(static s => s != null)
+            .Select(static (s, _) => s!)
+            .WithComparer(TypeSpec.Comparer);
+
+        context.RegisterSourceOutput(perType, static (spc, spec) =>
         {
-            Usings = root.Usings,
-            Class = cds,
-            Namespace = @namespace
-        };
-
-        foreach (MethodDeclarationSyntax method in cds.Members.OfType<MethodDeclarationSyntax>())
-        {
-            string methodName = method.Identifier.Text;
-            bool isBoolReturn = method.ReturnType is PredefinedTypeSyntax asPredefined && asPredefined.Keyword.IsKind(SyntaxKind.BoolKeyword);
-
-            SeparatedSyntaxList<ParameterSyntax> @params = method.ParameterList.Parameters;
-            bool hasThisParam = @params.First().Modifiers.Any(SyntaxKind.ThisKeyword);
-
-            if (methodName.StartsWith("Try") && isBoolReturn && hasThisParam)
-                eligibleClass.Methods.Add(method);
-        }
-
-        return eligibleClass.Methods.Count > 0 ? eligibleClass : null;
-    }
-
-    private static void Generate(SourceProductionContext context, EligibleClassContainer @class)
-    {
-        string newClassName = $"{@class.Class.Identifier.ValueText}_AutogenNonTry";
-
-        StringBuilder sb = new StringBuilder();
-
-        sb.Append("using System;").Append('\n');
-        foreach (UsingDirectiveSyntax usingDirectiveSyntax in @class.Usings)
-            sb.Append(usingDirectiveSyntax.ToFullString());
-
-        sb.Append("namespace ").Append(@class.Namespace.Name.ToString()).Append('\n');
-        sb.Append("{").Append('\n');
-        sb.Append("    ")
-            .Append(@class.Class.Modifiers.ToString())
-            .Append(" class ")
-            .Append(newClassName)
-            .Append('\n');
-        sb.Append("    {").Append('\n');
-
-        foreach (MethodDeclarationSyntax method in @class.Methods)
-        {
-            SeparatedSyntaxList<ParameterSyntax> @params = method.ParameterList.Parameters;
-
-            ParameterSyntax thisParam = @params.First();
-            bool hasSingleOutParam = @params.Take(@params.Count - 1).All(x => !x.Modifiers.Any(SyntaxKind.OutKeyword)) &&
-                                     @params.Last().Modifiers.Any(SyntaxKind.OutKeyword);
-
-            ParameterSyntax[] arguments;
-            if (hasSingleOutParam)
-                arguments = @params.Skip(1).Take(@params.Count - 2).ToArray();
-            else
-                arguments = @params.Skip(1).ToArray();
-
-            string argumentsCommaStr = arguments.Any() ? ", " : string.Empty;
-            string argumentsStr = string.Join(", ", arguments.Select(s => s.ToFullString()));
-            string argumentsNamesStr = string.Join(", ", arguments.Select(s => s.Identifier.Text));
-
-            string outType;
-            if (hasSingleOutParam)
-                outType = @params.Last().Type.ToString();
-            else
-                outType = "void";
-
-            sb.Append("        ")
-                .Append(method.Modifiers.ToString())
-                .Append(" ")
-                .Append(outType)
-                .Append(" ")
-                .Append(method.Identifier.Text.Substring("Try".Length))
-                .Append("(").Append(thisParam.ToFullString())
-                .Append(argumentsCommaStr)
-                .Append(argumentsStr)
-                .Append(")")
-                .Append('\n');
-
-            sb.Append("        {").Append('\n');
-            sb.Append($"            if (!{thisParam.Identifier.Text}.{method.Identifier.Text}({argumentsNamesStr}{argumentsCommaStr}out {outType} result))").Append('\n');
-            sb.Append("                throw new Exception();").Append('\n');
-            sb.Append('\n');
-            sb.Append("            return result;").Append('\n');
-            sb.Append("        }").Append('\n');
-        }
-
-        sb.Append("    }").Append('\n');
-        sb.Append("}").Append('\n');
-
-        context.AddSource(newClassName, SourceText.From(sb.ToString(), Encoding.UTF8));
+            // TODO: convert spec from selection to emit type
+            // EmitType(spc, r.Type, r.Specs); // one file per type
+        });
     }
 }
-

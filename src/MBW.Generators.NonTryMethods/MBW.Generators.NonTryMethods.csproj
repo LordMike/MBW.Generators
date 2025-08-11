@@ -4,6 +4,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MBW.Generators.NonTryMethods.Abstracts\MBW.Generators.NonTryMethods.Abstracts.csproj" />
+    <ProjectReference Include="..\MBW.Generators.NonTryMethods.Attributes\MBW.Generators.NonTryMethods.Attributes.csproj" />
   </ItemGroup>
 
 </Project>

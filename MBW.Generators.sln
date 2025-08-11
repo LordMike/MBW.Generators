@@ -7,7 +7,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{FEDB6F1E-3C3
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MBW.Generators.NonTryMethods", "src\MBW.Generators.NonTryMethods\MBW.Generators.NonTryMethods.csproj", "{892EA9E7-0714-4EFA-9814-95D5A74D311B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MBW.Generators.NonTryMethods.Abstracts", "src\MBW.Generators.NonTryMethods.Abstracts\MBW.Generators.NonTryMethods.Abstracts.csproj", "{B63AD214-3CAA-4400-BA3E-FBFC8DE752D4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MBW.Generators.NonTryMethods.Attributes", "src\MBW.Generators.NonTryMethods.Attributes\MBW.Generators.NonTryMethods.Attributes.csproj", "{B63AD214-3CAA-4400-BA3E-FBFC8DE752D4}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MBW.Generators.NonTryMethods.Tests", "src\MBW.Generators.NonTryMethods.Tests\MBW.Generators.NonTryMethods.Tests.csproj", "{99CF0327-824C-4AB8-9350-94660B15AE65}"
 EndProject
