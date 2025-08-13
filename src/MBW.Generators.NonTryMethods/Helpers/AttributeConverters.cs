@@ -24,17 +24,19 @@ internal static class AttributeConverters
         );
     }
 
-    public static (GenerateNonTryAsyncOptionsAttributeInfo info, Location origin) ToAsyncOptions(in AttributeData a)
+    public static (GenerateNonTryOptionsAttributeInfo info, Location origin) ToAsyncOptions(in AttributeData a)
     {
-        AsyncCandidateStrategy candidate = AsyncCandidateStrategy.TupleBooleanAndValue; // default
-        AsyncGenerationStrategy generation = AsyncGenerationStrategy.Verbatim; // default
+        AsyncCandidateStrategy asyncCandidateStrategy = AsyncCandidateStrategy.TupleBooleanAndValue;
+        ReturnGenerationStrategy returnGenerationStrategy = ReturnGenerationStrategy.Verbatim;
+        MethodsGenerationStrategy methodsGenerationStrategy = MethodsGenerationStrategy.Auto;
 
         ImmutableArray<TypedConstant> args = a.ConstructorArguments;
-        if (args.Length >= 1 && args[0].Value is int c) candidate = (AsyncCandidateStrategy)c;
-        if (args.Length >= 2 && args[1].Value is int g) generation = (AsyncGenerationStrategy)g;
+        if (args.Length >= 1 && args[0].Value is int c) asyncCandidateStrategy = (AsyncCandidateStrategy)c;
+        if (args.Length >= 2 && args[1].Value is int g) returnGenerationStrategy = (ReturnGenerationStrategy)g;
+        if (args.Length >= 3 && args[2].Value is int m) methodsGenerationStrategy = (MethodsGenerationStrategy)m;
 
         return (
-            new GenerateNonTryAsyncOptionsAttributeInfo(candidate, generation),
+            new GenerateNonTryOptionsAttributeInfo(asyncCandidateStrategy, returnGenerationStrategy, methodsGenerationStrategy),
             a.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? Location.None
         );
     }

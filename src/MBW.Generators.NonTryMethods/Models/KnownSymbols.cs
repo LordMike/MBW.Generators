@@ -22,10 +22,10 @@ internal sealed class KnownSymbols
     public static KnownSymbols? CreateInstance(Compilation c)
     {
         var generateNonTryMethodAttribute =
-            c.GetTypeByMetadataName("MBW.Generators.NonTryMethods.Abstracts.Attributes.GenerateNonTryMethodAttribute");
+            c.GetTypeByMetadataName("MBW.Generators.NonTryMethods.Attributes.GenerateNonTryMethodAttribute");
         var generateNonTryAsyncOptionsAttribute =
             c.GetTypeByMetadataName(
-                "MBW.Generators.NonTryMethods.Abstracts.Attributes.GenerateNonTryAsyncOptionsAttribute");
+                "MBW.Generators.NonTryMethods.Attributes.GenerateNonTryAsyncOptionsAttribute");
         var taskOfT = c.GetTypeByMetadataName("System.Threading.Tasks.Task`1");
         var valueTaskOfT = c.GetTypeByMetadataName("System.Threading.Tasks.ValueTask`1");
 

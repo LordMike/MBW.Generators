@@ -1,11 +1,11 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Text.RegularExpressions;
 using MBW.Generators.NonTryMethods.Models;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Newtonsoft.Json;
 
 namespace MBW.Generators.NonTryMethods;
 
@@ -27,9 +27,10 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
             .Select((s, _) => s!);
 
         // Assembly-level attributes
-        IncrementalValueProvider<ImmutableArray<(GenerateNonTryMethodAttributeInfo info, Location origin)>> assemblyRuleProvider =
-            knownSymbolsProvider.Combine(context.CompilationProvider)
-                .Select((tuple, _) => AttributesCollection.From(tuple.Left, tuple.Right.Assembly));
+        IncrementalValueProvider<ImmutableArray<(GenerateNonTryMethodAttributeInfo info, Location origin)>>
+            assemblyRuleProvider =
+                knownSymbolsProvider.Combine(context.CompilationProvider)
+                    .Select((tuple, _) => AttributesCollection.From(tuple.Left, tuple.Right.Assembly));
 
         IncrementalValuesProvider<TypeSpec> perType = typesProvider.Combine(knownSymbolsProvider)
             .Combine(assemblyRuleProvider)
@@ -52,13 +53,6 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
                         SymbolEqualityComparer.Default) ?? false))
                     return true;
 
-                // if type has any method with attribute => include
-                if (typeSymbol.GetMembers()
-                    .Any(m => m is IMethodSymbol asMethod && asMethod.GetAttributes().Any(a =>
-                        a.AttributeClass?.Equals(knownSymbols.GenerateNonTryMethodAttribute,
-                            SymbolEqualityComparer.Default) ?? false)))
-                    return true;
-
                 // Else, ignore
                 return false;
             })
@@ -66,8 +60,10 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
             {
                 KnownSymbols knownSymbols = tuple.Left.Right!;
                 INamedTypeSymbol typeSymbol = tuple.Left.Left;
-                ImmutableArray<(GenerateNonTryMethodAttributeInfo info, Location origin)> assemblyAttributes = tuple.Right;
-                ImmutableArray<(GenerateNonTryMethodAttributeInfo info, Location origin)> classAttributes = AttributesCollection.From(knownSymbols, typeSymbol);
+                ImmutableArray<(GenerateNonTryMethodAttributeInfo info, Location origin)> assemblyAttributes =
+                    tuple.Right;
+                ImmutableArray<(GenerateNonTryMethodAttributeInfo info, Location origin)> classAttributes =
+                    AttributesCollection.From(knownSymbols, typeSymbol);
 
                 // Discover which attribute(s) applies to this type
                 List<MethodSpec>? res = null;
@@ -76,17 +72,6 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
                     // Discover methods to convert in this type (based on attribute regexes, use inner most attribute first)
                     if (method.Name.Length == 0)
                         continue;
-
-                    // Method level
-                    ImmutableArray<(GenerateNonTryMethodAttributeInfo info, Location origin)> attribs =
-                        AttributesCollection.From(knownSymbols, method);
-                    if (attribs.Any(a => a.info.Pattern.IsMatch(method.Name)))
-                    {
-                        res ??= [];
-                        res.Add(new MethodSpec(method, attribs));
-
-                        continue;
-                    }
 
                     // Class level
                     if (classAttributes.Any(a => a.info.Pattern.IsMatch(method.Name)))
@@ -117,13 +102,17 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
                 return new TypeSpec(knownSymbols, typeSymbol, res.ToImmutableArray());
             })
             .Where(static s => s != null)
-            .Select(static (s, _) => s!)
-            .WithComparer(TypeSpec.Comparer);
+            .Select(static (s, _) => s!);
 
         context.RegisterSourceOutput(perType, static (spc, spec) =>
         {
             // TODO: convert spec from selection to emit type
             // EmitType(spc, r.Type, r.Specs); // one file per type
+            spc.AddSource(spec.Type.Name + ".g.cs", $"""
+                                                    /*
+                                                    {JsonConvert.SerializeObject(spec)}
+                                                    */
+                                                    """);
         });
     }
 }

@@ -1,11 +1,12 @@
-using MBW.Generators.NonTryMethods.Attributes;
+using System;
 
-namespace MBW.Generators.NonTryMethods.Models;
+namespace MBW.Generators.NonTryMethods.Attributes;
 
-public sealed class GenerateNonTryOptionsAttributeInfo(
+[AttributeUsage(AttributeTargets.Assembly | AttributeTargets.Class | AttributeTargets.Interface, Inherited = false)]
+public sealed class GenerateNonTryOptionsAttribute(
     AsyncCandidateStrategy asyncCandidateStrategy = AsyncCandidateStrategy.TupleBooleanAndValue,
     ReturnGenerationStrategy returnGenerationStrategy = ReturnGenerationStrategy.Verbatim,
-    MethodsGenerationStrategy methodsGenerationStrategy = MethodsGenerationStrategy.Auto)
+    MethodsGenerationStrategy methodsGenerationStrategy = MethodsGenerationStrategy.Auto) : Attribute
 {
     public AsyncCandidateStrategy AsyncCandidateStrategy { get; } = asyncCandidateStrategy;
     public ReturnGenerationStrategy ReturnGenerationStrategy { get; } = returnGenerationStrategy;

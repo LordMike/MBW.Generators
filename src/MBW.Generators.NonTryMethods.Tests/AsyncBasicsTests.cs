@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using MBW.Generators.NonTryMethods.Tests.Helpers;
 using MBW.Generators.Tests.Common;

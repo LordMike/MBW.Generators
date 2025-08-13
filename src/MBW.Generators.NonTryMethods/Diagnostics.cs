@@ -2,45 +2,97 @@ using Microsoft.CodeAnalysis;
 
 namespace MBW.Generators.NonTryMethods;
 
+using Microsoft.CodeAnalysis;
+
 internal static class Diagnostics
 {
-    public static readonly DiagnosticDescriptor NonTry_TargetNotPartial = new(
-        "NT001", "Target type is not partial",
-        "Type '{0}' must be declared partial to add generated methods", "NonTry", DiagnosticSeverity.Error, true);
+    // ------------------------------------------------------------------------
+    // Strategy / configuration
+    // ------------------------------------------------------------------------
 
-    public static readonly DiagnosticDescriptor NonTry_InvalidNameRegex = new(
-        "NT002", "Invalid name regex",
-        "Attribute on '{0}' has invalid regex '{1}': {2}", "NonTry", DiagnosticSeverity.Error, true);
+    /// <summary>
+    /// The chosen MethodsGenerationStrategy cannot be applied to the target type
+    /// (e.g., PartialType requires 'partial', Extensions not supported/invalid).
+    /// The user likely needs to tweak <see cref="GenerateNonTryOptionsAttribute"/>.
+    /// </summary>
+    public static readonly DiagnosticDescriptor StrategyRequirementsNotMet = new(
+        id: "NT001",
+        title: "Generation strategy requirements not met",
+        messageFormat:
+            "MethodsGenerationStrategy '{0}' from [GenerateNonTryOptionsAttribute] cannot be applied to target type '{1}': {2}",
+        category: "NonTry",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
 
-    public static readonly DiagnosticDescriptor NonTry_InvalidNameReplacement = new(
-        "NT003", "Invalid name replacement",
-        "Replacement '{1}' for pattern '{0}' on '{2}' failed: {3}", "NonTry", DiagnosticSeverity.Error, true);
+    /// <summary>
+    /// Custom exception type must derive from System.Exception.
+    /// This is configured via <see cref="GenerateNonTryMethodAttribute"/>.
+    /// </summary>
+    public static readonly DiagnosticDescriptor InvalidExceptionType = new(
+        id: "NT002",
+        title: "Invalid exception type",
+        messageFormat:
+            "Exception type '{0}' specified via [GenerateNonTryMethodAttribute] must derive from System.Exception",
+        category: "NonTry",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
 
-    public static readonly DiagnosticDescriptor NonTry_InvalidExceptionType = new(
-        "NT004", "Invalid exception type",
-        "Exception type '{0}' must derive from System.Exception", "NonTry", DiagnosticSeverity.Error, true);
+    // ------------------------------------------------------------------------
+    // Candidate selection / shapes
+    // ------------------------------------------------------------------------
 
-    public static readonly DiagnosticDescriptor NonTry_NotEligibleSync = new(
-        "NT005", "Method not eligible (sync)",
-        "Method '{0}' must return bool and have exactly one 'out' parameter", "NonTry", DiagnosticSeverity.Info,
-        true);
+    /// <summary>
+    /// Method matched a non-try pattern from <see cref="GenerateNonTryMethodAttribute"/> but is not a valid sync Try:
+    /// must return bool and have exactly one 'out' parameter.
+    /// </summary>
+    public static readonly DiagnosticDescriptor NotEligibleSync = new(
+        id: "NT003",
+        title: "Method not eligible (sync shape)",
+        messageFormat:
+            "Method '{0}' matched [GenerateNonTryMethodAttribute] pattern '{1}' but is not eligible: must return 'bool' and have exactly one 'out' parameter",
+        category: "NonTry",
+        defaultSeverity: DiagnosticSeverity.Info,
+        isEnabledByDefault: true);
 
-    public static readonly DiagnosticDescriptor NonTry_NotEligibleAsyncShape = new(
-        "NT006", "Method not eligible (async shape)",
-        "Method '{0}' matches name but not async candidate strategy '{1}' (expect Task<(bool,T)> or ValueTask<(bool,T)>)",
-        "NonTry", DiagnosticSeverity.Warning, true);
+    /// <summary>
+    /// Method matched a non-try pattern from <see cref="GenerateNonTryMethodAttribute"/> but doesn't match the async candidate strategy
+    /// configured by <see cref="GenerateNonTryOptionsAttribute"/>.
+    /// </summary>
+    public static readonly DiagnosticDescriptor NotEligibleAsyncShape = new(
+        id: "NT004",
+        title: "Method not eligible (async shape)",
+        messageFormat:
+            "Method '{0}' matched [GenerateNonTryMethodAttribute] pattern '{1}' but is excluded by async candidate strategy '{2}' from [GenerateNonTryOptionsAttribute] (expected Task<(bool,T)> or ValueTask<(bool,T)>)",
+        category: "NonTry",
+        defaultSeverity: DiagnosticSeverity.Info,
+        isEnabledByDefault: true);
 
-    public static readonly DiagnosticDescriptor NonTry_EmptyGeneratedName = new(
-        "NT007", "Empty generated name",
-        "Method '{0}' becomes empty after applying pattern '{1}' with replacement '{2}'", "NonTry",
-        DiagnosticSeverity.Warning, true);
+    // ------------------------------------------------------------------------
+    // Emission
+    // ------------------------------------------------------------------------
 
-    public static readonly DiagnosticDescriptor NonTry_SignatureCollision = new(
-        "NT008", "Generated signature collision",
-        "Method '{0}' would collide with an existing member in '{1}'", "NonTry", DiagnosticSeverity.Warning, true);
+    /// <summary>
+    /// Generated signature would collide with an existing member in the target type.
+    /// The colliding output originates from <see cref="GenerateNonTryMethodAttribute"/>.
+    /// </summary>
+    public static readonly DiagnosticDescriptor SignatureCollision = new(
+        id: "NT005",
+        title: "Generated signature collision",
+        messageFormat:
+            "Generated method '{0}' from [GenerateNonTryMethodAttribute] would collide with an existing member in '{1}'; skipping",
+        category: "NonTry",
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
 
-    public static readonly DiagnosticDescriptor NonTry_DuplicateSpec = new(
-        "NT009", "Duplicate generated signature",
-        "Multiple attributes produce the same generated signature '{0}' in '{1}'; emitting once", "NonTry",
-        DiagnosticSeverity.Warning, true);
+    /// <summary>
+    /// Multiple GenerateNonTryMethodAttribute patterns produce the same generated signature; emit once.
+    /// </summary>
+    public static readonly DiagnosticDescriptor DuplicateGeneratedSignature = new(
+        id: "NT006",
+        title: "Duplicate generated signature",
+        messageFormat:
+            "Multiple [GenerateNonTryMethodAttribute]s produce the same generated signature '{0}' in '{1}'; emitting once",
+        category: "NonTry",
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
 }

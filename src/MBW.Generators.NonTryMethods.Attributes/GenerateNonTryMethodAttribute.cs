@@ -3,9 +3,7 @@ using JetBrains.Annotations;
 
 namespace MBW.Generators.NonTryMethods.Attributes;
 
-[AttributeUsage(
-    AttributeTargets.Assembly | AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Interface |
-    AttributeTargets.Method, AllowMultiple = true, Inherited = false)]
+[AttributeUsage(AttributeTargets.Assembly | AttributeTargets.Class  | AttributeTargets.Interface, AllowMultiple = true, Inherited = false)]
 public sealed class GenerateNonTryMethodAttribute(Type? exceptionType = null, [RegexPattern] string? methodNamePattern = "^[Tt]ry(.*)")
     : Attribute
 {
