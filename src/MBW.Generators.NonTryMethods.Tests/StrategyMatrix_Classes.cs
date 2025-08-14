@@ -100,9 +100,9 @@ public class StrategyMatrix_Classes
 
                            public static class TestClass_NonTryExtensions
                            {
-                               public static int Method(this TestClass target)
+                               public static int Method(this TestClass self)
                                {
-                                   if (target.TryMethod(out var v))
+                                   if (self.TryMethod(out var v))
                                    {
                                        return v;
                                    }

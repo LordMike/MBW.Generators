@@ -1,3 +1,9 @@
+using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
+using MBW.Generators.NonTryMethods.GenerationModels;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
@@ -16,5 +22,14 @@ internal class GenerationHelpers
         if (value is char ch)
             return LiteralExpression(SyntaxKind.CharacterLiteralExpression, Literal(ch));
         return ParseExpression(SymbolDisplay.FormatPrimitive(value, quoteStrings: true, useHexadecimalNumbers: false));
+    }
+    
+    public static string FindUnusedParamName(ImmutableArray<IParameterSymbol> @params, string prefix)
+    {
+        var reserved = new HashSet<string>(@params.Select(p => p.Name), StringComparer.Ordinal);
+        var name = prefix; 
+        int i = 1;
+        while (reserved.Contains(name)) name = prefix + i++;
+        return name;
     }
 }

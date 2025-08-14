@@ -165,7 +165,6 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
         return ns + simple + ".NonTry.g.cs";
     }
 
-
     /// <summary>
     /// Build a full compilation unit for the given type + planned methods.
     /// Caller should do: cu.NormalizeWhitespace().ToFullString() then AddSource.
@@ -742,7 +741,6 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
     private static MethodDeclarationSyntax CreateShell(PlannedMethod pm, bool isAsync)
     {
         var (isPublic, isStatic) = GetModifiers(pm);
-
         var ret = ParseTypeName(pm.Signature.ReturnType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat));
         var decl = MethodDeclaration(ret, pm.Signature.Name);
 
@@ -752,108 +750,80 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
         if (isAsync) mods.Add(Token(SyntaxKind.AsyncKeyword));
         decl = decl.WithModifiers(TokenList(mods));
 
-        var parameters = pm.Signature.Parameters.Select(RenderParameter);
-        return decl.WithParameterList(ParameterList(SeparatedList(parameters)));
+        // params filled by caller with ComputeExtensionBits(...)
+        return decl;
     }
 
-    private static ExpressionSyntax BuildTryInvocation(PlannedMethod pm, bool isAsync, string? outVarName = null)
+    private static MethodDeclarationSyntax BuildNonTrySync(PlannedMethod pm)
     {
-        // If you later want reduced extension calls (self.TryFoo(...)), adjust here.
-        // For now we just invoke by name with args rendered below.
-        return InvocationExpression(IdentifierName(pm.Source.Method.Name))
-            .WithArgumentList(ArgumentList(SeparatedList(
-                isAsync
-                    ? RenderTryArgsAsync(pm)
-                    : RenderTryArgsSync(pm, outVarName!)
-            )));
+        // [public] [static] T Foo([this C self,] ...) { if (self?.TryFoo(..., out outParam)) return outParam; throw new Ex(); }
+        var decl = CreateShell(pm, isAsync: false);
+        var (recv, @params, target) = ComputeExtensionBits(pm);
+        decl = decl.WithParameterList(ParameterList(@params));
+
+        var outParam = pm.Source.Method.Parameters.First(p => p.RefKind == RefKind.Out).Name;
+        var args = pm.Source.Method.Parameters.Select(p =>
+            p.RefKind == RefKind.Out
+                ? Argument(DeclarationExpression(IdentifierName("var"),
+                        SingleVariableDesignation(Identifier(outParam))))
+                    .WithRefKindKeyword(Token(SyntaxKind.OutKeyword))
+                : Argument(IdentifierName(p.Name))
+                    .WithRefKindKeyword(p.RefKind switch
+                    {
+                        RefKind.Ref => Token(SyntaxKind.RefKeyword),
+                        RefKind.In => Token(SyntaxKind.InKeyword),
+                        _ => default
+                    }));
+
+        var tryCall = InvocationExpression(target).WithArgumentList(ArgumentList(SeparatedList(args)));
+
+        return decl.WithBody(Block(
+            IfStatement(tryCall, Block(ReturnStatement(IdentifierName(outParam)))),
+            BuildThrow(pm)
+        ));
+    }
+
+    private static MethodDeclarationSyntax BuildNonTryAsync(PlannedMethod pm)
+    {
+        // [public] [static] async Task<T> FooAsync([this C self,] ...) { var t = await self?.TryFooAsync(...); if (t.Item1) return t.Item2; throw new Ex(); }
+        var decl = CreateShell(pm, isAsync: true);
+        var (recv, @params, target) = ComputeExtensionBits(pm);
+        decl = decl.WithParameterList(ParameterList(@params));
+
+        var args = pm.Source.Method.Parameters.Select(p =>
+            Argument(IdentifierName(p.Name))
+                .WithRefKindKeyword(p.RefKind switch
+                {
+                    RefKind.Ref => Token(SyntaxKind.RefKeyword),
+                    RefKind.In => Token(SyntaxKind.InKeyword),
+                    _ => default
+                }));
+
+        var awaitCall = AwaitExpression(
+            InvocationExpression(target).WithArgumentList(ArgumentList(SeparatedList(args))));
+
+        var t = Identifier(GenerationHelpers.FindUnusedParamName(pm.Signature.Parameters, "tmp"));
+        var declLocal = LocalDeclarationStatement(
+            VariableDeclaration(IdentifierName("var"))
+                .WithVariables(SeparatedList(new[]
+                    { VariableDeclarator(t).WithInitializer(EqualsValueClause(awaitCall)) })));
+
+        var ok = MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName(t),
+            IdentifierName("Item1"));
+        var val = MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName(t),
+            IdentifierName("Item2"));
+
+        return decl.WithBody(Block(
+            declLocal,
+            IfStatement(ok, Block(ReturnStatement(val))),
+            BuildThrow(pm)
+        ));
     }
 
     private static ThrowStatementSyntax BuildThrow(PlannedMethod pm) =>
         ThrowStatement(ObjectCreationExpression(
                 ParseTypeName(pm.ExceptionType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)))
             .WithArgumentList(ArgumentList()));
-
-    private static MethodDeclarationSyntax BuildNonTrySync(PlannedMethod pm)
-    {
-        // PSEUDOCODE:
-        // [public] [static] T Foo(...) { if (TryFoo(..., out myOut)) return myOut; throw new Ex(); }
-        var m = CreateShell(pm, isAsync: false);
-
-        // Identify the out parameter in the source method
-        var outParam = pm.Source.Method.Parameters.First(p => p.RefKind == RefKind.Out).Name;
-
-        // Invocation uses all original parameter names, with out <outParam>
-        var tryCall = InvocationExpression(IdentifierName(pm.Source.Method.Name))
-            .WithArgumentList(ArgumentList(SeparatedList(RenderTryArgsSync(pm, outParam))));
-
-        var body = Block(
-            IfStatement(tryCall, Block(ReturnStatement(IdentifierName(outParam)))),
-            BuildThrow(pm)
-        );
-
-        return m.WithBody(body);
-    }
-
-    private static MethodDeclarationSyntax BuildNonTryAsync(PlannedMethod pm)
-    {
-        // PSEUDOCODE:
-        // [public] [static] async Task<T> FooAsync(...) { var t = await TryFooAsync(...); if (t.Item1) return t.Item2; throw new Ex(); }
-        var m = CreateShell(pm, isAsync: true);
-
-        var tmp = Identifier("tmp");
-        var awaitCall = AwaitExpression(BuildTryInvocation(pm, isAsync: true));
-
-        var decl = LocalDeclarationStatement(
-            VariableDeclaration(IdentifierName("var"))
-                .WithVariables(SeparatedList(new[]
-                {
-                    VariableDeclarator(tmp).WithInitializer(EqualsValueClause(awaitCall))
-                })));
-
-        var ok = MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName(tmp),
-            IdentifierName("Item1"));
-        var value = MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName(tmp),
-            IdentifierName("Item2"));
-
-        var body = Block(
-            decl,
-            IfStatement(ok, Block(ReturnStatement(value))),
-            BuildThrow(pm)
-        );
-
-        return m.WithBody(body);
-    }
-
-    private static IEnumerable<ArgumentSyntax> RenderTryArgsSync(PlannedMethod pm, string outParamName)
-    {
-        foreach (var p in pm.Source.Method.Parameters)
-        {
-            if (p.RefKind == RefKind.Out)
-            {
-                yield return Argument(
-                        DeclarationExpression(IdentifierName("var"), SingleVariableDesignation(Identifier(outParamName))))
-                    .WithRefKindKeyword(Token(SyntaxKind.OutKeyword));
-            }
-            else
-            {
-                var arg = Argument(IdentifierName(p.Name));
-                if (p.RefKind == RefKind.Ref) arg = arg.WithRefKindKeyword(Token(SyntaxKind.RefKeyword));
-                if (p.RefKind == RefKind.In)  arg = arg.WithRefKindKeyword(Token(SyntaxKind.InKeyword));
-                yield return arg;
-            }
-        }
-    }
-
-    private static IEnumerable<ArgumentSyntax> RenderTryArgsAsync(PlannedMethod pm)
-    {
-        foreach (var p in pm.Source.Method.Parameters)
-        {
-            var arg = Argument(IdentifierName(p.Name));
-            if (p.RefKind == RefKind.Ref) arg = arg.WithRefKindKeyword(Token(SyntaxKind.RefKeyword));
-            if (p.RefKind == RefKind.In) arg = arg.WithRefKindKeyword(Token(SyntaxKind.InKeyword));
-            yield return arg;
-        }
-    }
 
     private static ParameterSyntax RenderParameter(IParameterSymbol p)
     {
@@ -882,5 +852,49 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
         }
 
         return param;
+    }
+
+    private static (string? recv, SeparatedSyntaxList<ParameterSyntax> @params, ExpressionSyntax target)
+        ComputeExtensionBits(PlannedMethod pm)
+    {
+        var renderedParams = pm.Signature.Parameters.Select(RenderParameter);
+
+        if (pm.Signature.Kind != EmissionKind.Extension)
+            return (null, SeparatedList(renderedParams), IdentifierName(pm.Source.Method.Name));
+
+        // allocate receiver name that won't collide with user params
+        string recv = GenerationHelpers.FindUnusedParamName(pm.Signature.Parameters, "self");
+
+        var thisParam = BuildExtensionThisParam(pm, recv);
+
+        var allParams = new[] { thisParam }.Concat(renderedParams);
+        var target = MemberAccessExpression(
+            SyntaxKind.SimpleMemberAccessExpression,
+            IdentifierName(recv),
+            IdentifierName(pm.Source.Method.Name));
+
+        return (recv, SeparatedList(allParams), target);
+    }
+
+
+    private static ParameterSyntax BuildExtensionThisParam(PlannedMethod pm, string receiverName)
+    {
+        var m = pm.Source.Method;
+        var recvType = ParseTypeName(
+            m.ContainingType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat));
+
+        // order: this [ref|in]
+        var mods = new List<SyntaxToken>(2)
+        {
+            Token(SyntaxKind.ThisKeyword)
+        };
+        if (m.ContainingType.IsValueType && !m.IsStatic && !m.IsReadOnly) 
+            mods.Add(Token(SyntaxKind.RefKeyword));
+        else if (m.ContainingType.IsValueType && !m.IsStatic && m.IsReadOnly) 
+            mods.Add(Token(SyntaxKind.InKeyword));
+
+        return Parameter(Identifier(receiverName))
+            .WithType(recvType)
+            .WithModifiers(TokenList(mods));
     }
 }

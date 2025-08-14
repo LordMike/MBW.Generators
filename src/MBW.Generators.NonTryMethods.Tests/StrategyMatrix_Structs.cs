@@ -66,9 +66,9 @@ public class StrategyMatrix_Structs
 
                            public static class TestClass_NonTryExtensions
                            {
-                               public static int Method(this ref TestClass target)
+                               public static int Method(this ref TestClass self)
                                {
-                                   if (target.TryMethod(out var v))
+                                   if (self.TryMethod(out var v))
                                    {
                                        return v;
                                    }
@@ -102,9 +102,9 @@ public class StrategyMatrix_Structs
 
                            public static class TestClass_NonTryExtensions
                            {
-                               public static int Method(this in TestClass target)
+                               public static int Method(this in TestClass self)
                                {
-                                   if (target.TryMethod(out var v))
+                                   if (self.TryMethod(out var v))
                                    {
                                        return v;
                                    }
