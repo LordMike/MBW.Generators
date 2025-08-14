@@ -1,3 +1,4 @@
+using System;
 using Microsoft.CodeAnalysis;
 
 namespace MBW.Generators.NonTryMethods.Models;
@@ -5,34 +6,38 @@ namespace MBW.Generators.NonTryMethods.Models;
 internal sealed class KnownSymbols
 {
     public readonly INamedTypeSymbol GenerateNonTryMethodAttribute;
-    public readonly INamedTypeSymbol GenerateNonTryAsyncOptionsAttribute;
+    public readonly INamedTypeSymbol GenerateNonTryOptionsAttribute;
     public readonly INamedTypeSymbol? TaskOfT;
     public readonly INamedTypeSymbol? ValueTaskOfT;
 
-    private KnownSymbols(INamedTypeSymbol generateNonTryMethodAttribute,
-        INamedTypeSymbol generateNonTryAsyncOptionsAttribute, INamedTypeSymbol? taskOfT,
-        INamedTypeSymbol? valueTaskOfT)
+    public readonly INamedTypeSymbol ExceptionBase;
+    public readonly INamedTypeSymbol InvalidOperationException;
+
+    private KnownSymbols(Compilation compilation, INamedTypeSymbol generateNonTryMethodAttribute,
+        INamedTypeSymbol generateNonTryOptionsAttribute)
     {
         GenerateNonTryMethodAttribute = generateNonTryMethodAttribute;
-        GenerateNonTryAsyncOptionsAttribute = generateNonTryAsyncOptionsAttribute;
-        TaskOfT = taskOfT;
-        ValueTaskOfT = valueTaskOfT;
+        GenerateNonTryOptionsAttribute = generateNonTryOptionsAttribute;
+        TaskOfT = compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1");
+        ValueTaskOfT = compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask`1");
+        ExceptionBase = compilation.GetTypeByMetadataName("System.Exception") ??
+                        throw new InvalidOperationException("Unable to locate System.Exception in compilation");
+        InvalidOperationException = compilation.GetTypeByMetadataName("System.InvalidOperationException") ??
+                                    throw new InvalidOperationException(
+                                        "Unable to locate System.InvalidOperationException in compilation");
     }
 
-    public static KnownSymbols? CreateInstance(Compilation c)
+    public static KnownSymbols? CreateInstance(Compilation compilation)
     {
         var generateNonTryMethodAttribute =
-            c.GetTypeByMetadataName("MBW.Generators.NonTryMethods.Attributes.GenerateNonTryMethodAttribute");
-        var generateNonTryAsyncOptionsAttribute =
-            c.GetTypeByMetadataName(
-                "MBW.Generators.NonTryMethods.Attributes.GenerateNonTryAsyncOptionsAttribute");
-        var taskOfT = c.GetTypeByMetadataName("System.Threading.Tasks.Task`1");
-        var valueTaskOfT = c.GetTypeByMetadataName("System.Threading.Tasks.ValueTask`1");
+            compilation.GetTypeByMetadataName("MBW.Generators.NonTryMethods.Attributes.GenerateNonTryMethodAttribute");
+        var generateNonTryOptionsAttribute =
+            compilation.GetTypeByMetadataName(
+                "MBW.Generators.NonTryMethods.Attributes.GenerateNonTryOptionsAttribute");
 
-        if (generateNonTryMethodAttribute == null || generateNonTryAsyncOptionsAttribute == null)
+        if (generateNonTryMethodAttribute == null || generateNonTryOptionsAttribute == null)
             return null;
 
-        return new KnownSymbols(generateNonTryMethodAttribute, generateNonTryAsyncOptionsAttribute, taskOfT,
-            valueTaskOfT);
+        return new KnownSymbols(compilation, generateNonTryMethodAttribute, generateNonTryOptionsAttribute);
     }
 }

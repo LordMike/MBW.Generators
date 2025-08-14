@@ -1,15 +1,9 @@
-using Microsoft.CodeAnalysis;
-
 namespace MBW.Generators.NonTryMethods;
 
 using Microsoft.CodeAnalysis;
 
 internal static class Diagnostics
 {
-    // ------------------------------------------------------------------------
-    // Strategy / configuration
-    // ------------------------------------------------------------------------
-
     /// <summary>
     /// The chosen MethodsGenerationStrategy cannot be applied to the target type
     /// (e.g., PartialType requires 'partial', Extensions not supported/invalid).
@@ -37,10 +31,6 @@ internal static class Diagnostics
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
-    // ------------------------------------------------------------------------
-    // Candidate selection / shapes
-    // ------------------------------------------------------------------------
-
     /// <summary>
     /// Method matched a non-try pattern from <see cref="GenerateNonTryMethodAttribute"/> but is not a valid sync Try:
     /// must return bool and have exactly one 'out' parameter.
@@ -67,10 +57,6 @@ internal static class Diagnostics
         defaultSeverity: DiagnosticSeverity.Info,
         isEnabledByDefault: true);
 
-    // ------------------------------------------------------------------------
-    // Emission
-    // ------------------------------------------------------------------------
-
     /// <summary>
     /// Generated signature would collide with an existing member in the target type.
     /// The colliding output originates from <see cref="GenerateNonTryMethodAttribute"/>.
@@ -91,7 +77,25 @@ internal static class Diagnostics
         id: "NT006",
         title: "Duplicate generated signature",
         messageFormat:
-            "Multiple [GenerateNonTryMethodAttribute]s produce the same generated signature '{0}' in '{1}'; emitting once",
+        "Multiple [GenerateNonTryMethodAttribute]s produce the same generated signature '{0}' in '{1}'; emitting once",
+        category: "NonTry",
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+    
+    public static readonly DiagnosticDescriptor MultiplePatternsMatchMethod = new(
+        id: "NT007",
+        title: "Multiple patterns match method",
+        messageFormat:
+        "Multiple [GenerateNonTryMethodAttribute] patterns match '{0}' in '{1}' and result in the same generated signature, The patterns were: {2}; emitting once",
+        category: "NonTry",
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor UnableToGenerateExtensionMethodForStaticMethod = new(
+        id: "NT008",
+        title: "Cannot generate extension for static method",
+        messageFormat:
+        "Method '{0}' in '{1}' is static; cannot generate an extension method that requires an instance receiver; skipping",
         category: "NonTry",
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);

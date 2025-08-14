@@ -1,7 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Runtime;
 using MBW.Generators.NonTryMethods.Helpers;
 using Microsoft.CodeAnalysis;
 
@@ -11,10 +9,10 @@ internal sealed class MethodSpec : IEquatable<MethodSpec>
 {
     public readonly int Key;
     public readonly IMethodSymbol Method;
-    public readonly ImmutableArray<(GenerateNonTryMethodAttributeInfo info, Location location)> ApplicableAttributes;
+    public readonly ImmutableArray<GenerateNonTryMethodAttributeInfo> ApplicableAttributes;
 
     public MethodSpec(IMethodSymbol method,
-        ImmutableArray<(GenerateNonTryMethodAttributeInfo info, Location location)> applicableAttributes)
+        ImmutableArray<GenerateNonTryMethodAttributeInfo> applicableAttributes)
     {
         Method = method;
         ApplicableAttributes = applicableAttributes;
