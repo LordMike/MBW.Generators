@@ -36,10 +36,10 @@ public class Nullability_Reference
                            {
                                public async Task<string?> MethodAsync()
                                {
-                                   var t = await TryMethodAsync();
-                                   if (t.Item1)
+                                   var tmp = await TryMethodAsync();
+                                   if (tmp.Item1)
                                    {
-                                       return t.Item2;
+                                       return tmp.Item2;
                                    }
 
                                    throw new InvalidOperationException();
@@ -76,10 +76,10 @@ public class Nullability_Reference
                            {
                                public async Task<string> MethodAsync()
                                {
-                                   var t = await TryMethodAsync();
-                                   if (t.Item1)
+                                   var tmp = await TryMethodAsync();
+                                   if (tmp.Item1)
                                    {
-                                       return t.Item2;
+                                       return tmp.Item2;
                                    }
 
                                    throw new InvalidOperationException();

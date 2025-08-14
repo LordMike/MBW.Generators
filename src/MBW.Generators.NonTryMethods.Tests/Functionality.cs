@@ -39,9 +39,9 @@ public class Functionality
                            {
                                public int Load(int a, int b)
                                {
-                                   if (TryLoad(a, b, out var v))
+                                   if (TryLoad(a, b, out var value))
                                    {
-                                       return v;
+                                       return value;
                                    }
 
                                    throw new InvalidOperationException();
@@ -82,9 +82,9 @@ public class Functionality
                            {
                                public int Load(int a, int b)
                                {
-                                   if (TryLoad(a, b, out var v))
+                                   if (TryLoad(a, b, out var value))
                                    {
-                                       return v;
+                                       return value;
                                    }
 
                                    throw new MyEx();
@@ -121,10 +121,10 @@ public class Functionality
                            {
                                public async Task<string?> LoadAsync(int id)
                                {
-                                   var t = await TryLoadAsync(id);
-                                   if (t.Item1)
+                                   var tmp = await TryLoadAsync(id);
+                                   if (tmp.Item1)
                                    {
-                                       return t.Item2;
+                                       return tmp.Item2;
                                    }
 
                                    throw new InvalidOperationException();
@@ -161,10 +161,10 @@ public class Functionality
                            {
                                public async ValueTask<int?> LoadAsync(int id)
                                {
-                                   var t = await TryLoadAsync(id);
-                                   if (t.Item1)
+                                   var tmp = await TryLoadAsync(id);
+                                   if (tmp.Item1)
                                    {
-                                       return t.Item2;
+                                       return tmp.Item2;
                                    }
 
                                    throw new InvalidOperationException();
@@ -201,10 +201,10 @@ public class Functionality
                            {
                                public async Task<string> LoadAsync(int id)
                                {
-                                   var t = await TryLoadAsync(id);
-                                   if (t.Item1)
+                                   var tmp = await TryLoadAsync(id);
+                                   if (tmp.Item1)
                                    {
-                                       return t.Item2;
+                                       return tmp.Item2;
                                    }
 
                                    throw new InvalidOperationException();

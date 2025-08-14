@@ -728,30 +728,131 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
     /// Handles sync and async, partial/iface/extension uniformly.
     /// </summary>
     private static MethodDeclarationSyntax BuildMethodDeclaration(PlannedMethod pm)
+        => pm.IsAsync ? BuildNonTryAsync(pm) : BuildNonTrySync(pm);
+
+    // Maps (kind, sourceIsStatic) -> (isPublic, isStatic, includePublicModifier)
+    private static (bool isPublic, bool isStatic) GetModifiers(PlannedMethod pm) => pm.Signature.Kind switch
     {
-        // 1) Return type
-        var returnType =
-            ParseTypeName(pm.Signature.ReturnType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat));
+        EmissionKind.Partial => (true, pm.Signature.IsStatic), // mirror static, public
+        EmissionKind.Extension => (true, true), // public static
+        EmissionKind.InterfaceDefault => (false, false), // no 'public', instance
+        _ => throw new InvalidOperationException($"Unsupported kind {pm.Signature.Kind}")
+    };
 
-        // 2) Method declaration + modifiers
-        var method = MethodDeclaration(returnType, pm.Signature.Name);
+    private static MethodDeclarationSyntax CreateShell(PlannedMethod pm, bool isAsync)
+    {
+        var (isPublic, isStatic) = GetModifiers(pm);
+
+        var ret = ParseTypeName(pm.Signature.ReturnType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat));
+        var decl = MethodDeclaration(ret, pm.Signature.Name);
+
         var mods = new List<SyntaxToken>();
-        if (pm.Signature.Kind != EmissionKind.InterfaceDefault)
-            mods.Add(Token(SyntaxKind.PublicKeyword));
-        if (pm.Signature.IsStatic) mods.Add(Token(SyntaxKind.StaticKeyword));
-        if (pm.IsAsync) mods.Add(Token(SyntaxKind.AsyncKeyword));
-        method = method.WithModifiers(TokenList(mods));
+        if (isPublic) mods.Add(Token(SyntaxKind.PublicKeyword));
+        if (isStatic) mods.Add(Token(SyntaxKind.StaticKeyword));
+        if (isAsync) mods.Add(Token(SyntaxKind.AsyncKeyword));
+        decl = decl.WithModifiers(TokenList(mods));
 
-        // 3) Parameters (rendered from symbols)
-        var parameters = pm.Signature.Parameters.Select(RenderParameter).ToArray();
-        method = method.WithParameterList(ParameterList(SeparatedList(parameters)));
+        var parameters = pm.Signature.Parameters.Select(RenderParameter);
+        return decl.WithParameterList(ParameterList(SeparatedList(parameters)));
+    }
 
-        // 4) Body
-        var body = pm.IsAsync ? BuildAsyncBody(pm) : BuildSyncBody(pm);
-        method = method.WithBody(body);
+    private static ExpressionSyntax BuildTryInvocation(PlannedMethod pm, bool isAsync, string? outVarName = null)
+    {
+        // If you later want reduced extension calls (self.TryFoo(...)), adjust here.
+        // For now we just invoke by name with args rendered below.
+        return InvocationExpression(IdentifierName(pm.Source.Method.Name))
+            .WithArgumentList(ArgumentList(SeparatedList(
+                isAsync
+                    ? RenderTryArgsAsync(pm)
+                    : RenderTryArgsSync(pm, outVarName!)
+            )));
+    }
 
-        // 5) (Optional) add where-clauses from source generics (not shown)
-        return method;
+    private static ThrowStatementSyntax BuildThrow(PlannedMethod pm) =>
+        ThrowStatement(ObjectCreationExpression(
+                ParseTypeName(pm.ExceptionType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)))
+            .WithArgumentList(ArgumentList()));
+
+    private static MethodDeclarationSyntax BuildNonTrySync(PlannedMethod pm)
+    {
+        // PSEUDOCODE:
+        // [public] [static] T Foo(...) { if (TryFoo(..., out myOut)) return myOut; throw new Ex(); }
+        var m = CreateShell(pm, isAsync: false);
+
+        // Identify the out parameter in the source method
+        var outParam = pm.Source.Method.Parameters.First(p => p.RefKind == RefKind.Out).Name;
+
+        // Invocation uses all original parameter names, with out <outParam>
+        var tryCall = InvocationExpression(IdentifierName(pm.Source.Method.Name))
+            .WithArgumentList(ArgumentList(SeparatedList(RenderTryArgsSync(pm, outParam))));
+
+        var body = Block(
+            IfStatement(tryCall, Block(ReturnStatement(IdentifierName(outParam)))),
+            BuildThrow(pm)
+        );
+
+        return m.WithBody(body);
+    }
+
+    private static MethodDeclarationSyntax BuildNonTryAsync(PlannedMethod pm)
+    {
+        // PSEUDOCODE:
+        // [public] [static] async Task<T> FooAsync(...) { var t = await TryFooAsync(...); if (t.Item1) return t.Item2; throw new Ex(); }
+        var m = CreateShell(pm, isAsync: true);
+
+        var tmp = Identifier("tmp");
+        var awaitCall = AwaitExpression(BuildTryInvocation(pm, isAsync: true));
+
+        var decl = LocalDeclarationStatement(
+            VariableDeclaration(IdentifierName("var"))
+                .WithVariables(SeparatedList(new[]
+                {
+                    VariableDeclarator(tmp).WithInitializer(EqualsValueClause(awaitCall))
+                })));
+
+        var ok = MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName(tmp),
+            IdentifierName("Item1"));
+        var value = MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName(tmp),
+            IdentifierName("Item2"));
+
+        var body = Block(
+            decl,
+            IfStatement(ok, Block(ReturnStatement(value))),
+            BuildThrow(pm)
+        );
+
+        return m.WithBody(body);
+    }
+
+    private static IEnumerable<ArgumentSyntax> RenderTryArgsSync(PlannedMethod pm, string outParamName)
+    {
+        foreach (var p in pm.Source.Method.Parameters)
+        {
+            if (p.RefKind == RefKind.Out)
+            {
+                yield return Argument(
+                        DeclarationExpression(IdentifierName("var"), SingleVariableDesignation(Identifier(outParamName))))
+                    .WithRefKindKeyword(Token(SyntaxKind.OutKeyword));
+            }
+            else
+            {
+                var arg = Argument(IdentifierName(p.Name));
+                if (p.RefKind == RefKind.Ref) arg = arg.WithRefKindKeyword(Token(SyntaxKind.RefKeyword));
+                if (p.RefKind == RefKind.In)  arg = arg.WithRefKindKeyword(Token(SyntaxKind.InKeyword));
+                yield return arg;
+            }
+        }
+    }
+
+    private static IEnumerable<ArgumentSyntax> RenderTryArgsAsync(PlannedMethod pm)
+    {
+        foreach (var p in pm.Source.Method.Parameters)
+        {
+            var arg = Argument(IdentifierName(p.Name));
+            if (p.RefKind == RefKind.Ref) arg = arg.WithRefKindKeyword(Token(SyntaxKind.RefKeyword));
+            if (p.RefKind == RefKind.In) arg = arg.WithRefKindKeyword(Token(SyntaxKind.InKeyword));
+            yield return arg;
+        }
     }
 
     private static ParameterSyntax RenderParameter(IParameterSymbol p)
@@ -781,100 +882,5 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
         }
 
         return param;
-    }
-
-    private static string FindUnusedVarName(ImmutableArray<IParameterSymbol> parameters)
-    {
-        string outVarName = "tmp";
-
-        HashSet<string> reservedVarNames = new HashSet<string>(parameters.Select(p => p.Name), StringComparer.Ordinal);
-        int i = 0;
-        while (reservedVarNames.Contains(outVarName))
-            outVarName = "tmp" + i++;
-
-        return outVarName;
-    }
-
-    private static BlockSyntax BuildSyncBody(PlannedMethod pm)
-    {
-        // if (TryX(..., out var v)) return v; throw new Exception();
-        var tryCall = InvocationExpression(
-                IdentifierName(pm.Source.Method.Name)) // assume same name on same type/this
-            .WithArgumentList(ArgumentList(SeparatedList(RenderTryArgs(pm, isAsync: false))));
-
-        // Structure: if (Try...) return v; throw ...
-        var varName = pm.Source.Method.Parameters.First(s => s.RefKind == RefKind.Out).Name;
-        var then = ReturnStatement(IdentifierName(varName));
-        var trueBlock = Block(SingletonList<StatementSyntax>(then));
-
-        // rebuild with correct shape
-        return Block(
-            // if (Try(...)) { return v; }
-            IfStatement(tryCall, trueBlock),
-
-            // throw new InvalidOperationException();
-            ThrowStatement(
-                ObjectCreationExpression(
-                        ParseTypeName(pm.ExceptionType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)))
-                    .WithArgumentList(ArgumentList()))
-        );
-    }
-
-    private static BlockSyntax BuildAsyncBody(PlannedMethod pm)
-    {
-        // var (ok, v) = await TryXAsync(...);
-        // if (ok) return v;
-        // throw new Exception();
-        var awaitExpr = AwaitExpression(
-            InvocationExpression(IdentifierName(pm.Source.Method.Name))
-                .WithArgumentList(ArgumentList(SeparatedList(RenderTryArgs(pm, isAsync: true)))));
-
-        var varName = FindUnusedVarName(pm.Signature.Parameters);
-
-        var decl = LocalDeclarationStatement(
-            VariableDeclaration(
-                IdentifierName("var"),
-                SeparatedList(new[]
-                {
-                    VariableDeclarator(Identifier(varName))
-                        .WithInitializer(EqualsValueClause(awaitExpr))
-                })));
-
-        var cond = MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName(varName),
-            IdentifierName("Item1"));
-        var retV = MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName(varName),
-            IdentifierName("Item2"));
-
-        var ifStmt = IfStatement(cond,
-            Block(SingletonList<StatementSyntax>(ReturnStatement(retV))));
-
-        var throwStmt = ThrowStatement(ObjectCreationExpression(
-                ParseTypeName(pm.ExceptionType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)))
-            .WithArgumentList(ArgumentList()));
-
-        return Block(decl, ifStmt, throwStmt);
-    }
-
-    private static IEnumerable<ArgumentSyntax> RenderTryArgs(PlannedMethod pm, bool isAsync)
-    {
-        // Map PlannedSignature.Parameters back to call-site args; last/out becomes 'out N' for sync.
-        // For brevity: assume names equal to symbol names and 'out var N' for sync.
-        // N is the varName
-        foreach (var p in pm.Source.Method.Parameters)
-        {
-            if (p.RefKind == RefKind.Out && !isAsync)
-                yield return Argument(DeclarationExpression(
-                        IdentifierName("var"),
-                        SingleVariableDesignation(Identifier(p.Name))))
-                    .WithRefKindKeyword(Token(SyntaxKind.OutKeyword));
-            else
-                yield return Argument(IdentifierName(p.Name))
-                    .WithRefKindKeyword(p.RefKind switch
-                    {
-                        RefKind.Ref => Token(SyntaxKind.RefKeyword),
-                        RefKind.In => Token(SyntaxKind.InKeyword),
-                        _ => default
-                    });
-        }
     }
 }
