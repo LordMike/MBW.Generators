@@ -9,6 +9,19 @@ internal static class Display
     public static readonly SymbolDisplayFormat Fqn = SymbolDisplayFormat.FullyQualifiedFormat;
     public static readonly SymbolDisplayFormat Minimal = SymbolDisplayFormat.MinimallyQualifiedFormat;
 
+    public static readonly SymbolDisplayFormat CrefFormat =
+        new(
+            globalNamespaceStyle: SymbolDisplayGlobalNamespaceStyle.OmittedAsContaining,
+            typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypes,
+            genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters,
+            memberOptions: SymbolDisplayMemberOptions.IncludeContainingType |
+                           SymbolDisplayMemberOptions.IncludeParameters,
+            parameterOptions: SymbolDisplayParameterOptions.IncludeType |
+                              SymbolDisplayParameterOptions.IncludeModifiers,
+            miscellaneousOptions: SymbolDisplayMiscellaneousOptions.EscapeKeywordIdentifiers |
+                                  SymbolDisplayMiscellaneousOptions.UseSpecialTypes
+        );
+
     public static NameSyntax? GlobalNamespaceName(INamespaceSymbol? ns)
         => ns is null || ns.IsGlobalNamespace
             ? null

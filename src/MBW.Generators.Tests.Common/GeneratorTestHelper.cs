@@ -16,6 +16,10 @@ public static class GeneratorTestHelper
         string source, string[] expectedDiagnostics, params Type[] assembliesToReference)
         where TGenerator : IIncrementalGenerator, new()
     {
+        SyntaxTree globalUsingsTree = CSharpSyntaxTree.ParseText(
+            "global using System;",
+            new CSharpParseOptions(LanguageVersion.Latest));
+
         SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(LanguageVersion.Latest));
 
         PortableExecutableReference[] refs = AppDomain.CurrentDomain.GetAssemblies()
@@ -27,7 +31,7 @@ public static class GeneratorTestHelper
 
         CSharpCompilation compilation = CSharpCompilation.Create(
             "Tests",
-            new[] { syntaxTree },
+            new[] { globalUsingsTree, syntaxTree },
             refs,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 

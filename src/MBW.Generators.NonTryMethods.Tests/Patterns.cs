@@ -67,25 +67,4 @@ public class Patterns
         Assert.Collection(diags,
             d => Assert.Equal(Diagnostics.MultiplePatternsMatchMethod.Id, d.Id));
     }
-
-    [Fact]
-    public void MultiplePatterns_Match_Reported()
-    {
-        (string? _, IReadOnlyList<Diagnostic> diags) =
-            TestsHelper.RunHelper("""
-                                  using MBW.Generators.NonTryMethods.Attributes;
-                                  using System.Threading.Tasks;
-
-                                  [GenerateNonTryMethod(methodNamePattern: "^(Try)(.*)$")]
-                                  [GenerateNonTryMethod(methodNamePattern: "^[Tt]ry(.*)$")]
-                                  [GenerateNonTryOptions]
-                                  public partial class TestClass
-                                  {
-                                      public Task<(bool ok, string? value)> TryMethodAsync()
-                                          => Task.FromResult((true, "x"));
-                                  }
-                                  """);
-        Assert.Collection(diags,
-            d => Assert.Equal(Diagnostics.MultiplePatternsMatchMethod.Id, d.Id));
-    }
 }

@@ -150,24 +150,11 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
             if (filtered.Length == 0)
                 return;
 
-            var usings = GenerationHelpers.GetUsingsForType(spec.Type, compilation);
+            IEnumerable<UsingDirectiveSyntax> usings = GenerationHelpers.GetUsingsForType(spec.Type);
 
-            // Add temp member to let Roslyn accept our syntax and let us produce minimal type names
-            MemberDeclarationSyntax tempMember;
-            var ns = spec.Type.ContainingNamespace;
-            if (ns is { IsGlobalNamespace: false })
-            {
-                tempMember = FileScopedNamespaceDeclaration(ParseName(ns.ToDisplayString()))
-                    .WithMembers(SingletonList<MemberDeclarationSyntax>(
-                        ClassDeclaration("__NT__Temp")
-                            .WithModifiers(TokenList(Token(SyntaxKind.InternalKeyword)))
-                    ));
-            }
-            else
-            {
-                tempMember = ClassDeclaration("__NT__Temp")
-                    .WithModifiers(TokenList(Token(SyntaxKind.InternalKeyword)));
-            }
+            // Build a temporary semantic model to help roslyn produce minimal names, with respect to our usings
+            MemberDeclarationSyntax tempMember = ClassDeclaration("__NT__Temp")
+                .WithModifiers(TokenList(Token(SyntaxKind.InternalKeyword)));
 
             var cu = CompilationUnit()
                 .WithUsings(List(usings))
@@ -181,7 +168,7 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
             var tempClass = cu.DescendantNodes().OfType<ClassDeclarationSyntax>()
                 .First(c => c.Identifier.Text == "__NT__Temp");
             var position = tempClass.Identifier.SpanStart;
-            var minimalInfo = new MinimalStringInfo(semanticModel, position);
+            var minimalInfo = GenerationHelpers.GetSourceDisplayContext(compilation, spec.Type);
 
             var cuReal = BuildCompilationUnit(spec, plan, filtered, minimalInfo,
                 needsTasks: filtered.Any(pm => pm.IsAsync));
@@ -573,24 +560,75 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
     private static MethodDeclarationSyntax CreateShell(PlannedMethod pm, bool isAsync,
         in MinimalStringInfo minimalStringInfo)
     {
-        var (isPublic, isStatic) = GetModifiers(pm);
+        var (visibilityKind, isStatic) = GetModifiers(pm);
         var ret = ParseTypeName(pm.Signature.ReturnType.ToMinimalDisplayString(minimalStringInfo));
         var decl = MethodDeclaration(ret, pm.Signature.Name);
 
         var mods = new List<SyntaxToken>();
-        if (isPublic) mods.Add(Token(SyntaxKind.PublicKeyword));
-        if (isStatic) mods.Add(Token(SyntaxKind.StaticKeyword));
-        if (isAsync) mods.Add(Token(SyntaxKind.AsyncKeyword));
-        return decl.WithModifiers(TokenList(mods));
+        if (visibilityKind.HasValue)
+            mods.Add(Token(visibilityKind.Value));
+        if (isStatic)
+            mods.Add(Token(SyntaxKind.StaticKeyword));
+        if (isAsync)
+            mods.Add(Token(SyntaxKind.AsyncKeyword));
+        decl = decl.WithModifiers(TokenList(mods));
+
+        // Add XML docs
+        var crefName = pm.Source.Method.ToMinimalDisplayString(minimalStringInfo, Display.CrefFormat);
+        var lines = new[]
+        {
+            $"/// <summary>",
+            $"/// This is a non-try variant of <see cref=\"{crefName}\"/>.",
+            $"/// </summary>",
+            $"/// <remarks>This was auto-generated.</remarks>",
+        };
+        var trivia = TriviaList(lines.Select(Comment));
+        decl = decl.WithLeadingTrivia(trivia.Add(ElasticCarriageReturnLineFeed));
+
+        return decl;
     }
 
-    private static (bool isPublic, bool isStatic) GetModifiers(PlannedMethod pm) => pm.Signature.Kind switch
+    private static (SyntaxKind? visibilityKind, bool isStatic) GetModifiers(PlannedMethod pm)
     {
-        EmissionKind.Partial => (true, pm.Signature.IsStatic),
-        EmissionKind.Extension => (true, true),
-        EmissionKind.InterfaceDefault => (false, false),
-        _ => (true, pm.Signature.IsStatic)
-    };
+        var src = pm.Source.Method;
+
+        // Interface members: omit visibility keyword so C# defaults to 'public'
+        if (src.ContainingType?.TypeKind == TypeKind.Interface)
+        {
+            if (pm.Signature.Kind == EmissionKind.Extension)
+            {
+                // If we're emitting extensions, we must mark these public
+                return (SyntaxKind.PublicKeyword, GetIsStatic(pm));
+            }
+
+            return (null, GetIsStatic(pm));
+        }
+
+        SyntaxKind? visibility = src.DeclaredAccessibility switch
+        {
+            Accessibility.Public => SyntaxKind.PublicKeyword,
+            Accessibility.Internal => SyntaxKind.InternalKeyword,
+            Accessibility.Private => SyntaxKind.PrivateKeyword,
+            Accessibility.Protected => SyntaxKind.ProtectedKeyword,
+
+            // Compound accessibilities need two tokens; return null here.
+            // If you need them later, change the return type to SyntaxTokenList.
+            Accessibility.ProtectedOrInternal => (SyntaxKind?)null, // would be 'protected internal'
+            Accessibility.ProtectedAndInternal => (SyntaxKind?)null, // would be 'private protected'
+
+            _ => null
+        };
+
+        return (visibility, GetIsStatic(pm));
+
+        static bool GetIsStatic(PlannedMethod pm) => pm.Signature.Kind switch
+        {
+            EmissionKind.Partial => pm.Signature.IsStatic,
+            EmissionKind.Extension => true,
+            EmissionKind.InterfaceDefault => false,
+            _ => pm.Signature.IsStatic
+        };
+    }
 
     private static bool NeedsInReceiver(IMethodSymbol m)
         => m.ContainingType.IsValueType && !m.IsStatic && m.IsReadOnly;
