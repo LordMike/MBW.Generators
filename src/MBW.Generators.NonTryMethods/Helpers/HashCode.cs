@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 namespace MBW.Generators.NonTryMethods.Helpers;
@@ -62,6 +63,7 @@ public struct HashCode
     private uint _queue1, _queue2, _queue3;
     private uint _length;
 
+    [SuppressMessage("MicrosoftCodeAnalysisCorrectness", "RS1035:Do not use APIs banned for analyzers")]
     private static uint GenerateGlobalSeed()
     {
         return (uint)new Random().Next();
