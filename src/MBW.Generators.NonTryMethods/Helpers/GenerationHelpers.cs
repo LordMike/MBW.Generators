@@ -26,8 +26,8 @@ internal class GenerationHelpers
     
     public static string FindUnusedParamName(ImmutableArray<IParameterSymbol> @params, string prefix)
     {
-        var reserved = new HashSet<string>(@params.Select(p => p.Name), StringComparer.Ordinal);
-        var name = prefix; 
+        HashSet<string> reserved = new HashSet<string>(@params.Select(p => p.Name), StringComparer.Ordinal);
+        string name = prefix; 
         int i = 1;
         while (reserved.Contains(name)) name = prefix + i++;
         return name;

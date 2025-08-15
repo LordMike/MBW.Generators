@@ -9,7 +9,7 @@ internal static class HashHelper
 {
     internal static void HashTypeParameters(this ref HashCode hc, ImmutableArray<ITypeParameterSymbol> typeParameters)
     {
-        foreach (var tp in typeParameters)
+        foreach (ITypeParameterSymbol? tp in typeParameters)
         {
             hc.Add(tp.Ordinal);
             hc.Add(tp.Variance); // None / In / Out
@@ -20,7 +20,7 @@ internal static class HashHelper
             hc.Add(tp.HasConstructorConstraint);
 
             // Constraint types (order is stable in Roslyn)
-            foreach (var ct in tp.ConstraintTypes)
+            foreach (ITypeSymbol? ct in tp.ConstraintTypes)
                 hc.HashTypeIdentity(ct);
         }
     }
@@ -58,19 +58,19 @@ internal static class HashHelper
         if (t is INamedTypeSymbol nt)
         {
             // Namespace chain (outer -> inner)
-            var nsParts = new Stack<string>();
-            for (var ns = nt.ContainingNamespace; ns != null && !ns.IsGlobalNamespace; ns = ns.ContainingNamespace)
+            Stack<string> nsParts = new Stack<string>();
+            for (INamespaceSymbol? ns = nt.ContainingNamespace; ns != null && !ns.IsGlobalNamespace; ns = ns.ContainingNamespace)
                 nsParts.Push(ns.MetadataName);
-            foreach (var part in nsParts)
+            foreach (string? part in nsParts)
                 hc.Add(part, StringComparer.Ordinal);
 
             // Containing types (outer -> inner), then this type
-            var typeStack = new Stack<INamedTypeSymbol>();
-            for (var cur = nt; cur != null; cur = cur.ContainingType)
+            Stack<INamedTypeSymbol> typeStack = new Stack<INamedTypeSymbol>();
+            for (INamedTypeSymbol? cur = nt; cur != null; cur = cur.ContainingType)
                 typeStack.Push(cur);
             while (typeStack.Count > 0)
             {
-                var cur = typeStack.Pop();
+                INamedTypeSymbol? cur = typeStack.Pop();
                 hc.Add(cur.MetadataName, StringComparer.Ordinal); // includes `N for arity
                 hc.Add(cur.Arity);
             }
@@ -78,7 +78,7 @@ internal static class HashHelper
             // Generic type arguments (constructed type)
             if (nt.IsGenericType)
             {
-                foreach (var arg in nt.TypeArguments)
+                foreach (ITypeSymbol? arg in nt.TypeArguments)
                     hc.HashTypeIdentity(arg);
             }
 
@@ -86,7 +86,7 @@ internal static class HashHelper
             if (nt.IsTupleType)
             {
                 hc.Add("tuple");
-                foreach (var el in nt.TupleElements)
+                foreach (IFieldSymbol? el in nt.TupleElements)
                     hc.HashTypeIdentity(el.Type);
             }
         }
@@ -98,19 +98,19 @@ internal static class HashHelper
     public static void HashTypeIdentity(this ref HashCode hc, INamedTypeSymbol t)
     {
         // Namespace chain (outer -> inner)
-        var nsParts = new Stack<string>();
-        for (var ns = t.ContainingNamespace; ns != null && !ns.IsGlobalNamespace; ns = ns.ContainingNamespace)
+        Stack<string> nsParts = new Stack<string>();
+        for (INamespaceSymbol? ns = t.ContainingNamespace; ns != null && !ns.IsGlobalNamespace; ns = ns.ContainingNamespace)
             nsParts.Push(ns.MetadataName);
-        foreach (var part in nsParts)
+        foreach (string? part in nsParts)
             hc.Add(part, StringComparer.Ordinal);
 
         // Containing types (outer -> inner), then this type
-        var typeStack = new Stack<INamedTypeSymbol>();
-        for (var cur = t; cur != null; cur = cur.ContainingType)
+        Stack<INamedTypeSymbol> typeStack = new Stack<INamedTypeSymbol>();
+        for (INamedTypeSymbol? cur = t; cur != null; cur = cur.ContainingType)
             typeStack.Push(cur);
         while (typeStack.Count > 0)
         {
-            var cur = typeStack.Pop();
+            INamedTypeSymbol? cur = typeStack.Pop();
             hc.Add(cur.MetadataName, StringComparer.Ordinal); // includes `N for arity in metadata name when applicable
             hc.Add(cur.Arity);
             hc.Add(cur.TypeKind);

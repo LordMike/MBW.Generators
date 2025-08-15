@@ -7,25 +7,29 @@ namespace MBW.Generators.NonTryMethods.Models;
 
 internal static class AttributesCollection
 {
-    public static ImmutableArray<GenerateNonTryMethodAttributeInfo> From(KnownSymbols? knownSymbols,
+    public static ImmutableArray<GenerateNonTryMethodAttributeInfoWithValidPattern> From(KnownSymbols? knownSymbols,
         ISymbol symbol)
     {
         if (knownSymbols is null)
-            return ImmutableArray<GenerateNonTryMethodAttributeInfo>.Empty;
+            return ImmutableArray<GenerateNonTryMethodAttributeInfoWithValidPattern>.Empty;
 
-        List<GenerateNonTryMethodAttributeInfo>? res = null;
+        List<GenerateNonTryMethodAttributeInfoWithValidPattern>? res = null;
         foreach (AttributeData attr in symbol.GetAttributes())
         {
             if (!SymbolEqualityComparer.Default.Equals(attr.AttributeClass, knownSymbols.GenerateNonTryMethodAttribute))
                 continue;
 
             var info = AttributeConverters.ToNonTry(attr);
-            res ??= [];
-            res.Add(info);
+
+            if (AttributeValidation.IsValidRegexPattern(info.MethodNamePattern))
+            {
+                res ??= [];
+                res.Add(new GenerateNonTryMethodAttributeInfoWithValidPattern(info));
+            }
         }
 
         if (res == null)
-            return ImmutableArray<GenerateNonTryMethodAttributeInfo>.Empty;
+            return ImmutableArray<GenerateNonTryMethodAttributeInfoWithValidPattern>.Empty;
 
         return [..res];
     }

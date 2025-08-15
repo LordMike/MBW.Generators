@@ -5,6 +5,9 @@ namespace MBW.Generators.NonTryMethods.Models;
 
 internal sealed class KnownSymbols
 {
+    public const string NonTryAttribute = "MBW.Generators.NonTryMethods.Attributes.GenerateNonTryMethodAttribute";
+    public const string NonTryOptionsAttribute = "MBW.Generators.NonTryMethods.Attributes.GenerateNonTryOptionsAttribute";
+   
     public readonly INamedTypeSymbol GenerateNonTryMethodAttribute;
     public readonly INamedTypeSymbol GenerateNonTryOptionsAttribute;
     public readonly INamedTypeSymbol? TaskOfT;
@@ -30,10 +33,10 @@ internal sealed class KnownSymbols
     public static KnownSymbols? CreateInstance(Compilation compilation)
     {
         var generateNonTryMethodAttribute =
-            compilation.GetTypeByMetadataName("MBW.Generators.NonTryMethods.Attributes.GenerateNonTryMethodAttribute");
+            compilation.GetTypeByMetadataName(NonTryAttribute);
         var generateNonTryOptionsAttribute =
             compilation.GetTypeByMetadataName(
-                "MBW.Generators.NonTryMethods.Attributes.GenerateNonTryOptionsAttribute");
+                NonTryOptionsAttribute);
 
         if (generateNonTryMethodAttribute == null || generateNonTryOptionsAttribute == null)
             return null;

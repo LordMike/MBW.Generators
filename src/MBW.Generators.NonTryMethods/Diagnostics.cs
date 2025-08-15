@@ -13,7 +13,7 @@ internal static class Diagnostics
         id: "NT001",
         title: "Generation strategy requirements not met",
         messageFormat:
-            "MethodsGenerationStrategy '{0}' from [GenerateNonTryOptionsAttribute] cannot be applied to target type '{1}': {2}",
+            "MethodsGenerationStrategy '{0}' from [GenerateNonTryOptions] cannot be applied to target type '{1}': {2}",
         category: "NonTry",
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
@@ -26,7 +26,7 @@ internal static class Diagnostics
         id: "NT002",
         title: "Invalid exception type",
         messageFormat:
-            "Exception type '{0}' specified via [GenerateNonTryMethodAttribute] must derive from System.Exception",
+            "Exception type '{0}' specified via [GenerateNonTryMethod] must derive from System.Exception",
         category: "NonTry",
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
@@ -39,7 +39,7 @@ internal static class Diagnostics
         id: "NT003",
         title: "Method not eligible (sync shape)",
         messageFormat:
-            "Method '{0}' matched [GenerateNonTryMethodAttribute] pattern '{1}' but is not eligible: must return 'bool' and have exactly one 'out' parameter",
+            "Method '{0}' matched [GenerateNonTryMethod] pattern '{1}' but is not eligible: must return 'bool' and have exactly one 'out' parameter",
         category: "NonTry",
         defaultSeverity: DiagnosticSeverity.Info,
         isEnabledByDefault: true);
@@ -52,7 +52,7 @@ internal static class Diagnostics
         id: "NT004",
         title: "Method not eligible (async shape)",
         messageFormat:
-            "Method '{0}' matched [GenerateNonTryMethodAttribute] pattern '{1}' but is excluded by async candidate strategy '{2}' from [GenerateNonTryOptionsAttribute] (expected Task<(bool,T)> or ValueTask<(bool,T)>)",
+            "Method '{0}' matched [GenerateNonTryMethod] pattern '{1}' but is excluded by async candidate strategy '{2}' from [GenerateNonTryOptions] (expected Task<(bool,T)> or ValueTask<(bool,T)>)",
         category: "NonTry",
         defaultSeverity: DiagnosticSeverity.Info,
         isEnabledByDefault: true);
@@ -65,7 +65,7 @@ internal static class Diagnostics
         id: "NT005",
         title: "Generated signature collision",
         messageFormat:
-            "Generated method '{0}' from [GenerateNonTryMethodAttribute] would collide with an existing member in '{1}'; skipping",
+            "Generated method '{0}' from [GenerateNonTryMethod] would collide with an existing member in '{1}'; skipping",
         category: "NonTry",
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
@@ -77,7 +77,7 @@ internal static class Diagnostics
         id: "NT006",
         title: "Duplicate generated signature",
         messageFormat:
-        "Multiple [GenerateNonTryMethodAttribute]s produce the same generated signature '{0}' in '{1}'; emitting once",
+        "Multiple [GenerateNonTryMethod]s produce the same generated signature '{0}' in '{1}'; emitting once",
         category: "NonTry",
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
@@ -86,7 +86,7 @@ internal static class Diagnostics
         id: "NT007",
         title: "Multiple patterns match method",
         messageFormat:
-        "Multiple [GenerateNonTryMethodAttribute] patterns match '{0}' in '{1}' and result in the same generated signature, The patterns were: {2}; emitting once",
+        "Multiple [GenerateNonTryMethod] patterns match '{0}' in '{1}' and result in the same generated signature, The patterns were: {2}; emitting once",
         category: "NonTry",
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
@@ -98,5 +98,14 @@ internal static class Diagnostics
         "Method '{0}' in '{1}' is static; cannot generate an extension method that requires an instance receiver; skipping",
         category: "NonTry",
         defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor RegularExpressionIsInvalid = new(
+        id: "NT009",
+        title: "An invalid regular expression was supplied to a [GenerateNonTryMethod]",
+        messageFormat:
+        "The regular expression '{0}' is invalid, it should be valid and have have exactly one capture group which indicates what the non-try method name will be",
+        category: "NonTry",
+        defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 }

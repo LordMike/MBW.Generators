@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using MBW.Generators.NonTryMethods.Attributes;
@@ -24,6 +25,46 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
         IncrementalValueProvider<KnownSymbols?> knownSymbolsProvider =
             context.CompilationProvider.Select((comp, _) => KnownSymbols.CreateInstance(comp));
 
+        // NonTry Attributes that are invalid
+        IncrementalValuesProvider<(bool invalid, string pattern, Location loc)> invalidAttributes =
+            context.SyntaxProvider.ForAttributeWithMetadataName(
+                    fullyQualifiedMetadataName: KnownSymbols.NonTryAttribute,
+                    predicate: static (_, _) => true, // already filtered by name; keep cheap
+                    transform: static (ctx, ct) =>
+                    {
+                        // There can be multiple matching attributes on the same target.
+                        var results = new List<(AttributeData attr, Location loc)>(ctx.Attributes.Length);
+                        foreach (var a in ctx.Attributes)
+                        {
+                            var loc = a.ApplicationSyntaxReference?.GetSyntax(ct)?.GetLocation()
+                                      ?? ctx.TargetSymbol.Locations.FirstOrDefault()
+                                      ?? Location.None;
+                            results.Add((a, loc));
+                        }
+
+                        return results.ToImmutableArray();
+                    })
+                .SelectMany(static (arr, _) => arr)
+                .Select(static (x, _) =>
+                {
+                    var model = AttributeConverters.ToNonTry(in x.attr);
+                    var pattern = model.MethodNamePattern;
+
+                    bool invalid = string.IsNullOrWhiteSpace(pattern)
+                                   || !AttributeValidation.IsValidRegexPattern(pattern!);
+
+                    return (invalid, pattern, x.loc);
+                })
+                .Where(static t => t.invalid);
+
+        context.RegisterSourceOutput(invalidAttributes, static (spc, diag) =>
+        {
+            spc.ReportDiagnostic(Diagnostic.Create(
+                Diagnostics.RegularExpressionIsInvalid,
+                diag.loc,
+                diag.pattern ?? "<null>"));
+        });
+
         // All classes+interfaces
         IncrementalValuesProvider<INamedTypeSymbol> typesProvider = context.SyntaxProvider.CreateSyntaxProvider(
                 static (node, _) => node is TypeDeclarationSyntax asType &&
@@ -31,13 +72,13 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
                                         or SyntaxKind.StructDeclaration,
                 static (ctx, _) => (INamedTypeSymbol?)ctx.SemanticModel.GetDeclaredSymbol(ctx.Node))
             .Where(static t => t is not null)
-            .Select((s, _) => s!);
+            .Select(static (s, _) => s!);
 
         // Assembly-level attributes
-        IncrementalValueProvider<ImmutableArray<GenerateNonTryMethodAttributeInfo>>
+        IncrementalValueProvider<ImmutableArray<GenerateNonTryMethodAttributeInfoWithValidPattern>>
             assemblyRuleProvider =
                 knownSymbolsProvider.Combine(context.CompilationProvider)
-                    .Select((tuple, _) => AttributesCollection.From(tuple.Left, tuple.Right.Assembly));
+                    .Select((t, _) => AttributesCollection.From(t.Left, t.Right.Assembly));
 
         IncrementalValuesProvider<TypeSpec> perType = typesProvider.Combine(knownSymbolsProvider)
             .Combine(assemblyRuleProvider)
@@ -45,7 +86,7 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
             {
                 KnownSymbols? knownSymbols = tuple.Left.Right;
                 INamedTypeSymbol typeSymbol = tuple.Left.Left;
-                ImmutableArray<GenerateNonTryMethodAttributeInfo> assemblyAttributes = tuple.Right;
+                ImmutableArray<GenerateNonTryMethodAttributeInfoWithValidPattern> assemblyAttributes = tuple.Right;
 
                 if (knownSymbols == null)
                     return false;
@@ -55,82 +96,85 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
                     return true;
 
                 // If type has attribute => include
-                if (typeSymbol.GetAttributes()
-                    .Any(a => a.AttributeClass?.Equals(knownSymbols.GenerateNonTryMethodAttribute,
-                        SymbolEqualityComparer.Default) ?? false))
+                if (typeSymbol.GetAttributes().Any(a =>
+                        a.AttributeClass?.Equals(knownSymbols.GenerateNonTryMethodAttribute,
+                            SymbolEqualityComparer.Default) ?? false))
                     return true;
 
-                // Else, ignore
                 return false;
             })
             .Select(static (tuple, _) =>
             {
                 KnownSymbols knownSymbols = tuple.Left.Right!;
                 INamedTypeSymbol typeSymbol = tuple.Left.Left;
-                ImmutableArray<GenerateNonTryMethodAttributeInfo> assemblyAttributes =
-                    tuple.Right;
-                ImmutableArray<GenerateNonTryMethodAttributeInfo> classAttributes =
+                ImmutableArray<GenerateNonTryMethodAttributeInfoWithValidPattern> assemblyAttributes = tuple.Right;
+                ImmutableArray<GenerateNonTryMethodAttributeInfoWithValidPattern> classAttributes =
                     AttributesCollection.From(knownSymbols, typeSymbol);
 
-                // Discover which attribute(s) applies to this type
                 List<MethodSpec>? res = null;
                 foreach (IMethodSymbol? method in typeSymbol.GetMembers().OfType<IMethodSymbol>())
                 {
-                    // Discover methods to convert in this type (based on attribute regexes, use inner most attribute first)
                     if (method.Name.Length == 0)
                         continue;
 
-                    // Class level
                     if (classAttributes.Any(a => a.Pattern.IsMatch(method.Name)))
                     {
                         res ??= [];
                         res.Add(new MethodSpec(method, classAttributes));
-
                         continue;
                     }
 
-                    // Assembly level
                     if (assemblyAttributes.Any(a => a.Pattern.IsMatch(method.Name)))
                     {
                         res ??= [];
                         res.Add(new MethodSpec(method, assemblyAttributes));
-
                         continue;
                     }
-
-                    // Ignore method
                 }
 
-                // If no methods => null
-                if (res == null)
-                    return null;
-
-                // Emit a spec with (symbols, type, (method, info)[])
-                return new TypeSpec(knownSymbols, typeSymbol, res.ToImmutableArray());
+                return res is null ? null : new TypeSpec(knownSymbols, typeSymbol, res.ToImmutableArray());
             })
             .Where(static s => s != null)
             .Select(static (s, _) => s!);
 
-        context.RegisterSourceOutput(perType, static (spc, spec) =>
+        // We also need the Compilation to compute minimal type names with the right using-context
+        context.RegisterSourceOutput(perType.Combine(context.CompilationProvider), static (spc, tuple) =>
         {
-            // 1) Decide strategy for this type
+            var spec = tuple.Left;
+            var compilation = tuple.Right;
+
             var plan = DetermineTypeStrategy(spec);
-
-            // 2) Plan all candidate methods (per-method decisions + diagnostics on failures)
             var planned = PlanAllMethods(spc, spec, plan);
-
-            // 3) Filter duplicates/collisions
             var filtered = FilterCollisionsAndDuplicates(spc, spec, plan, planned);
-
-            // 4) Build CU, normalize, emit
             if (filtered.Length == 0) return;
-            var cu = BuildCompilationUnit(spec, plan, filtered);
+
+            // Build a temporary tree with the usings we will emit, so ToMinimalDisplayString has context
+            bool needsTasks = filtered.Any(pm => pm.IsAsync);
+            var sb = new StringBuilder();
+            sb.AppendLine("using System;");
+            if (needsTasks) sb.AppendLine("using System.Threading.Tasks;");
+            var ns = spec.Type.ContainingNamespace;
+            if (ns is { IsGlobalNamespace: false })
+                sb.AppendLine($"namespace {ns.ToDisplayString()};");
+            sb.AppendLine("class __NT__Temp{}");
+
+            var tempTree = CSharpSyntaxTree.ParseText(SourceText.From(sb.ToString(), Encoding.UTF8));
+            var tempComp = compilation.AddSyntaxTrees(tempTree);
+            var semanticModel = tempComp.GetSemanticModel(tempTree, ignoreAccessibility: true);
+            int position = 0; // top of file
+
+            var cu = BuildCompilationUnit(spec, plan, filtered, semanticModel, position, needsTasks);
             var text = cu.NormalizeWhitespace().ToFullString();
             spc.AddSource(GetHintName(spec.Type), SourceText.From(text, Encoding.UTF8));
         });
     }
 
-    static IEnumerable<PlannedMethod> PlanAllMethods(SourceProductionContext spc, TypeSpec spec, TypeEmissionPlan plan)
+    // ---------------------------------------------------------------
+    //  Planning & filtering (unchanged behavior, compacted where safe)
+    // ---------------------------------------------------------------
+
+    private static IEnumerable<PlannedMethod> PlanAllMethods(SourceProductionContext spc, TypeSpec spec,
+        TypeEmissionPlan plan)
     {
         foreach (var m in spec.Methods)
             if (TryPlanMethod(spc, spec, plan, m, out var planned))
@@ -139,42 +183,25 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
 
     private static string GetHintName(INamedTypeSymbol type)
     {
-        // global::A.B.Outer.Inner`1 -> A.B.Outer.Inner.NonTry.g.cs (strip arity on leaf)
-        var fqn = type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-
-        const string globalPrefix = "global::";
-        if (fqn.StartsWith(globalPrefix, StringComparison.Ordinal))
-            fqn = fqn.Substring(globalPrefix.Length);
-
-        // Leaf simple name without arity suffix
+        // A.B.Outer.Inner`1 -> A.B.Outer.Inner.NonTry.g.cs (strip arity on leaf)
         var simple = type.Name;
         var tick = simple.IndexOf('`');
-        if (tick >= 0)
-            simple = simple.Substring(0, tick);
+        if (tick >= 0) simple = simple.Substring(0, tick);
 
-        // Namespace (if any)
         string ns = "";
         var nsSym = type.ContainingNamespace;
         if (nsSym is not null && !nsSym.IsGlobalNamespace)
         {
             ns = nsSym.ToDisplayString();
-            if (ns.Length != 0)
-                ns += ".";
+            if (ns.Length != 0) ns += ".";
         }
 
         return ns + simple + ".NonTry.g.cs";
     }
 
-    /// <summary>
-    /// Build a full compilation unit for the given type + planned methods.
-    /// Caller should do: cu.NormalizeWhitespace().ToFullString() then AddSource.
-    /// </summary>
-    private static CompilationUnitSyntax BuildCompilationUnit(
-        TypeSpec spec,
-        TypeEmissionPlan plan,
-        ImmutableArray<PlannedMethod> planned)
+    private static CompilationUnitSyntax BuildCompilationUnit(TypeSpec spec, TypeEmissionPlan plan,
+        ImmutableArray<PlannedMethod> planned, SemanticModel semanticModel, int position, bool needsTasks)
     {
-        // Header + nullable
         var headerTrivia = TriviaList(
             Comment("// <auto-generated/>"),
             CarriageReturnLineFeed,
@@ -182,44 +209,25 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
             CarriageReturnLineFeed
         );
 
-        // Usings (add Tasks only if needed)
-        bool needsTasks = planned.Any(pm => pm.IsAsync);
-        var usingList = new List<UsingDirectiveSyntax>
-        {
-            UsingDirective(IdentifierName("System"))
-        };
-        if (needsTasks)
-        {
-            usingList.Add(
-                UsingDirective(
-                    QualifiedName(
-                        QualifiedName(IdentifierName("System"), IdentifierName("Threading")),
-                        IdentifierName("Tasks"))));
-        }
+        // Usings: System, optionally Tasks
+        var usings = new List<UsingDirectiveSyntax> { UsingDirective(ParseName("System")) };
+        if (needsTasks) usings.Add(UsingDirective(ParseName("System.Threading.Tasks")));
 
-        // Namespace (file-scoped if present)
-        var nsName = spec.Type.ContainingNamespace.RenderNamespaceName();
-        MemberDeclarationSyntax container = BuildTypeContainer(spec, plan, planned);
+        var ns = spec.Type.ContainingNamespace;
+        var container = BuildTypeContainer(spec, plan, planned, semanticModel, position);
 
-        CompilationUnitSyntax cu;
-        if (nsName is null)
+        CompilationUnitSyntax cu = CompilationUnit().WithUsings(List(usings));
+        if (ns is { IsGlobalNamespace: false })
         {
-            cu = CompilationUnit()
-                .WithUsings(List(usingList))
+            var nsDecl = FileScopedNamespaceDeclaration(ParseName(ns.ToDisplayString()))
                 .WithMembers(SingletonList(container));
+            cu = cu.WithMembers(SingletonList<MemberDeclarationSyntax>(nsDecl));
         }
         else
         {
-            // file-scoped namespace keeps indentation minimal
-            var fileNs = FileScopedNamespaceDeclaration(nsName)
-                .WithMembers(SingletonList(container));
-
-            cu = CompilationUnit()
-                .WithUsings(List(usingList))
-                .WithMembers(SingletonList<MemberDeclarationSyntax>(fileNs));
+            cu = cu.WithMembers(SingletonList(container));
         }
 
-        // Attach header + nullable and return
         return cu.WithLeadingTrivia(headerTrivia);
     }
 
@@ -227,31 +235,22 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
     {
         var opts = GetEffectiveOptions(spec);
         var type = spec.Type;
-
         bool isInterface = type.TypeKind == TypeKind.Interface;
         bool isPartial = type.IsPartial();
         bool supportsIfaceDefaults = true; // assume C# 8+
 
-        // Emit-anyway policy: prefer in-place for Auto, even if not partial.
         var strategy = opts.MethodsGenerationStrategy == MethodsGenerationStrategy.Auto
             ? MethodsGenerationStrategy.PartialType
             : opts.MethodsGenerationStrategy;
 
-        // We still report capabilities for anyone who cares, but we won't use them to block emission.
-        return new TypeEmissionPlan(
-            type,
-            strategy,
-            canHostPartials: isPartial || isInterface, // informational only
-            isInterface: isInterface,
+        return new TypeEmissionPlan(type, strategy, canHostPartials: isPartial || isInterface, isInterface: isInterface,
             supportsInterfaceDefaults: supportsIfaceDefaults);
     }
 
-    private static MethodClassification ClassifyMethodShape(
-        IMethodSymbol method,
-        GenerateNonTryOptionsAttributeInfo opts,
-        KnownSymbols ks)
+    private static MethodClassification ClassifyMethodShape(IMethodSymbol method,
+        GenerateNonTryOptionsAttributeInfo opts, KnownSymbols ks)
     {
-        // --- 1) Sync: bool return + exactly one 'out' parameter ---
+        // sync bool + out T
         if (method.ReturnType.SpecialType == SpecialType.System_Boolean)
         {
             IParameterSymbol? outParam = null;
@@ -260,12 +259,8 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
                 if (p.RefKind == RefKind.Out)
                 {
                     if (outParam != null)
-                    {
-                        // More than one 'out' → not eligible 
                         return new MethodClassification(MethodShape.NotEligible, null, isValueTask: false,
                             payloadType: null);
-                    }
-
                     outParam = p;
                 }
             }
@@ -273,19 +268,15 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
             if (outParam != null)
                 return new MethodClassification(MethodShape.SyncBoolOut, outParam, isValueTask: false,
                     payloadType: null);
-
-            // bool return but no 'out' → not eligible
             return new MethodClassification(MethodShape.NotEligible, null, isValueTask: false, payloadType: null);
         }
 
-        // --- 2) Async: Task<(bool,T)> or ValueTask<(bool,T)> ---
+        // async Task<(bool,T)> / ValueTask<(bool,T)>
         if ((opts.AsyncCandidateStrategy & AsyncCandidateStrategy.TupleBooleanAndValue) != 0)
         {
             if (method.ReturnType is INamedTypeSymbol rt && rt.IsGenericType)
             {
-                // Task<T>
-                if (ks.TaskOfT is not null &&
-                    SymbolEqualityComparer.Default.Equals(rt.OriginalDefinition, ks.TaskOfT))
+                if (ks.TaskOfT is not null && SymbolEqualityComparer.Default.Equals(rt.OriginalDefinition, ks.TaskOfT))
                 {
                     var tArg = rt.TypeArguments[0];
                     if (TryGetTupleBoolPayload(tArg, out var payload))
@@ -293,7 +284,6 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
                             payloadType: payload);
                 }
 
-                // ValueTask<T>
                 if (ks.ValueTaskOfT is not null &&
                     SymbolEqualityComparer.Default.Equals(rt.OriginalDefinition, ks.ValueTaskOfT))
                 {
@@ -305,13 +295,11 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
             }
         }
 
-        // --- 3) Not eligible ---
         return new MethodClassification(MethodShape.NotEligible, null, isValueTask: false, payloadType: null);
 
         static bool TryGetTupleBoolPayload(ITypeSymbol t, out ITypeSymbol? payload)
         {
             payload = null;
-
             if (t is INamedTypeSymbol nt && nt.IsTupleType)
             {
                 var elems = nt.TupleElements;
@@ -326,7 +314,6 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
 
             if (t is INamedTypeSymbol nt2 && nt2.Arity == 2)
             {
-                // System.ValueTuple`2<bool, T>
                 if (nt2.MetadataName.StartsWith("ValueTuple`2", StringComparison.Ordinal) &&
                     IsInSystemNamespace(nt2.ContainingNamespace))
                 {
@@ -355,34 +342,25 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
         }
     }
 
-    private static bool TryPlanMethod(
-        SourceProductionContext spc,
-        TypeSpec typeSpec,
-        TypeEmissionPlan plan,
-        MethodSpec methodSpec,
-        out PlannedMethod planned)
+    private static bool TryPlanMethod(SourceProductionContext spc, TypeSpec typeSpec, TypeEmissionPlan plan,
+        MethodSpec methodSpec, out PlannedMethod planned)
     {
         planned = default;
-
         var method = methodSpec.Method;
         var ks = typeSpec.Symbols;
 
-        // 1) find matching NonTry patterns (type/assembly were already filtered into ApplicableAttributes)
-        GenerateNonTryMethodAttributeInfo attrib;
+        // 1) pick attribute (report NT007 MultiplePatternsMatchMethod if >1)
+        GenerateNonTryMethodAttributeInfoWithValidPattern attrib;
         {
-            var matches = methodSpec.ApplicableAttributes
-                .Where(a => a.Pattern.IsMatch(method.Name))
-                .ToArray();
-
+            var matches = methodSpec.ApplicableAttributes.Where(a => a.Pattern.IsMatch(method.Name)).ToArray();
             if (matches.Length == 0)
-                throw new InvalidOperationException("ERROR - expected method to have 1+ matching attributes");
+                throw new InvalidOperationException("Expected method to have 1+ matching attributes");
             if (matches.Length >= 2)
             {
                 spc.ReportDiagnostic(Diagnostic.Create(
                     Diagnostics.MultiplePatternsMatchMethod,
                     method.Locations.FirstOrDefault(),
-                    method.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat),
-                    method.Name,
+                    method.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat), method.Name,
                     typeSpec.Type.Name,
                     string.Join(", ", matches.Select(s => $"'{s.Pattern}'"))));
             }
@@ -390,73 +368,44 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
             attrib = matches[0];
         }
 
-        // Effective options (type > assembly > defaults)
         var opts = GetEffectiveOptions(typeSpec);
-
-        // 2) classify shape
         var cls = ClassifyMethodShape(method, opts, ks);
         if (cls.Shape == MethodShape.NotEligible)
         {
-            // Heuristic: if returns bool or has any out param -> treat as sync mismatch; else async mismatch
             var looksSync = method.ReturnType.SpecialType == SpecialType.System_Boolean ||
                             method.Parameters.Any(p => p.RefKind == RefKind.Out);
-            if (looksSync)
-            {
-                spc.ReportDiagnostic(Diagnostic.Create(
-                    Diagnostics.NotEligibleSync,
-                    method.Locations.FirstOrDefault(),
-                    method.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat),
-                    // use first pattern text for message
-                    attrib.MethodNamePattern));
-            }
-            else
-            {
-                spc.ReportDiagnostic(Diagnostic.Create(
-                    Diagnostics.NotEligibleAsyncShape,
-                    method.Locations.FirstOrDefault(),
-                    method.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat),
-                    attrib.MethodNamePattern,
-                    opts.AsyncCandidateStrategy));
-            }
-
+            spc.ReportDiagnostic(Diagnostic.Create(
+                looksSync ? Diagnostics.NotEligibleSync : Diagnostics.NotEligibleAsyncShape,
+                method.Locations.FirstOrDefault(),
+                method.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat), attrib.MethodNamePattern,
+                opts.AsyncCandidateStrategy));
             return false;
         }
 
-        // 3) compute generated name
         string newName = ComputeGeneratedName(method.Name, attrib);
-
-        // 4) resolve exception type
         var exType = ResolveExceptionType(spc, ks, attrib);
 
-        // 5) choose emission kind
-        EmissionKind kind =
-            plan.Strategy == MethodsGenerationStrategy.Extensions ? EmissionKind.Extension
+        EmissionKind kind = plan.Strategy == MethodsGenerationStrategy.Extensions ? EmissionKind.Extension
             : plan.IsInterface ? EmissionKind.InterfaceDefault
             : EmissionKind.Partial;
 
-        // Extensions on static methods are generally meaningless
         if (kind == EmissionKind.Extension && method.IsStatic)
         {
             spc.ReportDiagnostic(Diagnostic.Create(
                 Diagnostics.UnableToGenerateExtensionMethodForStaticMethod,
                 method.Locations.FirstOrDefault(),
-                method.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat),
-                method.Name,
-                typeSpec.Type.Name));
+                method.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat), method.Name, typeSpec.Type.Name));
             return false;
         }
 
-        // 6) build final signature pieces
         bool isAsync = cls.Shape == MethodShape.AsyncTuple;
         bool isValueTask = cls.IsValueTask;
 
-        // Return type
         ITypeSymbol returnType;
         ImmutableArray<IParameterSymbol> parameters;
 
         if (!isAsync)
         {
-            // sync: return = out param type (maybe adjusted); parameters = all minus that out
             var outP = cls.OutParam!;
             returnType = AdjustForReturnStrategy(outP.Type, opts.ReturnGenerationStrategy);
             parameters = method.Parameters.Where(p => !SymbolEqualityComparer.Default.Equals(p, outP))
@@ -464,19 +413,12 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
         }
         else
         {
-            // async: return = Task<T> / ValueTask<T>, where T is payload (maybe adjusted). params unchanged.
             var payload = AdjustForReturnStrategy(cls.PayloadType!, opts.ReturnGenerationStrategy);
-
             INamedTypeSymbol wrapper = isValueTask ? ks.ValueTaskOfT : ks.TaskOfT;
-            var constructed = wrapper.Construct(payload);
-            returnType = constructed;
+            returnType = wrapper.Construct(payload);
             parameters = method.Parameters.ToImmutableArray();
         }
 
-        // IsStatic of generated method:
-        // - Partial: mirror source.IsStatic
-        // - InterfaceDefault: force instance (non-static)
-        // - Extension: static (receiver added during emission)
         bool genIsStatic = kind switch
         {
             EmissionKind.Partial => method.IsStatic,
@@ -489,93 +431,61 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
         planned = new PlannedMethod(methodSpec, sig, exType, isAsync, isValueTask);
         return true;
 
-        static string ComputeGeneratedName(string original, GenerateNonTryMethodAttributeInfo info)
+        static string ComputeGeneratedName(string original, GenerateNonTryMethodAttributeInfoWithValidPattern info)
         {
             var m = info.Pattern.Match(original);
-            if (m.Success)
-            {
-                // Prefer first capture group if present
-                if (m.Groups.Count > 1 && m.Groups[1].Success)
-                    return m.Groups[1].Value;
-            }
+            Debug.Assert(m.Success);
 
-            // Fallback: strip leading Try/try if present; else keep name unchanged
-            if (original.StartsWith("Try", StringComparison.Ordinal))
-                return original.Substring(3);
-            if (original.StartsWith("try", StringComparison.Ordinal))
-                return original.Substring(3);
-            return original;
+            return m.Groups[1].Value;
         }
 
         static ITypeSymbol AdjustForReturnStrategy(ITypeSymbol t, ReturnGenerationStrategy strat)
         {
             if (strat == ReturnGenerationStrategy.Verbatim) return t;
-
-            // TrueMeansNotNull:
-            // If Nullable<T> => unwrap
             if (t is INamedTypeSymbol nt && nt.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T)
                 return nt.TypeArguments[0];
-
-            // If reference type and annotated, drop annotation
-            if (t.NullableAnnotation == NullableAnnotation.Annotated &&
-                (t.IsReferenceType || t.IsAnonymousType))
-            {
+            if (t.NullableAnnotation == NullableAnnotation.Annotated && (t.IsReferenceType || t.IsAnonymousType))
                 return t.WithNullableAnnotation(NullableAnnotation.NotAnnotated);
-            }
-
             return t;
         }
     }
 
-    private static ImmutableArray<PlannedMethod> FilterCollisionsAndDuplicates(
-        SourceProductionContext spc,
-        TypeSpec typeSpec,
-        TypeEmissionPlan plan,
-        IEnumerable<PlannedMethod> candidates)
+    private static ImmutableArray<PlannedMethod> FilterCollisionsAndDuplicates(SourceProductionContext spc,
+        TypeSpec typeSpec, TypeEmissionPlan plan, IEnumerable<PlannedMethod> candidates)
     {
-        // 1) Build signature keys; dedupe identical -> NT006.
         var seen = new Dictionary<SignatureKey, PlannedMethod>();
         var deduped = new List<PlannedMethod>();
-
         foreach (var pm in candidates)
         {
             var key = SignatureKey.From(pm);
             if (seen.ContainsKey(key))
             {
-                // Duplicate generated signature in this type
                 spc.ReportDiagnostic(Diagnostic.Create(
                     Diagnostics.DuplicateGeneratedSignature,
                     pm.Source.Method.Locations.FirstOrDefault(),
                     pm.Signature.Name,
                     typeSpec.Type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)));
-                continue; // keep first, drop duplicate
+                continue;
             }
 
             seen[key] = pm;
             deduped.Add(pm);
         }
 
-        // 2) Check against existing members; collisions -> NT005.
-        // Only relevant when emitting into the target type (partials/interface defaults).
         if (deduped.Count == 0) return ImmutableArray<PlannedMethod>.Empty;
 
         if (deduped.Any(p => p.Signature.Kind != EmissionKind.Extension))
         {
-            // Build a set of existing method signatures in the target type for quick collision checks
             var existing = new HashSet<SignatureKey>();
             foreach (var m in typeSpec.Type.GetMembers().OfType<IMethodSymbol>())
-            {
-                if (m.MethodKind != MethodKind.Ordinary) continue;
-                existing.Add(SignatureKey.FromExisting(m));
-            }
+                if (m.MethodKind == MethodKind.Ordinary)
+                    existing.Add(SignatureKey.FromExisting(m));
 
-            // Filter out planned methods that collide with existing members
             var filtered = new List<PlannedMethod>(deduped.Count);
             foreach (var pm in deduped)
             {
                 if (pm.Signature.Kind == EmissionKind.Extension)
                 {
-                    // Extensions go to a separate container; existing-member collision doesn't apply here.
                     filtered.Add(pm);
                     continue;
                 }
@@ -588,7 +498,7 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
                         pm.Source.Method.Locations.FirstOrDefault(),
                         pm.Signature.Name,
                         typeSpec.Type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)));
-                    continue; // drop colliding generated member
+                    continue;
                 }
 
                 filtered.Add(pm);
@@ -597,7 +507,6 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
             return filtered.ToImmutableArray();
         }
 
-        // Only extensions were present; duplicates already handled
         return deduped.ToImmutableArray();
     }
 
@@ -605,204 +514,151 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
     {
         var ks = spec.Symbols;
         var type = spec.Type;
-
-        // 1) Type-level options (most specific)
         foreach (var ad in type.GetAttributes())
-        {
             if (SymbolEqualityComparer.Default.Equals(ad.AttributeClass, ks.GenerateNonTryOptionsAttribute))
                 return AttributeConverters.ToOptions(ad);
-        }
-
-        // 2) Assembly-level options
         foreach (var ad in type.ContainingAssembly.GetAttributes())
-        {
             if (SymbolEqualityComparer.Default.Equals(ad.AttributeClass, ks.GenerateNonTryOptionsAttribute))
                 return AttributeConverters.ToOptions(ad);
-        }
-
-        // 3) Defaults
         return new GenerateNonTryOptionsAttributeInfo(Location.None);
     }
 
-    private static ITypeSymbol ResolveExceptionType(
-        SourceProductionContext spc,
-        KnownSymbols ks,
-        GenerateNonTryMethodAttributeInfo attr)
+    private static ITypeSymbol ResolveExceptionType(SourceProductionContext spc, KnownSymbols ks,
+        GenerateNonTryMethodAttributeInfoWithValidPattern attr)
     {
-        // If explicitly provided and derives from System.Exception → use it
-        if (attr.ExceptionType is INamedTypeSymbol provided &&
-            provided.IsDerivedFrom(ks.ExceptionBase))
-        {
+        if (attr.ExceptionType is INamedTypeSymbol provided and { } && provided.IsDerivedFrom(ks.ExceptionBase))
             return provided;
-        }
-
-        // If explicitly provided but invalid → warn and fall back to InvalidOperationException
-        if (attr.ExceptionType is INamedTypeSymbol badProvided)
+        if (attr.ExceptionType is INamedTypeSymbol bad)
         {
             spc.ReportDiagnostic(Diagnostic.Create(
                 Diagnostics.InvalidExceptionType,
                 attr.Location,
-                badProvided.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)));
-
+                bad.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)));
             return ks.InvalidOperationException;
         }
 
-        // No type provided → use InvalidOperationException
         return ks.InvalidOperationException;
     }
 
+    // ---------------------------------------------------------------
+    //  Emission helpers (concise): two builders + tiny dispatcher
+    // ---------------------------------------------------------------
 
-    /// <summary>
-    /// Builds either the partial/interface container or an extensions class,
-    /// and fills it with the appropriate methods.
-    /// </summary>
-    private static MemberDeclarationSyntax BuildTypeContainer(
-        TypeSpec spec,
-        TypeEmissionPlan plan,
-        ImmutableArray<PlannedMethod> planned)
-    {
-        // Split methods by emission kind
-        var partials = planned.Where(p =>
-            p.Signature.Kind == EmissionKind.Partial ||
-            p.Signature.Kind == EmissionKind.InterfaceDefault).ToArray();
+    private static MethodDeclarationSyntax BuildMethodDeclaration(PlannedMethod pm, SemanticModel semanticModel,
+        int position)
+        => pm.IsAsync ? BuildNonTryAsync(pm, semanticModel, position) : BuildNonTrySync(pm, semanticModel, position);
 
-        var extensions = planned.Where(p =>
-            p.Signature.Kind == EmissionKind.Extension).ToArray();
-
-        // 1) Base type container (same type as source) populated with partial/interface methods.
-        var baseTypeDecl = BuildTargetTypeDeclaration(spec.Type, partials);
-
-        // 2) Optional extensions static class in the same namespace.
-        if (extensions.Length == 0)
-            return baseTypeDecl;
-
-        var extDecl = BuildExtensionsContainer(spec.Type, extensions);
-
-        // If we have only extensions (no in-place members), return the extensions container.
-        if (partials.Length == 0)
-            return extDecl;
-
-        // If we have both, return the base container here; emit extDecl in a separate file from the driver.
-        return baseTypeDecl;
-    }
-
-    /// <summary>Creates the target type declaration and inserts methods (partial or interface default).</summary>
-    private static MemberDeclarationSyntax BuildTargetTypeDeclaration(
-        INamedTypeSymbol type,
-        IReadOnlyList<PlannedMethod> methods)
-    {
-        // 1) Create a TypeDeclarationSyntax matching kind/name/modifiers (partial assumed).
-        var identifier = Identifier(type.Name);
-        var modifiers = TokenList(Token(SyntaxKind.PartialKeyword)); // you can prepend public/internal/etc. as desired
-
-        TypeDeclarationSyntax decl =
-            type.TypeKind switch
-            {
-                TypeKind.Interface => InterfaceDeclaration(identifier).WithModifiers(modifiers),
-                TypeKind.Structure => StructDeclaration(identifier).WithModifiers(modifiers),
-                _ => ClassDeclaration(identifier).WithModifiers(modifiers)
-            };
-
-        // 2) Add type parameters + constraints (skipped here for brevity).
-        // 3) Add method members.
-        var members = methods.Select(BuildMethodDeclaration);
-        return decl.WithMembers(List<MemberDeclarationSyntax>(members));
-    }
-
-    /// <summary>Creates the static extensions class and inserts extension methods.</summary>
-    private static MemberDeclarationSyntax BuildExtensionsContainer(
-        INamedTypeSymbol type,
-        IReadOnlyList<PlannedMethod> methods)
-    {
-        var extName = Identifier($"{type.Name}_NonTryExtensions");
-        var decl = ClassDeclaration(extName)
-            .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword)));
-
-        var members = methods.Select(BuildMethodDeclaration);
-        return decl.WithMembers(List<MemberDeclarationSyntax>(members));
-    }
-
-    /// <summary>
-    /// Build a single method declaration (signature + body) from the plan.
-    /// Handles sync and async, partial/iface/extension uniformly.
-    /// </summary>
-    private static MethodDeclarationSyntax BuildMethodDeclaration(PlannedMethod pm)
-        => pm.IsAsync ? BuildNonTryAsync(pm) : BuildNonTrySync(pm);
-
-    // Maps (kind, sourceIsStatic) -> (isPublic, isStatic, includePublicModifier)
-    private static (bool isPublic, bool isStatic) GetModifiers(PlannedMethod pm) => pm.Signature.Kind switch
-    {
-        EmissionKind.Partial => (true, pm.Signature.IsStatic), // mirror static, public
-        EmissionKind.Extension => (true, true), // public static
-        EmissionKind.InterfaceDefault => (false, false), // no 'public', instance
-        _ => throw new InvalidOperationException($"Unsupported kind {pm.Signature.Kind}")
-    };
-
-    private static MethodDeclarationSyntax CreateShell(PlannedMethod pm, bool isAsync)
+    private static MethodDeclarationSyntax CreateShell(PlannedMethod pm, bool isAsync, SemanticModel semanticModel,
+        int position)
     {
         var (isPublic, isStatic) = GetModifiers(pm);
-        var ret = ParseTypeName(pm.Signature.ReturnType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat));
+        var ret = ParseTypeName(pm.Signature.ReturnType.ToMinimalDisplayString(semanticModel, position));
         var decl = MethodDeclaration(ret, pm.Signature.Name);
 
         var mods = new List<SyntaxToken>();
         if (isPublic) mods.Add(Token(SyntaxKind.PublicKeyword));
         if (isStatic) mods.Add(Token(SyntaxKind.StaticKeyword));
         if (isAsync) mods.Add(Token(SyntaxKind.AsyncKeyword));
-        decl = decl.WithModifiers(TokenList(mods));
-
-        // params filled by caller with ComputeExtensionBits(...)
-        return decl;
+        return decl.WithModifiers(TokenList(mods));
     }
 
-    private static MethodDeclarationSyntax BuildNonTrySync(PlannedMethod pm)
+    private static (bool isPublic, bool isStatic) GetModifiers(PlannedMethod pm) => pm.Signature.Kind switch
     {
-        // [public] [static] T Foo([this C self,] ...) { if (self?.TryFoo(..., out outParam)) return outParam; throw new Ex(); }
-        var decl = CreateShell(pm, isAsync: false);
-        var (recv, @params, target) = ComputeExtensionBits(pm);
-        decl = decl.WithParameterList(ParameterList(@params));
+        EmissionKind.Partial => (true, pm.Signature.IsStatic),
+        EmissionKind.Extension => (true, true),
+        EmissionKind.InterfaceDefault => (false, false),
+        _ => (true, pm.Signature.IsStatic)
+    };
+
+    private static bool NeedsInReceiver(IMethodSymbol m)
+        => m.ContainingType.IsValueType && !m.IsStatic && m.IsReadOnly;
+
+    private static bool NeedsRefReceiver(IMethodSymbol m)
+        => m.ContainingType.IsValueType && !m.IsStatic && !m.IsReadOnly;
+
+    private static ParameterSyntax BuildExtensionThisParam(PlannedMethod pm, string receiverName,
+        SemanticModel semanticModel, int position)
+    {
+        var m = pm.Source.Method;
+        var recvType = ParseTypeName(m.ContainingType.ToMinimalDisplayString(semanticModel, position));
+        var mods = new List<SyntaxToken> { Token(SyntaxKind.ThisKeyword) };
+        if (NeedsRefReceiver(m)) mods.Add(Token(SyntaxKind.RefKeyword));
+        else if (NeedsInReceiver(m)) mods.Add(Token(SyntaxKind.InKeyword));
+        return Parameter(Identifier(receiverName)).WithType(recvType).WithModifiers(TokenList(mods));
+    }
+
+    // Returns params list and call target expression (method identifier or receiver.member)
+    private static (SeparatedSyntaxList<ParameterSyntax> @params, ExpressionSyntax target)
+        ComputeExtensionBits(PlannedMethod pm, SemanticModel semanticModel, int position)
+    {
+        var renderedParams = pm.Signature.Parameters.Select(p => RenderParameter(p, semanticModel, position));
+        if (pm.Signature.Kind != EmissionKind.Extension)
+            return (SeparatedList(renderedParams), IdentifierName(pm.Source.Method.Name));
+
+        string recv = GenerationHelpers.FindUnusedParamName(pm.Signature.Parameters, "self");
+        var thisParam = BuildExtensionThisParam(pm, recv, semanticModel, position);
+        var allParams = new[] { thisParam }.Concat(renderedParams);
+        var target = MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName(recv),
+            IdentifierName(pm.Source.Method.Name));
+        return (SeparatedList(allParams), target);
+    }
+
+    private static IEnumerable<ArgumentSyntax> RenderTryArgs(PlannedMethod pm, bool isAsync)
+    {
+        foreach (var p in pm.Source.Method.Parameters)
+        {
+            if (!isAsync && p.RefKind == RefKind.Out)
+            {
+                // Sync pattern: out var <originalName>
+                yield return Argument(
+                        DeclarationExpression(
+                            IdentifierName("var"),
+                            SingleVariableDesignation(Identifier(p.Name))))
+                    .WithRefKindKeyword(Token(SyntaxKind.OutKeyword));
+                continue;
+            }
+
+            var arg = Argument(IdentifierName(p.Name));
+            if (p.RefKind == RefKind.Ref) arg = arg.WithRefKindKeyword(Token(SyntaxKind.RefKeyword));
+            if (p.RefKind == RefKind.In) arg = arg.WithRefKindKeyword(Token(SyntaxKind.InKeyword));
+            yield return arg;
+        }
+    }
+
+    private static ThrowStatementSyntax BuildThrow(PlannedMethod pm, SemanticModel semanticModel, int position)
+        => ThrowStatement(
+            ObjectCreationExpression(
+                    ParseTypeName(pm.ExceptionType.ToMinimalDisplayString(semanticModel, position)))
+                .WithArgumentList(ArgumentList()));
+
+    // [public] [static] T Foo([this C self,] ...) { if (target.TryFoo(..., out outParam)) return outParam; throw new Ex(); }
+    private static MethodDeclarationSyntax BuildNonTrySync(PlannedMethod pm, SemanticModel semanticModel, int position)
+    {
+        var decl = CreateShell(pm, isAsync: false, semanticModel, position);
+        var (pars, target) = ComputeExtensionBits(pm, semanticModel, position);
+        decl = decl.WithParameterList(ParameterList(pars));
 
         var outParam = pm.Source.Method.Parameters.First(p => p.RefKind == RefKind.Out).Name;
-        var args = pm.Source.Method.Parameters.Select(p =>
-            p.RefKind == RefKind.Out
-                ? Argument(DeclarationExpression(IdentifierName("var"),
-                        SingleVariableDesignation(Identifier(outParam))))
-                    .WithRefKindKeyword(Token(SyntaxKind.OutKeyword))
-                : Argument(IdentifierName(p.Name))
-                    .WithRefKindKeyword(p.RefKind switch
-                    {
-                        RefKind.Ref => Token(SyntaxKind.RefKeyword),
-                        RefKind.In => Token(SyntaxKind.InKeyword),
-                        _ => default
-                    }));
-
-        var tryCall = InvocationExpression(target).WithArgumentList(ArgumentList(SeparatedList(args)));
+        var tryCall = InvocationExpression(target)
+            .WithArgumentList(ArgumentList(SeparatedList(RenderTryArgs(pm, isAsync: false))));
 
         return decl.WithBody(Block(
             IfStatement(tryCall, Block(ReturnStatement(IdentifierName(outParam)))),
-            BuildThrow(pm)
+            BuildThrow(pm, semanticModel, position)
         ));
     }
 
-    private static MethodDeclarationSyntax BuildNonTryAsync(PlannedMethod pm)
+    // [public] [static] async Task<T> FooAsync([this C self,] ...) { var t = await target.TryFooAsync(...); if (t.Item1) return t.Item2; throw new Ex(); }
+    private static MethodDeclarationSyntax BuildNonTryAsync(PlannedMethod pm, SemanticModel semanticModel, int position)
     {
-        // [public] [static] async Task<T> FooAsync([this C self,] ...) { var t = await self?.TryFooAsync(...); if (t.Item1) return t.Item2; throw new Ex(); }
-        var decl = CreateShell(pm, isAsync: true);
-        var (recv, @params, target) = ComputeExtensionBits(pm);
-        decl = decl.WithParameterList(ParameterList(@params));
+        var decl = CreateShell(pm, isAsync: true, semanticModel, position);
+        var (pars, target) = ComputeExtensionBits(pm, semanticModel, position);
+        decl = decl.WithParameterList(ParameterList(pars));
 
-        var args = pm.Source.Method.Parameters.Select(p =>
-            Argument(IdentifierName(p.Name))
-                .WithRefKindKeyword(p.RefKind switch
-                {
-                    RefKind.Ref => Token(SyntaxKind.RefKeyword),
-                    RefKind.In => Token(SyntaxKind.InKeyword),
-                    _ => default
-                }));
+        var awaitCall = AwaitExpression(InvocationExpression(target)
+            .WithArgumentList(ArgumentList(SeparatedList(RenderTryArgs(pm, isAsync: true)))));
 
-        var awaitCall = AwaitExpression(
-            InvocationExpression(target).WithArgumentList(ArgumentList(SeparatedList(args))));
-
-        var t = Identifier(GenerationHelpers.FindUnusedParamName(pm.Signature.Parameters, "tmp"));
+        var t = Identifier("t");
         var declLocal = LocalDeclarationStatement(
             VariableDeclaration(IdentifierName("var"))
                 .WithVariables(SeparatedList(new[]
@@ -816,18 +672,12 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
         return decl.WithBody(Block(
             declLocal,
             IfStatement(ok, Block(ReturnStatement(val))),
-            BuildThrow(pm)
+            BuildThrow(pm, semanticModel, position)
         ));
     }
 
-    private static ThrowStatementSyntax BuildThrow(PlannedMethod pm) =>
-        ThrowStatement(ObjectCreationExpression(
-                ParseTypeName(pm.ExceptionType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)))
-            .WithArgumentList(ArgumentList()));
-
-    private static ParameterSyntax RenderParameter(IParameterSymbol p)
+    private static ParameterSyntax RenderParameter(IParameterSymbol p, SemanticModel semanticModel, int position)
     {
-        // this/ref/out/in
         var mods = new List<SyntaxToken>();
         if (p.IsThis) mods.Add(Token(SyntaxKind.ThisKeyword));
         switch (p.RefKind)
@@ -837,14 +687,12 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
             case RefKind.In: mods.Add(Token(SyntaxKind.InKeyword)); break;
         }
 
-        var typeSyntax = ParseTypeName(p.Type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat));
+        var typeSyntax = ParseTypeName(p.Type.ToMinimalDisplayString(semanticModel, position));
         var param = Parameter(Identifier(p.Name)).WithType(typeSyntax);
 
         if (mods.Count > 0) param = param.WithModifiers(TokenList(mods));
-
         if (p.IsParams)
             param = param.WithModifiers(TokenList(param.Modifiers.Concat(new[] { Token(SyntaxKind.ParamsKeyword) })));
-
         if (p.HasExplicitDefaultValue)
         {
             var equals = EqualsValueClause(GenerationHelpers.ToCSharpLiteralExpression(p.ExplicitDefaultValue));
@@ -854,47 +702,44 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
         return param;
     }
 
-    private static (string? recv, SeparatedSyntaxList<ParameterSyntax> @params, ExpressionSyntax target)
-        ComputeExtensionBits(PlannedMethod pm)
+    private static MemberDeclarationSyntax BuildTypeContainer(TypeSpec spec, TypeEmissionPlan plan,
+        ImmutableArray<PlannedMethod> planned, SemanticModel semanticModel, int position)
     {
-        var renderedParams = pm.Signature.Parameters.Select(RenderParameter);
+        var partials = planned.Where(p => p.Signature.Kind is EmissionKind.Partial or EmissionKind.InterfaceDefault)
+            .ToArray();
+        var extensions = planned.Where(p => p.Signature.Kind == EmissionKind.Extension).ToArray();
 
-        if (pm.Signature.Kind != EmissionKind.Extension)
-            return (null, SeparatedList(renderedParams), IdentifierName(pm.Source.Method.Name));
+        var baseTypeDecl = BuildTargetTypeDeclaration(spec.Type, partials, semanticModel, position);
+        if (extensions.Length == 0) return baseTypeDecl;
 
-        // allocate receiver name that won't collide with user params
-        string recv = GenerationHelpers.FindUnusedParamName(pm.Signature.Parameters, "self");
-
-        var thisParam = BuildExtensionThisParam(pm, recv);
-
-        var allParams = new[] { thisParam }.Concat(renderedParams);
-        var target = MemberAccessExpression(
-            SyntaxKind.SimpleMemberAccessExpression,
-            IdentifierName(recv),
-            IdentifierName(pm.Source.Method.Name));
-
-        return (recv, SeparatedList(allParams), target);
+        var extDecl = BuildExtensionsContainer(spec.Type, extensions, semanticModel, position);
+        if (partials.Length == 0) return extDecl;
+        return baseTypeDecl; // driver emits extDecl in separate hint if desired
     }
 
-
-    private static ParameterSyntax BuildExtensionThisParam(PlannedMethod pm, string receiverName)
+    private static MemberDeclarationSyntax BuildTargetTypeDeclaration(INamedTypeSymbol type,
+        IReadOnlyList<PlannedMethod> methods, SemanticModel semanticModel, int position)
     {
-        var m = pm.Source.Method;
-        var recvType = ParseTypeName(
-            m.ContainingType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat));
-
-        // order: this [ref|in]
-        var mods = new List<SyntaxToken>(2)
+        var identifier = Identifier(type.Name);
+        var modifiers = TokenList(Token(SyntaxKind.PartialKeyword));
+        TypeDeclarationSyntax decl = type.TypeKind switch
         {
-            Token(SyntaxKind.ThisKeyword)
+            TypeKind.Interface => InterfaceDeclaration(identifier).WithModifiers(modifiers),
+            TypeKind.Structure => StructDeclaration(identifier).WithModifiers(modifiers),
+            _ => ClassDeclaration(identifier).WithModifiers(modifiers)
         };
-        if (m.ContainingType.IsValueType && !m.IsStatic && !m.IsReadOnly) 
-            mods.Add(Token(SyntaxKind.RefKeyword));
-        else if (m.ContainingType.IsValueType && !m.IsStatic && m.IsReadOnly) 
-            mods.Add(Token(SyntaxKind.InKeyword));
 
-        return Parameter(Identifier(receiverName))
-            .WithType(recvType)
-            .WithModifiers(TokenList(mods));
+        var members = methods.Select(pm => BuildMethodDeclaration(pm, semanticModel, position));
+        return decl.WithMembers(List<MemberDeclarationSyntax>(members));
+    }
+
+    private static MemberDeclarationSyntax BuildExtensionsContainer(INamedTypeSymbol type,
+        IReadOnlyList<PlannedMethod> methods, SemanticModel semanticModel, int position)
+    {
+        var extName = Identifier($"{type.Name}_NonTryExtensions");
+        var decl = ClassDeclaration(extName)
+            .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword)));
+        var members = methods.Select(pm => BuildMethodDeclaration(pm, semanticModel, position));
+        return decl.WithMembers(List<MemberDeclarationSyntax>(members));
     }
 }

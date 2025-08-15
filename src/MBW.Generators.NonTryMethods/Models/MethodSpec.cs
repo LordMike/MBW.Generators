@@ -9,10 +9,10 @@ internal sealed class MethodSpec : IEquatable<MethodSpec>
 {
     public readonly int Key;
     public readonly IMethodSymbol Method;
-    public readonly ImmutableArray<GenerateNonTryMethodAttributeInfo> ApplicableAttributes;
+    public readonly ImmutableArray<GenerateNonTryMethodAttributeInfoWithValidPattern> ApplicableAttributes;
 
     public MethodSpec(IMethodSymbol method,
-        ImmutableArray<GenerateNonTryMethodAttributeInfo> applicableAttributes)
+        ImmutableArray<GenerateNonTryMethodAttributeInfoWithValidPattern> applicableAttributes)
     {
         Method = method;
         ApplicableAttributes = applicableAttributes;
