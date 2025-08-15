@@ -9,19 +9,16 @@ internal readonly struct PlannedMethod
     public readonly PlannedSignature Signature;
     public readonly ITypeSymbol ExceptionType;
     public readonly bool IsAsync;
-    public readonly bool IsValueTask;
 
     public PlannedMethod(
         MethodSpec source,
         PlannedSignature signature,
         ITypeSymbol exceptionType,
-        bool isAsync,
-        bool isValueTask)
+        bool isAsync)
     {
         Source = source;
         Signature = signature;
         ExceptionType = exceptionType;
         IsAsync = isAsync;
-        IsValueTask = isValueTask;
     }
 }

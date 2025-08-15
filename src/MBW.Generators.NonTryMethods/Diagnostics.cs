@@ -1,6 +1,6 @@
-namespace MBW.Generators.NonTryMethods;
-
 using Microsoft.CodeAnalysis;
+
+namespace MBW.Generators.NonTryMethods;
 
 internal static class Diagnostics
 {

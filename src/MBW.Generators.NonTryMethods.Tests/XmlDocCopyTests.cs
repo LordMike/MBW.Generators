@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using MBW.Generators.NonTryMethods.Tests.Helpers;
-using MBW.Generators.Tests.Common;
 using Microsoft.CodeAnalysis;
 using Xunit;
 

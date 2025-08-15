@@ -1,12 +1,10 @@
+using System.Collections.Generic;
 using MBW.Generators.NonTryMethods.Tests.Helpers;
 using MBW.Generators.Tests.Common;
-
-namespace MBW.Generators.NonTryMethods.Tests;
-
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Xunit;
+
+namespace MBW.Generators.NonTryMethods.Tests;
 
 public class Functionality
 {

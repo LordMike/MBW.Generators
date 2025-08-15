@@ -1,4 +1,5 @@
 using System;
+using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Xunit;
@@ -49,10 +50,10 @@ public static class SyntaxHelper
         text = text.Replace("\r\n", "\n").Replace("\r", "\n");
 
         // Trim trailing spaces per line
-        text = System.Text.RegularExpressions.Regex.Replace(text, @"[ \t]+\n", "\n");
+        text = Regex.Replace(text, @"[ \t]+\n", "\n");
 
         // Collapse 3+ blank lines to a single blank line
-        text = System.Text.RegularExpressions.Regex.Replace(text, @"\n{3,}", "\n\n");
+        text = Regex.Replace(text, @"\n{3,}", "\n\n");
 
         // Optional: remove leading/trailing blank lines
         text = text.Trim('\n', ' ', '\t');

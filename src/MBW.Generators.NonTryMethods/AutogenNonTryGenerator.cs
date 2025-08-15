@@ -128,11 +128,10 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
                     {
                         res ??= [];
                         res.Add(new MethodSpec(method, assemblyAttributes));
-                        continue;
                     }
                 }
 
-                return res is null ? null : new TypeSpec(knownSymbols, typeSymbol, res.ToImmutableArray());
+                return res is null ? null : new TypeSpec(knownSymbols, typeSymbol, [..res]);
             })
             .Where(static s => s != null)
             .Select(static (s, _) => s!);
@@ -140,40 +139,23 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
         // We also need the Compilation to compute minimal type names with the right using-context
         context.RegisterSourceOutput(perType.Combine(context.CompilationProvider), static (spc, tuple) =>
         {
-            var spec = tuple.Left;
+            var typeSpec = tuple.Left;
             var compilation = tuple.Right;
 
-            var plan = DetermineTypeStrategy(spec);
-            var planned = PlanAllMethods(spc, spec, plan);
-            var filtered = FilterCollisionsAndDuplicates(spc, spec, plan, planned);
+            var plan = DetermineTypeStrategy(typeSpec);
+            var planned = PlanAllMethods(spc, typeSpec, plan);
+            var filtered = FilterCollisionsAndDuplicates(spc, typeSpec, planned);
 
             if (filtered.Length == 0)
                 return;
 
-            IEnumerable<UsingDirectiveSyntax> usings = GenerationHelpers.GetUsingsForType(spec.Type);
-
-            // Build a temporary semantic model to help roslyn produce minimal names, with respect to our usings
-            MemberDeclarationSyntax tempMember = ClassDeclaration("__NT__Temp")
-                .WithModifiers(TokenList(Token(SyntaxKind.InternalKeyword)));
-
-            var cu = CompilationUnit()
-                .WithUsings(List(usings))
-                .WithMembers(SingletonList(tempMember));
-
-            var tempTree = cu.SyntaxTree;
-            var tempComp = compilation.AddSyntaxTrees(tempTree);
-            var semanticModel = tempComp.GetSemanticModel(tempTree, ignoreAccessibility: true);
-
             // Now build the *real* CU using the semanticModel + position
-            var tempClass = cu.DescendantNodes().OfType<ClassDeclarationSyntax>()
-                .First(c => c.Identifier.Text == "__NT__Temp");
-            var position = tempClass.Identifier.SpanStart;
-            var minimalInfo = GenerationHelpers.GetSourceDisplayContext(compilation, spec.Type);
+            var minimalInfo = GenerationHelpers.GetSourceDisplayContext(compilation, typeSpec.Type);
 
-            var cuReal = BuildCompilationUnit(spec, plan, filtered, minimalInfo,
+            var cuReal = BuildCompilationUnit(typeSpec, filtered, minimalInfo,
                 needsTasks: filtered.Any(pm => pm.IsAsync));
 
-            spc.AddSource(GetHintName(spec.Type),
+            spc.AddSource(GetHintName(typeSpec.Type),
                 SourceText.From(cuReal.NormalizeWhitespace().ToFullString(), Encoding.UTF8));
         });
     }
@@ -208,7 +190,7 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
         return ns + simple + ".NonTry.g.cs";
     }
 
-    private static CompilationUnitSyntax BuildCompilationUnit(TypeSpec spec, TypeEmissionPlan plan,
+    private static CompilationUnitSyntax BuildCompilationUnit(TypeSpec spec,
         ImmutableArray<PlannedMethod> planned, in MinimalStringInfo minimalStringInfo, bool needsTasks)
     {
         var headerTrivia = TriviaList(
@@ -223,7 +205,7 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
         if (needsTasks) usings.Add(UsingDirective(ParseName("System.Threading.Tasks")));
 
         var ns = spec.Type.ContainingNamespace;
-        var container = BuildTypeContainer(spec, plan, planned, minimalStringInfo);
+        var container = BuildTypeContainer(spec, planned, minimalStringInfo);
 
         CompilationUnitSyntax cu = CompilationUnit().WithUsings(List(usings));
         if (ns is { IsGlobalNamespace: false })
@@ -245,15 +227,13 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
         var opts = GetEffectiveOptions(spec);
         var type = spec.Type;
         bool isInterface = type.TypeKind == TypeKind.Interface;
-        bool isPartial = type.IsPartial();
         bool supportsIfaceDefaults = true; // assume C# 8+
 
         var strategy = opts.MethodsGenerationStrategy == MethodsGenerationStrategy.Auto
             ? MethodsGenerationStrategy.PartialType
             : opts.MethodsGenerationStrategy;
 
-        return new TypeEmissionPlan(type, strategy, canHostPartials: isPartial || isInterface, isInterface: isInterface,
-            supportsInterfaceDefaults: supportsIfaceDefaults);
+        return new TypeEmissionPlan(strategy, isInterface: isInterface);
     }
 
     private static MethodClassification ClassifyMethodShape(IMethodSymbol method,
@@ -417,15 +397,14 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
         {
             var outP = cls.OutParam!;
             returnType = AdjustForReturnStrategy(outP.Type, opts.ReturnGenerationStrategy);
-            parameters = method.Parameters.Where(p => !SymbolEqualityComparer.Default.Equals(p, outP))
-                .ToImmutableArray();
+            parameters = [..method.Parameters.Where(p => !SymbolEqualityComparer.Default.Equals(p, outP))];
         }
         else
         {
             var payload = AdjustForReturnStrategy(cls.PayloadType!, opts.ReturnGenerationStrategy);
             INamedTypeSymbol wrapper = isValueTask ? ks.ValueTaskOfT : ks.TaskOfT;
             returnType = wrapper.Construct(payload);
-            parameters = method.Parameters.ToImmutableArray();
+            parameters = [..method.Parameters];
         }
 
         bool genIsStatic = kind switch
@@ -437,7 +416,7 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
         };
 
         var sig = new PlannedSignature(kind, newName, returnType, parameters, genIsStatic);
-        planned = new PlannedMethod(methodSpec, sig, exType, isAsync, isValueTask);
+        planned = new PlannedMethod(methodSpec, sig, exType, isAsync);
         return true;
 
         static string ComputeGeneratedName(string original, GenerateNonTryMethodAttributeInfoWithValidPattern info)
@@ -460,7 +439,7 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
     }
 
     private static ImmutableArray<PlannedMethod> FilterCollisionsAndDuplicates(SourceProductionContext spc,
-        TypeSpec typeSpec, TypeEmissionPlan plan, IEnumerable<PlannedMethod> candidates)
+        TypeSpec typeSpec, IEnumerable<PlannedMethod> candidates)
     {
         var seen = new Dictionary<SignatureKey, PlannedMethod>();
         var deduped = new List<PlannedMethod>();
@@ -513,10 +492,10 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
                 filtered.Add(pm);
             }
 
-            return filtered.ToImmutableArray();
+            return [..filtered];
         }
 
-        return deduped.ToImmutableArray();
+        return [..deduped];
     }
 
     private static GenerateNonTryOptionsAttributeInfo GetEffectiveOptions(TypeSpec spec)
@@ -549,10 +528,6 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
         return ks.InvalidOperationException;
     }
 
-    // ---------------------------------------------------------------
-    //  Emission helpers (concise): two builders + tiny dispatcher
-    // ---------------------------------------------------------------
-
     private static MethodDeclarationSyntax BuildMethodDeclaration(PlannedMethod pm,
         in MinimalStringInfo minimalStringInfo)
         => pm.IsAsync ? BuildNonTryAsync(pm, minimalStringInfo) : BuildNonTrySync(pm, minimalStringInfo);
@@ -577,10 +552,10 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
         var crefName = pm.Source.Method.ToMinimalDisplayString(minimalStringInfo, Display.CrefFormat);
         var lines = new[]
         {
-            $"/// <summary>",
+            "/// <summary>",
             $"/// This is a non-try variant of <see cref=\"{crefName}\"/>.",
-            $"/// </summary>",
-            $"/// <remarks>This was auto-generated.</remarks>",
+            "/// </summary>",
+            "/// <remarks>This was auto-generated.</remarks>",
         };
         var trivia = TriviaList(lines.Select(Comment));
         decl = decl.WithLeadingTrivia(trivia.Add(ElasticCarriageReturnLineFeed));
@@ -613,8 +588,8 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
 
             // Compound accessibilities need two tokens; return null here.
             // If you need them later, change the return type to SyntaxTokenList.
-            Accessibility.ProtectedOrInternal => (SyntaxKind?)null, // would be 'protected internal'
-            Accessibility.ProtectedAndInternal => (SyntaxKind?)null, // would be 'private protected'
+            Accessibility.ProtectedOrInternal => null, // would be 'protected internal'
+            Accessibility.ProtectedAndInternal => null, // would be 'private protected'
 
             _ => null
         };
@@ -724,8 +699,7 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
         var t = Identifier(varName);
         var declLocal = LocalDeclarationStatement(
             VariableDeclaration(IdentifierName("var"))
-                .WithVariables(SeparatedList(new[]
-                    { VariableDeclarator(t).WithInitializer(EqualsValueClause(awaitCall)) })));
+                .WithVariables(SeparatedList([VariableDeclarator(t).WithInitializer(EqualsValueClause(awaitCall))])));
 
         var ok = MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName(t),
             IdentifierName("Item1"));
@@ -755,7 +729,7 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
 
         if (mods.Count > 0) param = param.WithModifiers(TokenList(mods));
         if (p.IsParams)
-            param = param.WithModifiers(TokenList(param.Modifiers.Concat(new[] { Token(SyntaxKind.ParamsKeyword) })));
+            param = param.WithModifiers(TokenList(param.Modifiers.Concat([Token(SyntaxKind.ParamsKeyword)])));
         if (p.HasExplicitDefaultValue)
         {
             var equals = EqualsValueClause(GenerationHelpers.ToCSharpLiteralExpression(p.ExplicitDefaultValue));
@@ -765,7 +739,7 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
         return param;
     }
 
-    private static MemberDeclarationSyntax BuildTypeContainer(TypeSpec spec, TypeEmissionPlan plan,
+    private static MemberDeclarationSyntax BuildTypeContainer(TypeSpec spec,
         ImmutableArray<PlannedMethod> planned, in MinimalStringInfo minimalStringInfo)
     {
         var partials = planned.Where(p => p.Signature.Kind is EmissionKind.Partial or EmissionKind.InterfaceDefault)
