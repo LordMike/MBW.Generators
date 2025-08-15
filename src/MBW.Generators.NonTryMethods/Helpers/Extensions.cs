@@ -1,4 +1,5 @@
 using System.Linq;
+using MBW.Generators.NonTryMethods.GenerationModels;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -18,7 +19,7 @@ internal static class Extensions
 
         return SyntaxFactory.ParseName(ns.ToDisplayString(NamespaceFormat));
     }
-    
+
     public static bool IsPartial(this INamedTypeSymbol type)
     {
         foreach (SyntaxReference? r in type.DeclaringSyntaxReferences)
@@ -37,5 +38,12 @@ internal static class Extensions
             if (SymbolEqualityComparer.Default.Equals(cur, baseType))
                 return true;
         return false;
+    }
+
+    public static string ToMinimalDisplayString(this ISymbol symbol,
+        MinimalStringInfo info,
+        SymbolDisplayFormat? format = null)
+    {
+        return symbol.ToMinimalDisplayString(info.SemanticModel, info.Position, format);
     }
 }

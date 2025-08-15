@@ -87,7 +87,7 @@ public class Functionality
                                        return value;
                                    }
 
-                                   throw new MyEx();
+                                   throw new global::MyEx();
                                }
                            }
                            """, output);

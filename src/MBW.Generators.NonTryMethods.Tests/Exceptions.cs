@@ -40,7 +40,7 @@ public class Exceptions
                                        return v;
                                    }
 
-                                   throw new MyEx();
+                                   throw new global::MyEx();
                                }
                            }
                            """, output);
