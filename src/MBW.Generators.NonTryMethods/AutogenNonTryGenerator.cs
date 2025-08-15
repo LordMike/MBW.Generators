@@ -146,26 +146,45 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
             var plan = DetermineTypeStrategy(spec);
             var planned = PlanAllMethods(spc, spec, plan);
             var filtered = FilterCollisionsAndDuplicates(spc, spec, plan, planned);
-            if (filtered.Length == 0) return;
 
-            // Build a temporary tree with the usings we will emit, so ToMinimalDisplayString has context
-            bool needsTasks = filtered.Any(pm => pm.IsAsync);
-            var sb = new StringBuilder();
-            sb.AppendLine("using System;");
-            if (needsTasks) sb.AppendLine("using System.Threading.Tasks;");
+            if (filtered.Length == 0)
+                return;
+
+            var usings = GenerationHelpers.GetUsingsForType(spec.Type, compilation);
+
+            // Add temp member to let Roslyn accept our syntax and let us produce minimal type names
+            MemberDeclarationSyntax tempMember;
             var ns = spec.Type.ContainingNamespace;
             if (ns is { IsGlobalNamespace: false })
-                sb.AppendLine($"namespace {ns.ToDisplayString()};");
-            sb.AppendLine("class __NT__Temp{}");
+            {
+                tempMember = FileScopedNamespaceDeclaration(ParseName(ns.ToDisplayString()))
+                    .WithMembers(SingletonList<MemberDeclarationSyntax>(
+                        ClassDeclaration("__NT__Temp")
+                            .WithModifiers(TokenList(Token(SyntaxKind.InternalKeyword)))
+                    ));
+            }
+            else
+            {
+                tempMember = ClassDeclaration("__NT__Temp")
+                    .WithModifiers(TokenList(Token(SyntaxKind.InternalKeyword)));
+            }
 
-            var tempTree = CSharpSyntaxTree.ParseText(SourceText.From(sb.ToString(), Encoding.UTF8));
+            var cu = CompilationUnit()
+                .WithUsings(List(usings))
+                .WithMembers(SingletonList(tempMember));
+
+            var tempTree = cu.SyntaxTree;
             var tempComp = compilation.AddSyntaxTrees(tempTree);
             var semanticModel = tempComp.GetSemanticModel(tempTree, ignoreAccessibility: true);
-            int position = 0; // top of file
 
-            var cu = BuildCompilationUnit(spec, plan, filtered, semanticModel, position, needsTasks);
-            var text = cu.NormalizeWhitespace().ToFullString();
-            spc.AddSource(GetHintName(spec.Type), SourceText.From(text, Encoding.UTF8));
+            var position = tempMember.SpanStart;
+
+            // Now build the *real* CU using the semanticModel + position
+            var cuReal = BuildCompilationUnit(spec, plan, filtered, semanticModel, position,
+                needsTasks: filtered.Any(pm => pm.IsAsync));
+
+            spc.AddSource(GetHintName(spec.Type),
+                SourceText.From(cuReal.NormalizeWhitespace().ToFullString(), Encoding.UTF8));
         });
     }
 
