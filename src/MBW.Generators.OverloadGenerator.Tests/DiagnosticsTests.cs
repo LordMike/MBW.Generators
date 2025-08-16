@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using MBW.Generators.OverloadGenerator.Tests.Helpers;
 using Microsoft.CodeAnalysis;
 using Xunit;
 
@@ -11,8 +12,8 @@ public class DiagnosticsTests
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.OverloadGenerator;
-                                  using MBW.Generators.OverloadGenerator.Attributes;
+                                  using MBW.Generators.OverloadGenerator.Generator;
+                                  using MBW.Generators.OverloadGenerator.Generator.Attributes;
                                   public enum K { A }
 
                                   public partial class X
@@ -32,8 +33,8 @@ public class DiagnosticsTests
         // Using typeof(void) for Transform should be rejected by the generator.
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.OverloadGenerator;
-                                  using MBW.Generators.OverloadGenerator.Attributes;
+                                  using MBW.Generators.OverloadGenerator.Generator;
+                                  using MBW.Generators.OverloadGenerator.Generator.Attributes;
 
                                   public partial class X2
                                   {
@@ -51,8 +52,8 @@ public class DiagnosticsTests
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.OverloadGenerator;
-                                  using MBW.Generators.OverloadGenerator.Attributes;
+                                  using MBW.Generators.OverloadGenerator.Generator;
+                                  using MBW.Generators.OverloadGenerator.Generator.Attributes;
                                   public enum K { A }
 
                                   public partial class X3
@@ -71,8 +72,8 @@ public class DiagnosticsTests
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.OverloadGenerator;
-                                  using MBW.Generators.OverloadGenerator.Attributes;
+                                  using MBW.Generators.OverloadGenerator.Generator;
+                                  using MBW.Generators.OverloadGenerator.Generator.Attributes;
 
                                   public partial class X4
                                   {
@@ -90,8 +91,8 @@ public class DiagnosticsTests
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.OverloadGenerator;
-                                  using MBW.Generators.OverloadGenerator.Attributes;
+                                  using MBW.Generators.OverloadGenerator.Generator;
+                                  using MBW.Generators.OverloadGenerator.Generator.Attributes;
                                   public enum K { A }
 
                                   public partial class X5

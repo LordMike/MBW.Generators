@@ -14,9 +14,9 @@ namespace MBW.Generators.OverloadGenerator;
 public sealed class OverloadGenerator : IIncrementalGenerator
 {
     private const string TransformAttributeName =
-        "MBW.Generators.OverloadGenerator.Attributes.TransformOverloadAttribute";
+        "MBW.Generators.OverloadGenerator.Generator.Attributes.TransformOverloadAttribute";
 
-    private const string DefaultAttributeName = "MBW.Generators.OverloadGenerator.Attributes.DefaultOverloadAttribute";
+    private const string DefaultAttributeName = "MBW.Generators.OverloadGenerator.Generator.Attributes.DefaultOverloadAttribute";
 
     private static readonly SymbolDisplayFormat NullableQualifiedFormat =
         new(
