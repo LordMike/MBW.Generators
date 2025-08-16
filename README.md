@@ -2,6 +2,11 @@
 
 A small collection of Roslyn source generators.
 
+Each generator ships as two NuGet packages: the generator itself and a companion
+`*.Attributes` package containing only the attributes. Reference both packages
+to run the generator, or reference just the attributes package when you merely
+want the annotations available without executing the generator.
+
 ## Generators
 
 | Generator | Description |

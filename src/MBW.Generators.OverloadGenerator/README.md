@@ -8,7 +8,7 @@ Imagine an API that accepts a string kind and an optional retry flag. Callers mi
 ## Quick Start
 - Install the `MBW.Generators.OverloadGenerator` and `MBW.Generators.OverloadGenerator.Attributes` packages.
 - Decorate your partial class or individual methods with `[TransformOverload]` or `[DefaultOverload]`.
-- The generator emits overloads for decorated methods, preserving visibility and parameter names and keeping extension methods as extensions.
+- The generator emits overloads for decorated methods, preserving visibility, parameter names, generic constraints, and default parameter values while keeping extension methods as extensions.
 
 Attributes and generator are in separate packages so you can reference the attributes without running the generator.
 
@@ -44,22 +44,24 @@ partial class Orders
 ## Features
 - Replace parameters with strongly typed alternatives or supply defaults.
 - Apply attributes at type or method level for flexible targeting.
-- Supports extension methods and generic types.
+- Supports extension methods and generic types, preserving generic constraints and default parameter values.
 - Uses incremental generators for performance.
-- Emits diagnostics to help guide usage.
+- Emits diagnostics to help guide usage, including signature collisions, missing parameters, invalid `accept` types, missing `{value}` tokens, and attempts to remove the `this` receiver of an extension method.
 - Preserves original method visibility and parameter names.
 - Generates interface members with default bodies where applicable.
 
 ## Attributes
 - **TransformOverloadAttribute** – apply to a type or method. Replaces a string parameter with a strongly typed version. Parameters:
   - `parameter` – the name of the parameter to replace.
-  - `accept` – the type callers can supply.
+  - `accept` – the type callers can supply. Unsupported types produce a diagnostic.
   - `transform` – an expression where `{value}` is substituted with the parameter.
   - `Usings` – optional namespaces added to the generated file.
 - **DefaultOverloadAttribute** – apply to a type or method. Emits an overload that supplies a default expression when the specified parameter is omitted. Parameters:
   - `parameter` – the name of the parameter to default.
   - `defaultExpression` – expression inserted for the missing argument.
   - `Usings` – optional namespaces added to the generated file.
+
+Removing the `this` receiver of an extension method is not supported and will trigger a diagnostic.
 
 Both attributes may appear multiple times and are not inherited.
 
