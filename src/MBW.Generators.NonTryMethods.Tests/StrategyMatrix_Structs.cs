@@ -13,7 +13,7 @@ public class StrategyMatrix_Structs
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.NonTryMethods.Attributes;
+                                  using MBW.Generators.NonTryMethods.Generator.Attributes;
 
                                   [GenerateNonTryMethod]
                                   [GenerateNonTryOptions(methodsGenerationStrategy: MethodsGenerationStrategy.Auto)]
@@ -48,7 +48,7 @@ public class StrategyMatrix_Structs
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.NonTryMethods.Attributes;
+                                  using MBW.Generators.NonTryMethods.Generator.Attributes;
 
                                   [GenerateNonTryMethod]
                                   [GenerateNonTryOptions(methodsGenerationStrategy: MethodsGenerationStrategy.Extensions)]
@@ -84,7 +84,7 @@ public class StrategyMatrix_Structs
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.NonTryMethods.Attributes;
+                                  using MBW.Generators.NonTryMethods.Generator.Attributes;
 
                                   [GenerateNonTryMethod]
                                   [GenerateNonTryOptions(methodsGenerationStrategy: MethodsGenerationStrategy.Extensions)]
@@ -120,7 +120,7 @@ public class StrategyMatrix_Structs
     {
         (string? _, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.NonTryMethods.Attributes;
+                                  using MBW.Generators.NonTryMethods.Generator.Attributes;
 
                                   [GenerateNonTryMethod]
                                   [GenerateNonTryOptions(methodsGenerationStrategy: MethodsGenerationStrategy.Extensions)]

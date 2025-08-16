@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using MBW.Generators.OverloadGenerator.Tests.Helpers;
 using MBW.Generators.Tests.Common;
 using Microsoft.CodeAnalysis;
 using Xunit;
@@ -12,8 +13,8 @@ public class DefaultOverloadTests
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.OverloadGenerator;
-                                  using MBW.Generators.OverloadGenerator.Attributes;
+                                  using MBW.Generators.OverloadGenerator.Generator;
+                                  using MBW.Generators.OverloadGenerator.Generator.Attributes;
 
                                   public partial class Api
                                   {
@@ -38,8 +39,8 @@ public class DefaultOverloadTests
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.OverloadGenerator;
-                                  using MBW.Generators.OverloadGenerator.Attributes;
+                                  using MBW.Generators.OverloadGenerator.Generator;
+                                  using MBW.Generators.OverloadGenerator.Generator.Attributes;
 
                                   public partial class Api2
                                   {
@@ -60,8 +61,8 @@ public class DefaultOverloadTests
     {
         (string? output, var diags) = TestsHelper
             .RunHelper("""
-                       using MBW.Generators.OverloadGenerator;
-                       using MBW.Generators.OverloadGenerator.Attributes;
+                       using MBW.Generators.OverloadGenerator.Generator;
+                       using MBW.Generators.OverloadGenerator.Generator.Attributes;
 
                        public static partial class Ext
                        {

@@ -5,7 +5,7 @@ VisualStudioVersion = 16.6.30114.105
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{FEDB6F1E-3C3C-4E07-AD7F-4F1C4DBCA449}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MBW.Generators.NonTryMethods", "src\MBW.Generators.NonTryMethods\MBW.Generators.NonTryMethods.csproj", "{892EA9E7-0714-4EFA-9814-95D5A74D311B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MBW.Generators.NonTryMethods.Generator", "src\MBW.Generators.NonTryMethods.Generator\MBW.Generators.NonTryMethods.Generator.csproj", "{892EA9E7-0714-4EFA-9814-95D5A74D311B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MBW.Generators.NonTryMethods.Attributes", "src\MBW.Generators.NonTryMethods.Attributes\MBW.Generators.NonTryMethods.Attributes.csproj", "{B63AD214-3CAA-4400-BA3E-FBFC8DE752D4}"
 EndProject
@@ -25,11 +25,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_Imports", "_Imports", "{E9
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MBW.Generators.OverloadGenerator.Attributes", "src\MBW.Generators.OverloadGenerator.Attributes\MBW.Generators.OverloadGenerator.Attributes.csproj", "{53CB8053-8DF5-4FE1-8AF2-AFA1923EDC12}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MBW.Generators.OverloadGenerator", "src\MBW.Generators.OverloadGenerator\MBW.Generators.OverloadGenerator.csproj", "{32FD191C-DC3C-4CBB-9A43-69D4BA09A7B3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MBW.Generators.OverloadGenerator.Generator", "src\MBW.Generators.OverloadGenerator.Generator\MBW.Generators.OverloadGenerator.Generator.csproj", "{32FD191C-DC3C-4CBB-9A43-69D4BA09A7B3}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MBW.Generators.OverloadGenerator.Tests", "src\MBW.Generators.OverloadGenerator.Tests\MBW.Generators.OverloadGenerator.Tests.csproj", "{5D59CD74-F8B5-4D44-B981-121E39036231}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MBW.Generators.Tests.Common", "src\MBW.Generators.Tests.Common\MBW.Generators.Tests.Common.csproj", "{302538E5-6C27-4E23-A827-F0B26394D1F4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MBW.Generators.NonTryMethods", "src\MBW.Generators.NonTryMethods\MBW.Generators.NonTryMethods.csproj", "{9AA3128D-3D79-4646-858F-7A529210BA08}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MBW.Generators.OverloadGenerator", "src\MBW.Generators.OverloadGenerator\MBW.Generators.OverloadGenerator.csproj", "{6DDC29D3-F56F-4D91-8381-CC122757F679}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -125,6 +129,30 @@ Global
 		{302538E5-6C27-4E23-A827-F0B26394D1F4}.Release|x64.Build.0 = Release|Any CPU
 		{302538E5-6C27-4E23-A827-F0B26394D1F4}.Release|x86.ActiveCfg = Release|Any CPU
 		{302538E5-6C27-4E23-A827-F0B26394D1F4}.Release|x86.Build.0 = Release|Any CPU
+		{9AA3128D-3D79-4646-858F-7A529210BA08}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9AA3128D-3D79-4646-858F-7A529210BA08}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9AA3128D-3D79-4646-858F-7A529210BA08}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{9AA3128D-3D79-4646-858F-7A529210BA08}.Debug|x64.Build.0 = Debug|Any CPU
+		{9AA3128D-3D79-4646-858F-7A529210BA08}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{9AA3128D-3D79-4646-858F-7A529210BA08}.Debug|x86.Build.0 = Debug|Any CPU
+		{9AA3128D-3D79-4646-858F-7A529210BA08}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9AA3128D-3D79-4646-858F-7A529210BA08}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9AA3128D-3D79-4646-858F-7A529210BA08}.Release|x64.ActiveCfg = Release|Any CPU
+		{9AA3128D-3D79-4646-858F-7A529210BA08}.Release|x64.Build.0 = Release|Any CPU
+		{9AA3128D-3D79-4646-858F-7A529210BA08}.Release|x86.ActiveCfg = Release|Any CPU
+		{9AA3128D-3D79-4646-858F-7A529210BA08}.Release|x86.Build.0 = Release|Any CPU
+		{6DDC29D3-F56F-4D91-8381-CC122757F679}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6DDC29D3-F56F-4D91-8381-CC122757F679}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6DDC29D3-F56F-4D91-8381-CC122757F679}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{6DDC29D3-F56F-4D91-8381-CC122757F679}.Debug|x64.Build.0 = Debug|Any CPU
+		{6DDC29D3-F56F-4D91-8381-CC122757F679}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{6DDC29D3-F56F-4D91-8381-CC122757F679}.Debug|x86.Build.0 = Debug|Any CPU
+		{6DDC29D3-F56F-4D91-8381-CC122757F679}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6DDC29D3-F56F-4D91-8381-CC122757F679}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6DDC29D3-F56F-4D91-8381-CC122757F679}.Release|x64.ActiveCfg = Release|Any CPU
+		{6DDC29D3-F56F-4D91-8381-CC122757F679}.Release|x64.Build.0 = Release|Any CPU
+		{6DDC29D3-F56F-4D91-8381-CC122757F679}.Release|x86.ActiveCfg = Release|Any CPU
+		{6DDC29D3-F56F-4D91-8381-CC122757F679}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -132,12 +160,14 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{892EA9E7-0714-4EFA-9814-95D5A74D311B} = {FEDB6F1E-3C3C-4E07-AD7F-4F1C4DBCA449}
 		{B63AD214-3CAA-4400-BA3E-FBFC8DE752D4} = {FEDB6F1E-3C3C-4E07-AD7F-4F1C4DBCA449}
-		{E95539ED-0430-4763-824A-2F70AEF0FF56} = {88DF2055-401C-43F3-BD17-CB133A6C4B67}
 		{99CF0327-824C-4AB8-9350-94660B15AE65} = {FEDB6F1E-3C3C-4E07-AD7F-4F1C4DBCA449}
+		{E95539ED-0430-4763-824A-2F70AEF0FF56} = {88DF2055-401C-43F3-BD17-CB133A6C4B67}
 		{53CB8053-8DF5-4FE1-8AF2-AFA1923EDC12} = {FEDB6F1E-3C3C-4E07-AD7F-4F1C4DBCA449}
 		{32FD191C-DC3C-4CBB-9A43-69D4BA09A7B3} = {FEDB6F1E-3C3C-4E07-AD7F-4F1C4DBCA449}
 		{5D59CD74-F8B5-4D44-B981-121E39036231} = {FEDB6F1E-3C3C-4E07-AD7F-4F1C4DBCA449}
 		{302538E5-6C27-4E23-A827-F0B26394D1F4} = {FEDB6F1E-3C3C-4E07-AD7F-4F1C4DBCA449}
+		{9AA3128D-3D79-4646-858F-7A529210BA08} = {FEDB6F1E-3C3C-4E07-AD7F-4F1C4DBCA449}
+		{6DDC29D3-F56F-4D91-8381-CC122757F679} = {FEDB6F1E-3C3C-4E07-AD7F-4F1C4DBCA449}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {50FB2CE7-1209-4E38-83F5-497922A3DBA9}

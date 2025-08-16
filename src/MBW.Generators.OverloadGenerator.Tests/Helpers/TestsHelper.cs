@@ -5,7 +5,7 @@ using MBW.Generators.OverloadGenerator.Attributes;
 using MBW.Generators.Tests.Common;
 using Microsoft.CodeAnalysis;
 
-namespace MBW.Generators.OverloadGenerator.Tests;
+namespace MBW.Generators.OverloadGenerator.Tests.Helpers;
 
 internal static class TestsHelper
 {

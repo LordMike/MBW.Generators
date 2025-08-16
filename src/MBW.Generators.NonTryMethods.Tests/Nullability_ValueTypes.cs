@@ -14,7 +14,7 @@ public class Nullability_ValueTypes
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
                                   using System.Threading.Tasks;
-                                  using MBW.Generators.NonTryMethods.Attributes;
+                                  using MBW.Generators.NonTryMethods.Generator.Attributes;
 
                                   [GenerateNonTryMethod]
                                   [GenerateNonTryOptions]
@@ -53,7 +53,7 @@ public class Nullability_ValueTypes
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
                                   using System.Threading.Tasks;
-                                  using MBW.Generators.NonTryMethods.Attributes;
+                                  using MBW.Generators.NonTryMethods.Generator.Attributes;
 
                                   [GenerateNonTryMethod]
                                   [GenerateNonTryOptions(returnGenerationStrategy: ReturnGenerationStrategy.TrueMeansNotNull)]
@@ -91,7 +91,7 @@ public class Nullability_ValueTypes
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.NonTryMethods.Attributes;
+                                  using MBW.Generators.NonTryMethods.Generator.Attributes;
 
                                   [GenerateNonTryMethod]
                                   [GenerateNonTryOptions]
@@ -130,7 +130,7 @@ public class Nullability_ValueTypes
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.NonTryMethods.Attributes;
+                                  using MBW.Generators.NonTryMethods.Generator.Attributes;
 
                                   [GenerateNonTryMethod]
                                   [GenerateNonTryOptions(returnGenerationStrategy: ReturnGenerationStrategy.TrueMeansNotNull)]

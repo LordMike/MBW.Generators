@@ -14,7 +14,7 @@ public class Patterns
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
                                   using System.Threading.Tasks;
-                                  using MBW.Generators.NonTryMethods.Attributes;
+                                  using MBW.Generators.NonTryMethods.Generator.Attributes;
 
                                   [GenerateNonTryMethod] // default ^[Tt]ry(.*)
                                   [GenerateNonTryOptions]
@@ -52,7 +52,7 @@ public class Patterns
     {
         (string? _, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.NonTryMethods.Attributes;
+                                  using MBW.Generators.NonTryMethods.Generator.Attributes;
                                   using System.Threading.Tasks;
 
                                   [GenerateNonTryMethod(methodNamePattern: "^[Tt]ry(.*)$")]

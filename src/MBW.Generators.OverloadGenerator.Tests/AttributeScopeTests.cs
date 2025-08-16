@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using MBW.Generators.OverloadGenerator.Tests.Helpers;
 using MBW.Generators.Tests.Common;
 using Microsoft.CodeAnalysis;
 using Xunit;
@@ -12,8 +13,8 @@ public class AttributeScopeTests
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.OverloadGenerator;
-                                  using MBW.Generators.OverloadGenerator.Attributes;
+                                  using MBW.Generators.OverloadGenerator.Generator;
+                                  using MBW.Generators.OverloadGenerator.Generator.Attributes;
 
                                   public enum OrderKind { Standard, Express }
 
@@ -48,8 +49,8 @@ public class AttributeScopeTests
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.OverloadGenerator;
-                                  using MBW.Generators.OverloadGenerator.Attributes;
+                                  using MBW.Generators.OverloadGenerator.Generator;
+                                  using MBW.Generators.OverloadGenerator.Generator.Attributes;
                                   public enum K { A, B }
 
                                   public partial class C
@@ -78,8 +79,8 @@ public class AttributeScopeTests
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.OverloadGenerator;
-                                  using MBW.Generators.OverloadGenerator.Attributes;
+                                  using MBW.Generators.OverloadGenerator.Generator;
+                                  using MBW.Generators.OverloadGenerator.Generator.Attributes;
                                   using System.Globalization;
 
                                   public enum K { A, B }
@@ -114,8 +115,8 @@ public class AttributeScopeTests
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.OverloadGenerator;
-                                  using MBW.Generators.OverloadGenerator.Attributes;
+                                  using MBW.Generators.OverloadGenerator.Generator;
+                                  using MBW.Generators.OverloadGenerator.Generator.Attributes;
                                   using System.Globalization;
 
                                   public enum Kind { A, B }

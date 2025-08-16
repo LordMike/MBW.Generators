@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using MBW.Generators.OverloadGenerator.Tests.Helpers;
 using MBW.Generators.Tests.Common;
 using Microsoft.CodeAnalysis;
 using Xunit;
@@ -12,8 +13,8 @@ public class CombinationRulesTests
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.OverloadGenerator;
-                                  using MBW.Generators.OverloadGenerator.Attributes;
+                                  using MBW.Generators.OverloadGenerator.Generator;
+                                  using MBW.Generators.OverloadGenerator.Generator.Attributes;
 
                                   public enum Mode { A, B }
 
@@ -48,8 +49,8 @@ public class CombinationRulesTests
         // if your generator supports cartesian combos, extend this assertion accordingly.
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.OverloadGenerator;
-                                  using MBW.Generators.OverloadGenerator.Attributes;
+                                  using MBW.Generators.OverloadGenerator.Generator;
+                                  using MBW.Generators.OverloadGenerator.Generator.Attributes;
 
                                   public enum Mode { A, B }
 

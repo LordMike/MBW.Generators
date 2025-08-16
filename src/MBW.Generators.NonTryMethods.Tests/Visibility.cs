@@ -17,7 +17,7 @@ public class Visibility
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper($$"""
-                                    using MBW.Generators.NonTryMethods.Attributes;
+                                    using MBW.Generators.NonTryMethods.Generator.Attributes;
 
                                     [GenerateNonTryMethod]
                                     internal partial class TestClass
@@ -56,7 +56,7 @@ public class Visibility
         // Interface methods must never have any visibility modifier, they are public by default.
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.NonTryMethods.Attributes;
+                                  using MBW.Generators.NonTryMethods.Generator.Attributes;
 
                                   [GenerateNonTryMethod]
                                   public partial interface TestInterface

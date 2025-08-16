@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using MBW.Generators.OverloadGenerator.Tests.Helpers;
 using MBW.Generators.Tests.Common;
 using Microsoft.CodeAnalysis;
 using Xunit;
@@ -12,8 +13,8 @@ public class TransformOverloadTests
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.OverloadGenerator;
-                                  using MBW.Generators.OverloadGenerator.Attributes;
+                                  using MBW.Generators.OverloadGenerator.Generator;
+                                  using MBW.Generators.OverloadGenerator.Generator.Attributes;
                                   using System.Globalization;
 
                                   public enum Op { Charge, Refund }
@@ -43,8 +44,8 @@ public class TransformOverloadTests
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.OverloadGenerator;
-                                  using MBW.Generators.OverloadGenerator.Attributes;
+                                  using MBW.Generators.OverloadGenerator.Generator;
+                                  using MBW.Generators.OverloadGenerator.Generator.Attributes;
 
                                   public enum E { A }
 
@@ -72,8 +73,8 @@ public class TransformOverloadTests
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.OverloadGenerator;
-                                  using MBW.Generators.OverloadGenerator.Attributes;
+                                  using MBW.Generators.OverloadGenerator.Generator;
+                                  using MBW.Generators.OverloadGenerator.Generator.Attributes;
 
                                   public enum E { A }
 
@@ -102,8 +103,8 @@ public class TransformOverloadTests
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.OverloadGenerator;
-                                  using MBW.Generators.OverloadGenerator.Attributes;
+                                  using MBW.Generators.OverloadGenerator.Generator;
+                                  using MBW.Generators.OverloadGenerator.Generator.Attributes;
 
                                   public enum E { A }
 
@@ -131,8 +132,8 @@ public class TransformOverloadTests
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.OverloadGenerator;
-                                  using MBW.Generators.OverloadGenerator.Attributes;
+                                  using MBW.Generators.OverloadGenerator.Generator;
+                                  using MBW.Generators.OverloadGenerator.Generator.Attributes;
 
                                   public enum E { A }
 
@@ -155,8 +156,8 @@ public class TransformOverloadTests
     {
         (string? output, var diags) = TestsHelper
             .RunHelper("""
-                       using MBW.Generators.OverloadGenerator;
-                       using MBW.Generators.OverloadGenerator.Attributes;
+                       using MBW.Generators.OverloadGenerator.Generator;
+                       using MBW.Generators.OverloadGenerator.Generator.Attributes;
 
                        public static partial class Ext2
                        {
