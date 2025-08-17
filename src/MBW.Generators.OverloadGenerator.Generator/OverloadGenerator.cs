@@ -40,6 +40,11 @@ public sealed class OverloadGenerator : IIncrementalGenerator
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
+        context.RegisterPostInitializationOutput(initializationContext =>
+        {
+            initializationContext.AddSource("OverloadGenerator.test.g.cs", "// Hello world");
+        });
+        
         IncrementalValueProvider<ImmutableArray<MethodModel>> methods = context.SyntaxProvider.CreateSyntaxProvider(
                 static (node, _) => IsCandidate(node),
                 static (ctx, _) => GetMethod(ctx))

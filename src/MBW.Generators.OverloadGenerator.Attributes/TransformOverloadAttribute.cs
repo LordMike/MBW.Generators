@@ -5,7 +5,7 @@ namespace MBW.Generators.OverloadGenerator.Attributes;
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = true, Inherited = false)]
 public sealed class TransformOverloadAttribute : Attribute
 {
-    public TransformOverloadAttribute(string parameter, Type accept, string transform)
+    public TransformOverloadAttribute(string parameter, Type accept, string transform = "{value}.ToString()")
     {
         Parameter = parameter;
         Accept = accept;
