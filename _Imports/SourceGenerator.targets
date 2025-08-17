@@ -2,6 +2,7 @@
 
   <!-- Package as analyzer -->
   <PropertyGroup>
+    <IsPackable>false</IsPackable>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <IncludeSymbols>false</IncludeSymbols>
 
@@ -9,10 +10,5 @@
          So we cannot use SuppressDependenciesWhenPacking which would be the normal way to workaround NU5128 -->
     <NoWarn>$(NoWarn);NU5128</NoWarn>
   </PropertyGroup>
-
-  <ItemGroup>
-    <!-- Package the generator in the analyzer directory of the nuget package -->
-    <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
-  </ItemGroup>
 
 </Project>

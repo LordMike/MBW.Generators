@@ -1,12 +1,14 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.Build.NoTargets/3.7.0">
 
-  <Import Project="..\..\_Imports\SourceGenerator.targets" />
+  <Import Project="..\..\_Imports\Metapackage.targets"/>
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
-    <RootNamespace>MBW.Generators.NonTryMethods</RootNamespace>
+    <Description>Non-Try methods generator</Description>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MBW.Generators.NonTryMethods.Generator\MBW.Generators.NonTryMethods.Generator.csproj" ReferenceOutputAssembly="false" Role="Generator"/>
+    <ProjectReference Include="..\MBW.Generators.NonTryMethods.Attributes\MBW.Generators.NonTryMethods.Attributes.csproj" ReferenceOutputAssembly="false" Role="Attributes"/>
+  </ItemGroup>
 
 </Project>

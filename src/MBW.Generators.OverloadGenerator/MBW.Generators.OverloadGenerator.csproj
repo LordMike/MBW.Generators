@@ -1,55 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Any TFM works; we aren't shipping lib/ assemblies -->
+  <Import Project="..\..\_Imports\Metapackage.targets"/>
+
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-
-    <!-- Pack settings -->
-    <IsPackable>true</IsPackable>
-    <IncludeBuildOutput>false</IncludeBuildOutput>
-
-    <!-- Package identity -->
-    <PackageId>MBW.Generators.NonTryMethods</PackageId>
-    <Description>Meta package: includes the NonTryMethods source generator (as analyzer) and attributes (as ref-only) so consumers can just reference this single package.</Description>
-    <PackageTags>source-generator;analyzers</PackageTags>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-
-    <!-- Paths to the built artifacts we want to embed.
-         Adjust TFM/paths if your projects target something else. -->
-    <AttributesRefDll>..\MBW.Generators.NonTryMethods.Attributes\bin\$(Configuration)\netstandard2.0\MBW.Generators.NonTryMethods.Attributes.dll</AttributesRefDll>
-    <AttributesRefXml>..\MBW.Generators.NonTryMethods.Attributes\bin\$(Configuration)\netstandard2.0\MBW.Generators.NonTryMethods.Attributes.xml</AttributesRefXml>
-    <GeneratorDll>..\MBW.Generators.NonTryMethods.Generator\bin\$(Configuration)\netstandard2.0\MBW.Generators.NonTryMethods.Generator.dll</GeneratorDll>
-    <GeneratorPdb>..\MBW.Generators.NonTryMethods.Generator\bin\$(Configuration)\netstandard2.0\MBW.Generators.NonTryMethods.Generator.pdb</GeneratorPdb>
+    <Description>Overload methods generator</Description>
   </PropertyGroup>
 
-  <!-- We don't want the meta package to reference the others at runtime or list them as deps.
-       These ProjectReferences are only to ensure build ordering. -->
   <ItemGroup>
-    <ProjectReference Include="..\MBW.Generators.NonTryMethods.Attributes\MBW.Generators.NonTryMethods.Attributes.csproj"
-                      ReferenceOutputAssembly="false"
-                      PrivateAssets="all" />
-    <ProjectReference Include="..\MBW.Generators.NonTryMethods.Generator\MBW.Generators.NonTryMethods.Generator.csproj"
-                      ReferenceOutputAssembly="false"
-                      PrivateAssets="all" />
+    <ProjectReference Include="..\MBW.Generators.OverloadGenerator.Generator\MBW.Generators.OverloadGenerator.Generator.csproj" ReferenceOutputAssembly="false" Role="Generator"/>
+    <ProjectReference Include="..\MBW.Generators.OverloadGenerator.Attributes\MBW.Generators.OverloadGenerator.Attributes.csproj" ReferenceOutputAssembly="false" Role="Attributes"/>
   </ItemGroup>
-
-  <!-- Package payload:
-       - Place the generator under analyzers/dotnet/cs so it auto-loads as a Roslyn analyzer (source generator).
-       - Place the Attributes assembly under ref/ so it is compile-time only (no lib/ -> no runtime dependency). -->
-  <ItemGroup>
-    <!-- Source generator (optional PDB for better diagnostics in IDE) -->
-    <None Include="$(GeneratorDll)" Pack="true" PackagePath="analyzers/dotnet/cs/" />
-    <None Include="$(GeneratorPdb)" Pack="true" PackagePath="analyzers/dotnet/cs/" Condition="Exists('$(GeneratorPdb)')" />
-
-    <!-- Attributes as REF-ONLY (compile-time), not in lib/, so nothing flows to runtime -->
-    <None Include="$(AttributesRefDll)" Pack="true" PackagePath="ref/netstandard2.0/" />
-    <None Include="$(AttributesRefXml)" Pack="true" PackagePath="ref/netstandard2.0/" Condition="Exists('$(AttributesRefXml)')" />
-  </ItemGroup>
-
-  <!-- Small sanity check so pack fails clearly if inputs are missing -->
-  <Target Name="VerifyMetaInputs" BeforeTargets="Pack">
-    <Error Condition="!Exists('$(GeneratorDll)')" Text="Generator DLL not found: $(GeneratorDll)" />
-    <Error Condition="!Exists('$(AttributesRefDll)')" Text="Attributes DLL not found: $(AttributesRefDll)" />
-  </Target>
 
 </Project>

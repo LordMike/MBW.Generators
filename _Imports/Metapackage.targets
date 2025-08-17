@@ -1,0 +1,47 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <IsPackable>true</IsPackable>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <DevelopmentDependency>true</DevelopmentDependency>
+
+    <!-- kill own pdb/xml/symbol package -->
+    <DebugSymbols>false</DebugSymbols>
+    <DebugType>none</DebugType>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <IncludeSymbols>false</IncludeSymbols>
+  </PropertyGroup>
+  
+  <Target Name="CollectMetaInputs" BeforeTargets="GenerateNuspec;_GetPackageFiles">
+    <!--    <MSBuild Projects="@(ProjectReference)"-->
+    <!--             Targets="Build"-->
+    <!--             Properties="Configuration=$(Configuration)" />-->
+
+    <MSBuild Projects="@(ProjectReference->WithMetadataValue('Role','Generator'))"
+             Targets="GetTargetPath">
+      <Output TaskParameter="TargetOutputs" ItemName="_GenDll" />
+    </MSBuild>
+
+    <MSBuild Projects="@(ProjectReference->WithMetadataValue('Role','Attributes'))"
+             Targets="GetTargetPath">
+      <Output TaskParameter="TargetOutputs" ItemName="_AttrDll" />
+    </MSBuild>
+
+    <ItemGroup>
+      <_GenPdb Include="@(_GenDll->'%(RootDir)%(Directory)%(Filename).pdb')" Condition="Exists('%(Identity)')" />
+      <_AttrXml Include="@(_AttrDll->'%(RootDir)%(Directory)%(Filename).xml')" Condition="Exists('%(Identity)')" />
+    </ItemGroup>
+
+    <Error Condition=" '@(_GenDll)' == '' " Text="Could not resolve generator TargetPath." />
+    <Error Condition=" '@(_AttrDll)' == '' " Text="Could not resolve attributes TargetPath." />
+
+    <ItemGroup>
+      <None Include="@(_GenDll)" Pack="true" PackagePath="analyzers/dotnet/cs/" />
+      <None Include="@(_GenPdb)" Pack="true" PackagePath="analyzers/dotnet/cs/" Condition=" '@(_GenPdb)' != '' " />
+      <None Include="@(_AttrDll)" Pack="true" PackagePath="ref/$(TargetFramework)/" />
+      <None Include="@(_AttrXml)" Pack="true" PackagePath="ref/$(TargetFramework)/" Condition=" '@(_AttrXml)' != '' " />
+    </ItemGroup>
+  </Target>
+
+</Project>

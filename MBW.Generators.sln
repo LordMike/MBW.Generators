@@ -21,6 +21,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_Imports", "_Imports", "{E9
 	ProjectSection(SolutionItems) = preProject
 		_Imports\Local.targets = _Imports\Local.targets
 		_Imports\SourceGenerator.targets = _Imports\SourceGenerator.targets
+		_Imports\Attributes.targets = _Imports\Attributes.targets
+		_Imports\Metapackage.targets = _Imports\Metapackage.targets
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MBW.Generators.OverloadGenerator.Attributes", "src\MBW.Generators.OverloadGenerator.Attributes\MBW.Generators.OverloadGenerator.Attributes.csproj", "{53CB8053-8DF5-4FE1-8AF2-AFA1923EDC12}"
