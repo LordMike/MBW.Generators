@@ -34,7 +34,7 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
         context.RegisterSourceOutput(knownSymbolsProvider, (productionContext, symbols) =>
         {
             productionContext.AddSource("NonTryMethods.__symbols.g.cs",
-                "// " + symbols.GenerateNonTryMethodAttribute);
+                "// attrib " + symbols?.GenerateNonTryMethodAttribute);
         });
 
         // NonTry Attributes that are invalid
