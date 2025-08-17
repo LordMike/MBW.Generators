@@ -13,6 +13,20 @@
     <IncludeSymbols>false</IncludeSymbols>
   </PropertyGroup>
   
+  <!-- create + pack lib placeholder so NuGet selects a framework group -->
+  <Target Name="AddLibPlaceholder" BeforeTargets="GenerateNuspec;_GetPackageFiles">
+    <ItemGroup>
+      <_LibPlaceholder Include="$(IntermediateOutputPath)lib\netstandard2.0\_._" />
+    </ItemGroup>
+    
+    <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(_LibPlaceholder.Identity)'))" />
+    <WriteLinesToFile File="%(_LibPlaceholder.Identity)" Lines="" Overwrite="true" />
+    
+    <ItemGroup>
+      <None Include="%(_LibPlaceholder.Identity)" Pack="true" PackagePath="lib/netstandard2.0/_._" />
+    </ItemGroup>
+  </Target>
+  
   <Target Name="CollectMetaInputs" BeforeTargets="GenerateNuspec;_GetPackageFiles">
     <!--    <MSBuild Projects="@(ProjectReference)"-->
     <!--             Targets="Build"-->
