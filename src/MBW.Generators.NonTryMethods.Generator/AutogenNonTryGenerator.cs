@@ -29,7 +29,7 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
 
         // Known types by reference
         IncrementalValueProvider<KnownSymbols?> knownSymbolsProvider =
-            context.CompilationProvider.Select((comp, _) => KnownSymbols.CreateInstance(comp));
+            context.CompilationProvider.Select((comp, _) => KnownSymbols.TryCreateInstance(comp));
 
         context.RegisterSourceOutput(knownSymbolsProvider, (productionContext, symbols) =>
         {

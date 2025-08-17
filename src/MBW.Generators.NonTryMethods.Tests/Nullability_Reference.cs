@@ -14,7 +14,7 @@ public class Nullability_Reference
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
                                   using System.Threading.Tasks;
-                                  using MBW.Generators.NonTryMethods.Generator.Attributes;
+                                  using MBW.Generators.NonTryMethods.Attributes;
 
                                   [GenerateNonTryMethod]
                                   [GenerateNonTryOptions]
@@ -54,7 +54,7 @@ public class Nullability_Reference
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
                                   using System.Threading.Tasks;
-                                  using MBW.Generators.NonTryMethods.Generator.Attributes;
+                                  using MBW.Generators.NonTryMethods.Attributes;
 
                                   [GenerateNonTryMethod]
                                   [GenerateNonTryOptions(returnGenerationStrategy: ReturnGenerationStrategy.TrueMeansNotNull)]
@@ -93,7 +93,7 @@ public class Nullability_Reference
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.NonTryMethods.Generator.Attributes;
+                                  using MBW.Generators.NonTryMethods.Attributes;
 
                                   [GenerateNonTryMethod]
                                   [GenerateNonTryOptions]
@@ -132,7 +132,7 @@ public class Nullability_Reference
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.NonTryMethods.Generator.Attributes;
+                                  using MBW.Generators.NonTryMethods.Attributes;
 
                                   [GenerateNonTryMethod]
                                   [GenerateNonTryOptions(returnGenerationStrategy: ReturnGenerationStrategy.TrueMeansNotNull)]

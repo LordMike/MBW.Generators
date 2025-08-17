@@ -14,7 +14,7 @@ public class Options
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
                                   using System.Threading.Tasks;
-                                  using MBW.Generators.NonTryMethods.Generator.Attributes;
+                                  using MBW.Generators.NonTryMethods.Attributes;
 
                                   [assembly: GenerateNonTryOptions(returnGenerationStrategy: ReturnGenerationStrategy.Verbatim)]
 

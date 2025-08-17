@@ -5,8 +5,8 @@ namespace MBW.Generators.NonTryMethods.Models;
 
 internal sealed class KnownSymbols
 {
-    public const string NonTryAttribute = "MBW.Generators.NonTryMethods.Generator.Attributes.GenerateNonTryMethodAttribute";
-    public const string NonTryOptionsAttribute = "MBW.Generators.NonTryMethods.Generator.Attributes.GenerateNonTryOptionsAttribute";
+    public const string NonTryAttribute = "MBW.Generators.NonTryMethods.Attributes.GenerateNonTryMethodAttribute";
+    public const string NonTryOptionsAttribute = "MBW.Generators.NonTryMethods.Attributes.GenerateNonTryOptionsAttribute";
    
     public readonly INamedTypeSymbol GenerateNonTryMethodAttribute;
     public readonly INamedTypeSymbol GenerateNonTryOptionsAttribute;
@@ -30,7 +30,7 @@ internal sealed class KnownSymbols
                                         "Unable to locate System.InvalidOperationException in compilation");
     }
 
-    public static KnownSymbols? CreateInstance(Compilation compilation)
+    public static KnownSymbols? TryCreateInstance(Compilation compilation)
     {
         var generateNonTryMethodAttribute =
             compilation.GetTypeByMetadataName(NonTryAttribute);
