@@ -21,9 +21,21 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
 {
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
+        context.RegisterPostInitializationOutput(pi =>
+        {
+            pi.AddSource("NonTryMethods.__smoketest.g.cs",
+                "// If you can see this, the package/analyzer wiring is OK.");
+        });
+
         // Known types by reference
         IncrementalValueProvider<KnownSymbols?> knownSymbolsProvider =
             context.CompilationProvider.Select((comp, _) => KnownSymbols.CreateInstance(comp));
+
+        context.RegisterSourceOutput(knownSymbolsProvider, (productionContext, symbols) =>
+        {
+            productionContext.AddSource("NonTryMethods.__symbols.g.cs",
+                "// " + symbols.GenerateNonTryMethodAttribute);
+        });
 
         // NonTry Attributes that are invalid
         IncrementalValuesProvider<(bool invalid, string pattern, Location loc)> invalidAttributes =
