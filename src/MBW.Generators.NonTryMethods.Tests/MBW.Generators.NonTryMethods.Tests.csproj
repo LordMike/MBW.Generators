@@ -17,7 +17,6 @@
   </ItemGroup>
   
   <ItemGroup>
-    <ProjectReference Include="..\MBW.Generators.NonTryMethods.Attributes\MBW.Generators.NonTryMethods.Attributes.csproj" />
     <ProjectReference Include="..\MBW.Generators.NonTryMethods.Generator\MBW.Generators.NonTryMethods.Generator.csproj" />
     <ProjectReference Include="..\MBW.Generators.Tests.Common\MBW.Generators.Tests.Common.csproj" />
   </ItemGroup>
