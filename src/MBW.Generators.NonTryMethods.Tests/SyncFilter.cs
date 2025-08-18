@@ -12,8 +12,6 @@ public class SyncFilter
     {
         (string? _, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.NonTryMethods.Attributes;
-
                                   [GenerateNonTryMethod]
                                   [GenerateNonTryOptions]
                                   public partial class TestClass
@@ -30,8 +28,7 @@ public class SyncFilter
     {
         (string? _, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.NonTryMethods.Attributes;
-
+                                  
                                   [GenerateNonTryMethod]
                                   [GenerateNonTryOptions]
                                   public partial class TestClass

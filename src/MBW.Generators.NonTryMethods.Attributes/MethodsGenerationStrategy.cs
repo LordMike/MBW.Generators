@@ -1,5 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace MBW.Generators.NonTryMethods.Attributes;
 
+[SuppressMessage("ReSharper", "RedundantNameQualifier")]
 public enum MethodsGenerationStrategy
 {
     /// <summary>

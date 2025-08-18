@@ -13,7 +13,7 @@ public class DefaultOverloadTests
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.OverloadGenerator.Generator;
+                                  using MBW.Generators.OverloadGenerator;
                                   using MBW.Generators.OverloadGenerator.Attributes;
 
                                   public partial class Api
@@ -39,7 +39,7 @@ public class DefaultOverloadTests
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.OverloadGenerator.Generator;
+                                  using MBW.Generators.OverloadGenerator;
                                   using MBW.Generators.OverloadGenerator.Attributes;
 
                                   public partial class Api2
@@ -61,7 +61,7 @@ public class DefaultOverloadTests
     {
         (string? output, var diags) = TestsHelper
             .RunHelper("""
-                       using MBW.Generators.OverloadGenerator.Generator;
+                       using MBW.Generators.OverloadGenerator;
                        using MBW.Generators.OverloadGenerator.Attributes;
 
                        public static partial class Ext

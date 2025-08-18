@@ -15,7 +15,7 @@ public class OverloadResolutionTests
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper(
                 """
-                using MBW.Generators.OverloadGenerator.Generator;
+                using MBW.Generators.OverloadGenerator;
                 using MBW.Generators.OverloadGenerator.Attributes;
                 public enum K { A, B }
                 public partial class S
@@ -45,7 +45,7 @@ public class OverloadResolutionTests
         // Removing a parameter shouldn't conflict with existing defaulted parameters.
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.OverloadGenerator.Generator;
+                                  using MBW.Generators.OverloadGenerator;
                                   using MBW.Generators.OverloadGenerator.Attributes;
 
                                   public partial class S2

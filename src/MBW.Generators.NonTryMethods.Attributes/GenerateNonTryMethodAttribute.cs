@@ -1,4 +1,6 @@
 using System;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using JetBrains.Annotations;
 
 namespace MBW.Generators.NonTryMethods.Attributes;
@@ -6,6 +8,8 @@ namespace MBW.Generators.NonTryMethods.Attributes;
 [AttributeUsage(
     AttributeTargets.Assembly | AttributeTargets.Class | AttributeTargets.Interface | AttributeTargets.Struct,
     AllowMultiple = true, Inherited = false)]
+[SuppressMessage("ReSharper", "RedundantNameQualifier")]
+[Conditional("NEVER_RENDER")]
 public sealed class GenerateNonTryMethodAttribute(
     Type? exceptionType = null,
     [RegexPattern] string? methodNamePattern = "^[Tt]ry(.*)")

@@ -13,8 +13,6 @@ public class StrategyMatrix_Classes
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.NonTryMethods.Attributes;
-
                                   [GenerateNonTryMethod]
                                   [GenerateNonTryOptions(methodsGenerationStrategy: MethodsGenerationStrategy.Auto)]
                                   public class TestClass
@@ -48,8 +46,6 @@ public class StrategyMatrix_Classes
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.NonTryMethods.Attributes;
-
                                   [GenerateNonTryMethod]
                                   [GenerateNonTryOptions(methodsGenerationStrategy: MethodsGenerationStrategy.PartialType)]
                                   public partial class TestClass
@@ -83,8 +79,6 @@ public class StrategyMatrix_Classes
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.NonTryMethods.Attributes;
-
                                   [GenerateNonTryMethod]
                                   [GenerateNonTryOptions(methodsGenerationStrategy: MethodsGenerationStrategy.Extensions)]
                                   public class TestClass
@@ -118,8 +112,7 @@ public class StrategyMatrix_Classes
     {
         (string? _, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.NonTryMethods.Attributes;
-
+                                  
                                   [GenerateNonTryMethod]
                                   [GenerateNonTryOptions(methodsGenerationStrategy: MethodsGenerationStrategy.Extensions)]
                                   public class TestClass

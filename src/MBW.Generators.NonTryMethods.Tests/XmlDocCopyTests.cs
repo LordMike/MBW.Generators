@@ -36,8 +36,6 @@ public class XmlDocCopyTests
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper($$"""
-                                    using MBW.Generators.NonTryMethods.Attributes;
-
                                     {{(useNamespace ? "namespace TestNamespace;" : "")}}
 
                                     [GenerateNonTryMethod]

@@ -12,9 +12,8 @@ public class AttributeValidation
     {
         (string? _, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.NonTryMethods.Attributes;
-
                                   [GenerateNonTryMethod(methodNamePattern: "^(Try)(.*)$")]
+                                  
                                   public class TestClass
                                   {
                                       public bool TryMethod(out int a)

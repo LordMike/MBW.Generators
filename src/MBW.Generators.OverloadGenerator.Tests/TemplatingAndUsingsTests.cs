@@ -13,7 +13,7 @@ public class TemplatingAndUsingsTests
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.OverloadGenerator.Generator;
+                                  using MBW.Generators.OverloadGenerator;
                                   using MBW.Generators.OverloadGenerator.Attributes;
                                   using System;
 
@@ -50,7 +50,7 @@ public class TemplatingAndUsingsTests
         // Ensure only {value} is replaced and surrounding text remains unchanged.
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.OverloadGenerator.Generator;
+                                  using MBW.Generators.OverloadGenerator;
                                   using MBW.Generators.OverloadGenerator.Attributes;
 
                                   public enum K { A }
@@ -81,7 +81,7 @@ public class TemplatingAndUsingsTests
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.OverloadGenerator.Generator;
+                                  using MBW.Generators.OverloadGenerator;
                                   using MBW.Generators.OverloadGenerator.Attributes;
 
                                   public static class Consts { public static readonly string K = "const"; }

@@ -13,8 +13,6 @@ public class StrategyMatrix_Interfaces
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.NonTryMethods.Attributes;
-
                                   [GenerateNonTryMethod]
                                   [GenerateNonTryOptions(methodsGenerationStrategy: MethodsGenerationStrategy.Auto)]
                                   public partial interface TestInterface
@@ -48,8 +46,7 @@ public class StrategyMatrix_Interfaces
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.NonTryMethods.Attributes;
-
+                                  
                                   [GenerateNonTryMethod]
                                   [GenerateNonTryOptions(methodsGenerationStrategy: MethodsGenerationStrategy.PartialType)]
                                   public partial interface TestInterface
@@ -83,8 +80,7 @@ public class StrategyMatrix_Interfaces
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.NonTryMethods.Attributes;
-
+                                  
                                   [GenerateNonTryMethod]
                                   [GenerateNonTryOptions(methodsGenerationStrategy: MethodsGenerationStrategy.Extensions)]
                                   public interface TestInterface

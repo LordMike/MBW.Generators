@@ -13,8 +13,7 @@ public class AsyncFilter
         (string? _, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
                                   using System.Threading.Tasks;
-                                  using MBW.Generators.NonTryMethods.Attributes;
-
+                                  
                                   [GenerateNonTryMethod]
                                   [GenerateNonTryOptions]
                                   public partial class TestClass
@@ -33,8 +32,7 @@ public class AsyncFilter
         (string? _, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
                                   using System.Threading.Tasks;
-                                  using MBW.Generators.NonTryMethods.Attributes;
-
+                                  
                                   [GenerateNonTryMethod]
                                   [GenerateNonTryOptions]
                                   public partial class TestClass
@@ -53,8 +51,7 @@ public class AsyncFilter
         (string? _, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
                                   using System.Threading.Tasks;
-                                  using MBW.Generators.NonTryMethods.Attributes;
-
+                                  
                                   [GenerateNonTryMethod]
                                   [GenerateNonTryOptions]
                                   public partial class TestClass
@@ -73,8 +70,7 @@ public class AsyncFilter
         (string? _, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
                                   using System.Threading.Tasks;
-                                  using MBW.Generators.NonTryMethods.Attributes;
-
+                                  
                                   [GenerateNonTryMethod]
                                   [GenerateNonTryOptions(asyncCandidateStrategy: AsyncCandidateStrategy.None)]
                                   public partial class TestClass

@@ -12,8 +12,6 @@ public class Collisions
     {
         (string? _, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.NonTryMethods.Attributes;
-
                                   [GenerateNonTryMethod]
                                   [GenerateNonTryOptions]
                                   public partial class TestClass
@@ -34,8 +32,7 @@ public class Collisions
         (string? _, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
                                   using System.Threading.Tasks;
-                                  using MBW.Generators.NonTryMethods.Attributes;
-
+                                  
                                   [GenerateNonTryMethod(methodNamePattern: "^Try(.*)$")]
                                   [GenerateNonTryMethod(methodNamePattern: "^[Tt]ry(.*)$")]
                                   [GenerateNonTryOptions]

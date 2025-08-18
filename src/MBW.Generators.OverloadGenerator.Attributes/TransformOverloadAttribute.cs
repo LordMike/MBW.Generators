@@ -1,8 +1,10 @@
 using System;
+using System.Diagnostics;
 
 namespace MBW.Generators.OverloadGenerator.Attributes;
 
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = true, Inherited = false)]
+[Conditional("NEVER_RENDER")]
 public sealed class TransformOverloadAttribute : Attribute
 {
     public TransformOverloadAttribute(string parameter, Type accept, string transform = "{value}.ToString()")

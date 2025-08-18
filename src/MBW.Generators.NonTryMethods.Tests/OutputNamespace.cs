@@ -13,8 +13,6 @@ public class OutputNamespace
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.NonTryMethods.Attributes;
-
                                   namespace TestNamespace;
 
                                   [GenerateNonTryMethod]

@@ -17,7 +17,7 @@
   </ItemGroup>
   
   <ItemGroup>
-    <ProjectReference Include="..\MBW.Generators.OverloadGenerator.Generator\MBW.Generators.OverloadGenerator.Generator.csproj" />
+    <ProjectReference Include="..\MBW.Generators.OverloadGenerator\MBW.Generators.OverloadGenerator.csproj" />
     <ProjectReference Include="..\MBW.Generators.Tests.Common\MBW.Generators.Tests.Common.csproj" />
   </ItemGroup>
   

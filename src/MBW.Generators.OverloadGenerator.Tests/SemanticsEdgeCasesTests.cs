@@ -14,7 +14,7 @@ public class SemanticsEdgeCasesTests
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
                                   #nullable enable
-                                  using MBW.Generators.OverloadGenerator.Generator;
+                                  using MBW.Generators.OverloadGenerator;
                                   using MBW.Generators.OverloadGenerator.Attributes;
                                   public enum K { A }
 
@@ -42,7 +42,7 @@ public class SemanticsEdgeCasesTests
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.OverloadGenerator.Generator;
+                                  using MBW.Generators.OverloadGenerator;
                                   using MBW.Generators.OverloadGenerator.Attributes;
 
                                   public enum Flags { A = 1, B = 2 }
@@ -73,7 +73,7 @@ public class SemanticsEdgeCasesTests
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.OverloadGenerator.Generator;
+                                  using MBW.Generators.OverloadGenerator;
                                   using MBW.Generators.OverloadGenerator.Attributes;
 
                                   public partial class F

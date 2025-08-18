@@ -1,8 +1,10 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace MBW.Generators.NonTryMethods.Attributes;
 
 [Flags]
+[SuppressMessage("ReSharper", "RedundantNameQualifier")]
 public enum AsyncCandidateStrategy
 {
     /// <summary>

@@ -1,10 +1,14 @@
 using System;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 
 namespace MBW.Generators.NonTryMethods.Attributes;
 
 [AttributeUsage(
     AttributeTargets.Assembly | AttributeTargets.Class | AttributeTargets.Interface | AttributeTargets.Struct,
     Inherited = false)]
+[SuppressMessage("ReSharper", "RedundantNameQualifier")]
+[Conditional("NEVER_RENDER")]
 public sealed class GenerateNonTryOptionsAttribute(
     AsyncCandidateStrategy asyncCandidateStrategy = AsyncCandidateStrategy.TupleBooleanAndValue,
     ReturnGenerationStrategy returnGenerationStrategy = ReturnGenerationStrategy.Verbatim,

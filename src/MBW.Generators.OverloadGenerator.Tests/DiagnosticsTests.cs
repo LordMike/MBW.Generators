@@ -12,7 +12,7 @@ public class DiagnosticsTests
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.OverloadGenerator.Generator;
+                                  using MBW.Generators.OverloadGenerator;
                                   using MBW.Generators.OverloadGenerator.Attributes;
                                   public enum K { A }
 
@@ -33,7 +33,7 @@ public class DiagnosticsTests
         // Using typeof(void) for Transform should be rejected by the generator.
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.OverloadGenerator.Generator;
+                                  using MBW.Generators.OverloadGenerator;
                                   using MBW.Generators.OverloadGenerator.Attributes;
 
                                   public partial class X2
@@ -52,7 +52,7 @@ public class DiagnosticsTests
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.OverloadGenerator.Generator;
+                                  using MBW.Generators.OverloadGenerator;
                                   using MBW.Generators.OverloadGenerator.Attributes;
                                   public enum K { A }
 
@@ -72,7 +72,7 @@ public class DiagnosticsTests
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.OverloadGenerator.Generator;
+                                  using MBW.Generators.OverloadGenerator;
                                   using MBW.Generators.OverloadGenerator.Attributes;
 
                                   public partial class X4
@@ -91,7 +91,7 @@ public class DiagnosticsTests
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.OverloadGenerator.Generator;
+                                  using MBW.Generators.OverloadGenerator;
                                   using MBW.Generators.OverloadGenerator.Attributes;
                                   public enum K { A }
 

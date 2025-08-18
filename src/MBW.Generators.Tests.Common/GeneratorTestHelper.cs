@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -10,11 +9,11 @@ namespace MBW.Generators.Tests.Common;
 public static class GeneratorTestHelper
 {
     public static (IReadOnlyDictionary<string, string> Sources, IReadOnlyList<Diagnostic> Diagnostics) Run<TGenerator>(
-        string source, string[] expectedDiagnostics, params Type[] assembliesToReference)
+        string source, string[] expectedDiagnostics, string[] defaultUsings, params Type[] assembliesToReference)
         where TGenerator : IIncrementalGenerator, new()
     {
-        SyntaxTree globalUsingsTree = CSharpSyntaxTree.ParseText(
-            "global using System;",
+        SyntaxTree globalUsings = CSharpSyntaxTree.ParseText(
+            string.Join("\n", defaultUsings.Append("System").Select(s => $"global using {s};")),
             new CSharpParseOptions(LanguageVersion.Latest));
 
         SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(LanguageVersion.Latest));
@@ -28,15 +27,17 @@ public static class GeneratorTestHelper
 
         CSharpCompilation compilation = CSharpCompilation.Create(
             "Tests",
-            new[] { globalUsingsTree, syntaxTree },
+            new[] { globalUsings, syntaxTree },
             refs,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
-
+        
+        // Ignore expected syntax errors, and:
+        // CS0122 (attribute is inaccessible due to protection level) -- we first emit attributes later on
         var syntaxDiagnostics = compilation.GetDiagnostics()
-            .Where(s => !expectedDiagnostics.Contains(s.Id))
+            .Where(s => !expectedDiagnostics.Contains(s.Id) && s.Id != "CS0122")
             .Where(s => s.Severity == DiagnosticSeverity.Error)
             .ToArray();
-
+        
         if (syntaxDiagnostics.Length > 0)
             throw new InvalidOperationException("Syntax error in test:\n" +
                                                 string.Join("\n", syntaxDiagnostics.Select(x => x.ToString())));
@@ -44,12 +45,15 @@ public static class GeneratorTestHelper
         IIncrementalGenerator generator = new TGenerator();
 
         GeneratorDriver driver = CSharpGeneratorDriver.Create(generator);
-        driver = driver.RunGenerators(compilation);
+        driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out _);
         GeneratorRunResult result = driver.GetRunResult().Results.Single();
-
+        
         Dictionary<string, string> sources =
-            result.GeneratedSources.ToDictionary(x => x.HintName, x => x.SourceText.ToString());
-        ImmutableArray<Diagnostic> diags = result.Diagnostics;
-        return (sources, diags);
+            result.GeneratedSources
+                .Where(s => s.HintName != "Microsoft.CodeAnalysis.EmbeddedAttribute.cs" && 
+                            !s.HintName.StartsWith("MBW.Generators.", StringComparison.OrdinalIgnoreCase))
+                .ToDictionary(x => x.HintName, x => x.SourceText.ToString());
+
+        return (sources, result.Diagnostics);
     }
 }

@@ -14,8 +14,7 @@ public class Exceptions
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
                                   using System;
-                                  using MBW.Generators.NonTryMethods.Attributes;
-
+                                  
                                   public class MyEx : Exception {}
 
                                   [GenerateNonTryMethod(typeof(MyEx))]
@@ -51,8 +50,6 @@ public class Exceptions
     {
         (string? _, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
-                                  using MBW.Generators.NonTryMethods.Attributes;
-
                                   [GenerateNonTryMethod(typeof(int))]
                                   [GenerateNonTryOptions]
                                   public partial class TestClass

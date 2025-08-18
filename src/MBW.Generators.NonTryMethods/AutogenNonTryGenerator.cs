@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using MBW.Generators.Common;
 using MBW.Generators.NonTryMethods.Attributes;
 using MBW.Generators.NonTryMethods.GenerationModels;
 using MBW.Generators.NonTryMethods.Helpers;
@@ -21,6 +22,9 @@ public sealed class AutogenNonTryGenerator : IIncrementalGenerator
 {
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
+        // Emit our attributes
+        AttributesEmitter.EmitAttributes(typeof(AutogenNonTryGenerator).Assembly, ref context);
+        
         // Known types by reference
         IncrementalValueProvider<KnownSymbols?> knownSymbolsProvider =
             context.CompilationProvider.Select((comp, _) => KnownSymbols.TryCreateInstance(comp));

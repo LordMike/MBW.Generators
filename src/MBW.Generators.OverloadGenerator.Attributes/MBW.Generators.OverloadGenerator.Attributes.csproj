@@ -1,11 +1,5 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <Import Project="..\..\_Imports\Attributes.targets" />
+    <Import Project="..\..\_Imports\Attributes.targets"/>
 
-  <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <Description>Attributes for MBW.Generators.OverloadGenerator source generator</Description>
-  </PropertyGroup>
-  
 </Project>
