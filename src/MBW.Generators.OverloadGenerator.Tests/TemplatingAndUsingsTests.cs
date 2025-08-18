@@ -14,7 +14,7 @@ public class TemplatingAndUsingsTests
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
                                   using MBW.Generators.OverloadGenerator.Generator;
-                                  using MBW.Generators.OverloadGenerator.Generator.Attributes;
+                                  using MBW.Generators.OverloadGenerator.Attributes;
                                   using System;
 
                                   public enum K { A }
@@ -51,7 +51,7 @@ public class TemplatingAndUsingsTests
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
                                   using MBW.Generators.OverloadGenerator.Generator;
-                                  using MBW.Generators.OverloadGenerator.Generator.Attributes;
+                                  using MBW.Generators.OverloadGenerator.Attributes;
 
                                   public enum K { A }
 
@@ -82,7 +82,7 @@ public class TemplatingAndUsingsTests
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
                                   using MBW.Generators.OverloadGenerator.Generator;
-                                  using MBW.Generators.OverloadGenerator.Generator.Attributes;
+                                  using MBW.Generators.OverloadGenerator.Attributes;
 
                                   public static class Consts { public static readonly string K = "const"; }
 

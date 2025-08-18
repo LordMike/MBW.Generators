@@ -14,7 +14,7 @@ public class CombinationRulesTests
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
                                   using MBW.Generators.OverloadGenerator.Generator;
-                                  using MBW.Generators.OverloadGenerator.Generator.Attributes;
+                                  using MBW.Generators.OverloadGenerator.Attributes;
 
                                   public enum Mode { A, B }
 
@@ -50,7 +50,7 @@ public class CombinationRulesTests
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
                                   using MBW.Generators.OverloadGenerator.Generator;
-                                  using MBW.Generators.OverloadGenerator.Generator.Attributes;
+                                  using MBW.Generators.OverloadGenerator.Attributes;
 
                                   public enum Mode { A, B }
 

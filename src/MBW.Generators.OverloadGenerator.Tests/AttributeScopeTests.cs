@@ -14,7 +14,7 @@ public class AttributeScopeTests
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
                                   using MBW.Generators.OverloadGenerator.Generator;
-                                  using MBW.Generators.OverloadGenerator.Generator.Attributes;
+                                  using MBW.Generators.OverloadGenerator.Attributes;
 
                                   public enum OrderKind { Standard, Express }
 
@@ -50,7 +50,7 @@ public class AttributeScopeTests
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
                                   using MBW.Generators.OverloadGenerator.Generator;
-                                  using MBW.Generators.OverloadGenerator.Generator.Attributes;
+                                  using MBW.Generators.OverloadGenerator.Attributes;
                                   public enum K { A, B }
 
                                   public partial class C
@@ -80,7 +80,7 @@ public class AttributeScopeTests
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
                                   using MBW.Generators.OverloadGenerator.Generator;
-                                  using MBW.Generators.OverloadGenerator.Generator.Attributes;
+                                  using MBW.Generators.OverloadGenerator.Attributes;
                                   using System.Globalization;
 
                                   public enum K { A, B }
@@ -116,7 +116,7 @@ public class AttributeScopeTests
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
                                   using MBW.Generators.OverloadGenerator.Generator;
-                                  using MBW.Generators.OverloadGenerator.Generator.Attributes;
+                                  using MBW.Generators.OverloadGenerator.Attributes;
                                   using System.Globalization;
 
                                   public enum Kind { A, B }

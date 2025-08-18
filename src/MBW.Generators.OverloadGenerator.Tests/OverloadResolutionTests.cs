@@ -16,7 +16,7 @@ public class OverloadResolutionTests
             TestsHelper.RunHelper(
                 """
                 using MBW.Generators.OverloadGenerator.Generator;
-                using MBW.Generators.OverloadGenerator.Generator.Attributes;
+                using MBW.Generators.OverloadGenerator.Attributes;
                 public enum K { A, B }
                 public partial class S
                 {
@@ -46,7 +46,7 @@ public class OverloadResolutionTests
         (string? output, IReadOnlyList<Diagnostic> diags) =
             TestsHelper.RunHelper("""
                                   using MBW.Generators.OverloadGenerator.Generator;
-                                  using MBW.Generators.OverloadGenerator.Generator.Attributes;
+                                  using MBW.Generators.OverloadGenerator.Attributes;
 
                                   public partial class S2
                                   {

@@ -16,7 +16,7 @@ public class TypeTopologyTests
                                   namespace N1.N2
                                   {
                                       using MBW.Generators.OverloadGenerator.Generator;
-                                      using MBW.Generators.OverloadGenerator.Generator.Attributes;
+                                      using MBW.Generators.OverloadGenerator.Attributes;
 
                                       public enum K { A }
 
@@ -51,7 +51,7 @@ public class TypeTopologyTests
             TestsHelper.RunHelper(
                 """
                 using MBW.Generators.OverloadGenerator.Generator;
-                using MBW.Generators.OverloadGenerator.Generator.Attributes;
+                using MBW.Generators.OverloadGenerator.Attributes;
 
                 public enum K { A }
                 public partial class P
