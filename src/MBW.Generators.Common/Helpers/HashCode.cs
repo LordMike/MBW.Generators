@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
-namespace MBW.Generators.NonTryMethods.Helpers;
+namespace MBW.Generators.Common.Helpers;
 /*
 
 The xxHash32 implementation is based on the code published by Yann Collet:

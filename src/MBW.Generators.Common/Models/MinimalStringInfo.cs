@@ -1,8 +1,8 @@
 using Microsoft.CodeAnalysis;
 
-namespace MBW.Generators.NonTryMethods.GenerationModels;
+namespace MBW.Generators.Common.Models;
 
-internal readonly struct MinimalStringInfo(SemanticModel semanticModel, int position)
+public readonly struct MinimalStringInfo(SemanticModel semanticModel, int position)
 {
     public readonly SemanticModel SemanticModel = semanticModel;
     public readonly int Position = position;

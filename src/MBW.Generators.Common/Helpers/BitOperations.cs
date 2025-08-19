@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 
-namespace MBW.Generators.NonTryMethods.Helpers;
+namespace MBW.Generators.Common.Helpers;
 
 internal static class BitOperations
 {

@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 
-namespace MBW.Generators.NonTryMethods.Helpers;
+namespace MBW.Generators.Common.Helpers;
 
-internal static class HashHelper
+public static class HashHelper
 {
-    internal static void HashTypeParameters(this ref HashCode hc, ImmutableArray<ITypeParameterSymbol> typeParameters)
+    public static void HashTypeParameters(this ref HashCode hc, ImmutableArray<ITypeParameterSymbol> typeParameters)
     {
         foreach (ITypeParameterSymbol? tp in typeParameters)
         {
@@ -25,7 +25,7 @@ internal static class HashHelper
         }
     }
 
-    internal static void HashTypeIdentity(this ref HashCode hc, ITypeSymbol t)
+    public static void HashTypeIdentity(this ref HashCode hc, ITypeSymbol t)
     {
         hc.Add(t.TypeKind);
 
@@ -117,7 +117,7 @@ internal static class HashHelper
         }
     }
 
-    internal static int HashConstant(object? value)
+    public static int HashConstant(object? value)
     {
         if (value is null) return 0;
 

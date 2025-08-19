@@ -1,12 +1,12 @@
 using System.Linq;
-using MBW.Generators.NonTryMethods.GenerationModels;
+using MBW.Generators.Common.Models;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace MBW.Generators.NonTryMethods.Helpers;
+namespace MBW.Generators.Common.Helpers;
 
-internal static class Extensions
+public static class Extensions
 {
     private static readonly SymbolDisplayFormat NamespaceFormat =
         SymbolDisplayFormat.FullyQualifiedFormat

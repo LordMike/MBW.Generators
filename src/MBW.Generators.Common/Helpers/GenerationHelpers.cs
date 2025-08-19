@@ -2,15 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using MBW.Generators.NonTryMethods.GenerationModels;
+using MBW.Generators.Common.Models;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
-namespace MBW.Generators.NonTryMethods.Helpers;
+namespace MBW.Generators.Common.Helpers;
 
-internal class GenerationHelpers
+public class GenerationHelpers
 {
     public static ExpressionSyntax ToCSharpLiteralExpression(object? value)
     {
