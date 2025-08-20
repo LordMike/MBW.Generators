@@ -4,7 +4,7 @@ namespace MBW.Generators.Common;
 
 internal static class Diagnostics
 {
-    public static readonly DiagnosticDescriptor ExceptionError = new(
+    internal static readonly DiagnosticDescriptor ExceptionError = new(
         id: "MB001",
         title: "An internal error occurred in the generator",
         messageFormat:

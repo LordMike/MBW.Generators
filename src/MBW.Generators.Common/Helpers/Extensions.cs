@@ -6,13 +6,13 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace MBW.Generators.Common.Helpers;
 
-public static class Extensions
+internal static class Extensions
 {
     private static readonly SymbolDisplayFormat NamespaceFormat =
         SymbolDisplayFormat.FullyQualifiedFormat
             .WithGlobalNamespaceStyle(SymbolDisplayGlobalNamespaceStyle.Omitted);
 
-    public static NameSyntax? RenderNamespaceName(this INamespaceSymbol ns)
+    internal static NameSyntax? RenderNamespaceName(this INamespaceSymbol ns)
     {
         if (ns.IsGlobalNamespace)
             return null;
@@ -20,7 +20,7 @@ public static class Extensions
         return SyntaxFactory.ParseName(ns.ToDisplayString(NamespaceFormat));
     }
 
-    public static bool IsPartial(this INamedTypeSymbol type)
+    internal static bool IsPartial(this INamedTypeSymbol type)
     {
         foreach (SyntaxReference? r in type.DeclaringSyntaxReferences)
         {
@@ -32,7 +32,7 @@ public static class Extensions
         return false;
     }
 
-    public static bool IsDerivedFrom(this INamedTypeSymbol type, INamedTypeSymbol baseType)
+    internal static bool IsDerivedFrom(this INamedTypeSymbol type, INamedTypeSymbol baseType)
     {
         for (INamedTypeSymbol? cur = type; cur is not null; cur = cur.BaseType)
             if (SymbolEqualityComparer.Default.Equals(cur, baseType))
@@ -40,7 +40,7 @@ public static class Extensions
         return false;
     }
 
-    public static string ToMinimalDisplayString(this ISymbol symbol,
+    internal static string ToMinimalDisplayString(this ISymbol symbol,
         MinimalStringInfo info,
         SymbolDisplayFormat? format = null)
     {

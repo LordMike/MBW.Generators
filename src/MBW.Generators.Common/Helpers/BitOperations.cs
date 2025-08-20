@@ -13,7 +13,7 @@ internal static class BitOperations
     /// Any value outside the range [0..31] is treated as congruent mod 32.</param>
     /// <returns>The rotated value.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static uint RotateLeft(uint value, int offset)
+    internal static uint RotateLeft(uint value, int offset)
         => (value << offset) | (value >> (32 - offset));
 
     /// <summary>
@@ -25,6 +25,6 @@ internal static class BitOperations
     /// Any value outside the range [0..63] is treated as congruent mod 64.</param>
     /// <returns>The rotated value.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ulong RotateLeft(ulong value, int offset)
+    internal static ulong RotateLeft(ulong value, int offset)
         => (value << offset) | (value >> (64 - offset));
 }

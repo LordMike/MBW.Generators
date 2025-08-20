@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
@@ -20,13 +21,18 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 namespace MBW.Generators.NonTryMethods;
 
 [Generator]
-public sealed class AutogenNonTryGenerator : GeneratorBase
+public sealed class AutogenNonTryGenerator : GeneratorBase<AutogenNonTryGenerator>
 {
     protected override void InitializeInternal(IncrementalGeneratorInitializationContext context)
     {
         // Known types by reference
         IncrementalValueProvider<KnownSymbols?> knownSymbolsProvider =
-            context.CompilationProvider.Select((comp, _) => KnownSymbols.TryCreateInstance(comp));
+            context.CompilationProvider.Select((comp, _) =>
+            {
+                var tryCreateInstance = KnownSymbols.TryCreateInstance(comp);
+                Logger.Log($"Symbols: {tryCreateInstance}");
+                return tryCreateInstance;
+            });
 
         // NonTry Attributes that are invalid
         IncrementalValuesProvider<(bool invalid, string pattern, Location loc)> invalidAttributes =
@@ -39,7 +45,7 @@ public sealed class AutogenNonTryGenerator : GeneratorBase
                         var results = new List<(AttributeData attr, Location loc)>(ctx.Attributes.Length);
                         foreach (var a in ctx.Attributes)
                         {
-                            var loc = a.ApplicationSyntaxReference?.GetSyntax(ct)?.GetLocation()
+                            var loc = a.ApplicationSyntaxReference?.GetSyntax(ct).GetLocation()
                                       ?? ctx.TargetSymbol.Locations.FirstOrDefault()
                                       ?? Location.None;
                             results.Add((a, loc));
@@ -83,31 +89,42 @@ public sealed class AutogenNonTryGenerator : GeneratorBase
                 knownSymbolsProvider.Combine(context.CompilationProvider)
                     .Select((t, _) => AttributesCollection.From(t.Left, t.Right.Assembly));
 
+        // Filter all types, to those with assembly-level or type-level attributes
         IncrementalValuesProvider<TypeSpec> perType = typesProvider.Combine(knownSymbolsProvider)
             .Combine(assemblyRuleProvider)
             .Where(static tuple =>
             {
+                // Evaluate if the type should be considered for generation
                 KnownSymbols? knownSymbols = tuple.Left.Right;
                 INamedTypeSymbol typeSymbol = tuple.Left.Left;
                 ImmutableArray<GenerateNonTryMethodAttributeInfoWithValidPattern> assemblyAttributes = tuple.Right;
+
+                Logger.Log($"Considering: {typeSymbol.Name}, symbols: {knownSymbols}");
 
                 if (knownSymbols == null)
                     return false;
 
                 // If assembly has attribute => include
                 if (assemblyAttributes.Length > 0)
+                {
+                    Logger.Log($"  Including because assembly attrib: {typeSymbol.Name}");
                     return true;
+                }
 
                 // If type has attribute => include
                 if (typeSymbol.GetAttributes().Any(a =>
                         a.AttributeClass?.Equals(knownSymbols.GenerateNonTryMethodAttribute,
                             SymbolEqualityComparer.Default) ?? false))
+                {
+                    Logger.Log($"  Including because type attrib: {typeSymbol.Name}");
                     return true;
+                }
 
                 return false;
             })
             .Select(static (tuple, _) =>
             {
+                // Produce a type-spec, if any, for this type
                 KnownSymbols knownSymbols = tuple.Left.Right!;
                 INamedTypeSymbol typeSymbol = tuple.Left.Left;
                 ImmutableArray<GenerateNonTryMethodAttributeInfoWithValidPattern> assemblyAttributes = tuple.Right;
@@ -134,38 +151,66 @@ public sealed class AutogenNonTryGenerator : GeneratorBase
                     }
                 }
 
-                return res is null ? null : new TypeSpec(knownSymbols, typeSymbol, [..res]);
+                var typeSpec = res is null ? null : new TypeSpec(knownSymbols, typeSymbol, [..res]);
+                Logger.Log($"Type {typeSymbol.Name}, spec: {res?.Count} methods, key: {typeSpec?.Key}");
+                return typeSpec;
             })
             .Where(static s => s != null)
             .Select(static (s, _) => s!);
 
-        // We also need the Compilation to compute minimal type names with the right using-context
-        context.RegisterSourceOutput(perType.Combine(context.CompilationProvider), static (spc, tuple) =>
-        {
-            var typeSpec = tuple.Left;
-            var compilation = tuple.Right;
+        // Final transform to provide us with info for generation, from the Compilation. Take special care, as compilation is _always_ new, so a special comparer is used
+        var typeSpecWithMinimal = perType
+            .Combine(context.CompilationProvider)
+            .Select((tuple, token) =>
+            {
+                var typeSpec = tuple.Left;
+                var compilation = tuple.Right;
 
-            var plan = DetermineTypeStrategy(typeSpec);
-            var planned = PlanAllMethods(spc, typeSpec, plan);
-            var filtered = FilterCollisionsAndDuplicates(spc, typeSpec, planned);
+                var minimalInfo = GenerationHelpers.GetMinimalDisplayContext(compilation, typeSpec.Type);
+                return new TypeSpecWithMinimal(typeSpec, minimalInfo);
+            });
 
-            if (filtered.Length == 0)
-                return;
+        context.RegisterSourceOutput(typeSpecWithMinimal
+            , (spc, spec) =>
+            {
+                try
+                {
+                    var typeSpec = spec.TypeSpec;
+                    var minimalInfo = spec.MinimalStringInfo;
 
-            // Now build the *real* CU using the semanticModel + position
-            var minimalInfo = GenerationHelpers.GetSourceDisplayContext(compilation, typeSpec.Type);
+                    Logger.Log($"Generating for key: {typeSpec.Type.Name}");
 
-            var cuReal = BuildCompilationUnit(typeSpec, filtered, minimalInfo,
-                needsTasks: filtered.Any(pm => pm.IsAsync));
+                    var plan = DetermineTypeStrategy(typeSpec);
+                    var planned = PlanAllMethods(spc, typeSpec, plan);
+                    var filtered = FilterCollisionsAndDuplicates(spc, typeSpec, planned);
 
-            spc.AddSource(GetHintName(typeSpec.Type),
-                SourceText.From(cuReal.NormalizeWhitespace().ToFullString(), Encoding.UTF8));
-        });
+                    Logger.Log(
+                        $"Generating for {typeSpec.Type.Name}, plan: {plan}, methods: {string.Join(", ", filtered.Select(x => x.Source.Method.Name))}");
+
+                    if (filtered.Length == 0)
+                    {
+                        Logger.Log(
+                            $"WARNING Not emitting");
+
+                        return;
+                    }
+
+                    var cu = BuildCompilationUnit(typeSpec, filtered, minimalInfo,
+                        needsTasks: filtered.Any(pm => pm.IsAsync));
+
+                    spc.AddSource(GenerationHelpers.GetHintName("NonTry", typeSpec.Type),
+                        SourceText.From(cu.NormalizeWhitespace().ToFullString(), Encoding.UTF8));
+
+                    // Remove symbols ref to let GC handle it
+                    Logger.Log("Cleaning");
+                    typeSpec.Clean();
+                }
+                catch (Exception e)
+                {
+                    Logger.Log(e);
+                }
+            });
     }
-
-    // ---------------------------------------------------------------
-    //  Planning & filtering (unchanged behavior, compacted where safe)
-    // ---------------------------------------------------------------
 
     private static IEnumerable<PlannedMethod> PlanAllMethods(SourceProductionContext spc, TypeSpec spec,
         TypeEmissionPlan plan)
@@ -173,24 +218,6 @@ public sealed class AutogenNonTryGenerator : GeneratorBase
         foreach (var m in spec.Methods)
             if (TryPlanMethod(spc, spec, plan, m, out var planned))
                 yield return planned;
-    }
-
-    private static string GetHintName(INamedTypeSymbol type)
-    {
-        // A.B.Outer.Inner`1 -> A.B.Outer.Inner.NonTry.g.cs (strip arity on leaf)
-        var simple = type.Name;
-        var tick = simple.IndexOf('`');
-        if (tick >= 0) simple = simple.Substring(0, tick);
-
-        string ns = "";
-        var nsSym = type.ContainingNamespace;
-        if (nsSym is not null && !nsSym.IsGlobalNamespace)
-        {
-            ns = nsSym.ToDisplayString();
-            if (ns.Length != 0) ns += ".";
-        }
-
-        return ns + simple + ".NonTry.g.cs";
     }
 
     private static CompilationUnitSyntax BuildCompilationUnit(TypeSpec spec,

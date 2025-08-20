@@ -8,15 +8,18 @@ namespace MBW.Generators.NonTryMethods.Models;
 
 internal sealed class TypeSpec : IEquatable<TypeSpec>
 {
-    public readonly long Key;
+    private INamedTypeSymbol? _type;
+    public readonly int Key;
     public readonly KnownSymbols Symbols;
-    public readonly INamedTypeSymbol Type;
     public readonly ImmutableArray<MethodSpec> Methods;
+
+    public INamedTypeSymbol Type =>
+        _type ?? throw new InvalidOperationException("Attempted to access Type after cleaning");
 
     public TypeSpec(KnownSymbols symbols, INamedTypeSymbol type, ImmutableArray<MethodSpec> methods)
     {
         Symbols = symbols;
-        Type = type;
+        _type = type;
         Methods = methods;
 
         // Structural identity
@@ -44,11 +47,23 @@ internal sealed class TypeSpec : IEquatable<TypeSpec>
 
     public bool Equals(TypeSpec? other)
     {
+        var res = Equals2(other);
+        Logger.Log($"Equality called, this key: {Key}, other: {other?.Key}, res: {res}");
+        return res;
+    }
+
+    private bool Equals2(TypeSpec? other)
+    {
         if (other is null) return false;
         if (ReferenceEquals(this, other)) return true;
         return Key == other.Key;
     }
 
+    public void Clean()
+    {
+        _type = null;
+    }
+
     public override bool Equals(object? obj) => ReferenceEquals(this, obj) || obj is TypeSpec other && Equals(other);
-    public override int GetHashCode() => Key.GetHashCode();
+    public override int GetHashCode() => Key;
 }

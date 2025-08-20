@@ -5,9 +5,9 @@ using Microsoft.CodeAnalysis;
 
 namespace MBW.Generators.Common.Helpers;
 
-public static class HashHelper
+internal static class HashHelper
 {
-    public static void HashTypeParameters(this ref HashCode hc, ImmutableArray<ITypeParameterSymbol> typeParameters)
+    internal static void HashTypeParameters(this ref HashCode hc, ImmutableArray<ITypeParameterSymbol> typeParameters)
     {
         foreach (ITypeParameterSymbol? tp in typeParameters)
         {
@@ -25,7 +25,7 @@ public static class HashHelper
         }
     }
 
-    public static void HashTypeIdentity(this ref HashCode hc, ITypeSymbol t)
+    internal static void HashTypeIdentity(this ref HashCode hc, ITypeSymbol t)
     {
         hc.Add(t.TypeKind);
 
@@ -95,7 +95,7 @@ public static class HashHelper
     /// <summary>
     /// Structural identity for named types: namespace chain, containing types, name, arity, kind.
     /// </summary>
-    public static void HashTypeIdentity(this ref HashCode hc, INamedTypeSymbol t)
+    internal static void HashTypeIdentity(this ref HashCode hc, INamedTypeSymbol t)
     {
         // Namespace chain (outer -> inner)
         Stack<string> nsParts = new Stack<string>();
@@ -117,7 +117,7 @@ public static class HashHelper
         }
     }
 
-    public static int HashConstant(object? value)
+    internal static int HashConstant(object? value)
     {
         if (value is null) return 0;
 

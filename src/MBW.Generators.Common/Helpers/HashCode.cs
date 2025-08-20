@@ -49,7 +49,7 @@ https://raw.githubusercontent.com/Cyan4973/xxHash/5c174cfa4e45a42f94082dc0d4539b
 // xxHash32 is used for the hash code.
 // https://github.com/Cyan4973/xxHash
 
-public struct HashCode
+internal struct HashCode
 {
     private static readonly uint s_seed = GenerateGlobalSeed();
 
@@ -69,7 +69,7 @@ public struct HashCode
         return (uint)new Random().Next();
     }
 
-    public static int Combine<T1>(T1 value1)
+    internal static int Combine<T1>(T1 value1)
     {
         // Provide a way of diffusing bits from something with a limited
         // input hash space. For example, many enums only have a few
@@ -89,7 +89,7 @@ public struct HashCode
         return (int)hash;
     }
 
-    public static int Combine<T1, T2>(T1 value1, T2 value2)
+    internal static int Combine<T1, T2>(T1 value1, T2 value2)
     {
         uint hc1 = (uint)(value1?.GetHashCode() ?? 0);
         uint hc2 = (uint)(value2?.GetHashCode() ?? 0);
@@ -104,7 +104,7 @@ public struct HashCode
         return (int)hash;
     }
 
-    public static int Combine<T1, T2, T3>(T1 value1, T2 value2, T3 value3)
+    internal static int Combine<T1, T2, T3>(T1 value1, T2 value2, T3 value3)
     {
         uint hc1 = (uint)(value1?.GetHashCode() ?? 0);
         uint hc2 = (uint)(value2?.GetHashCode() ?? 0);
@@ -121,7 +121,7 @@ public struct HashCode
         return (int)hash;
     }
 
-    public static int Combine<T1, T2, T3, T4>(T1 value1, T2 value2, T3 value3, T4 value4)
+    internal static int Combine<T1, T2, T3, T4>(T1 value1, T2 value2, T3 value3, T4 value4)
     {
         uint hc1 = (uint)(value1?.GetHashCode() ?? 0);
         uint hc2 = (uint)(value2?.GetHashCode() ?? 0);
@@ -142,7 +142,7 @@ public struct HashCode
         return (int)hash;
     }
 
-    public static int Combine<T1, T2, T3, T4, T5>(T1 value1, T2 value2, T3 value3, T4 value4, T5 value5)
+    internal static int Combine<T1, T2, T3, T4, T5>(T1 value1, T2 value2, T3 value3, T4 value4, T5 value5)
     {
         uint hc1 = (uint)(value1?.GetHashCode() ?? 0);
         uint hc2 = (uint)(value2?.GetHashCode() ?? 0);
@@ -166,7 +166,7 @@ public struct HashCode
         return (int)hash;
     }
 
-    public static int Combine<T1, T2, T3, T4, T5, T6>(T1 value1, T2 value2, T3 value3, T4 value4, T5 value5, T6 value6)
+    internal static int Combine<T1, T2, T3, T4, T5, T6>(T1 value1, T2 value2, T3 value3, T4 value4, T5 value5, T6 value6)
     {
         uint hc1 = (uint)(value1?.GetHashCode() ?? 0);
         uint hc2 = (uint)(value2?.GetHashCode() ?? 0);
@@ -192,7 +192,7 @@ public struct HashCode
         return (int)hash;
     }
 
-    public static int Combine<T1, T2, T3, T4, T5, T6, T7>(T1 value1, T2 value2, T3 value3, T4 value4, T5 value5, T6 value6, T7 value7)
+    internal static int Combine<T1, T2, T3, T4, T5, T6, T7>(T1 value1, T2 value2, T3 value3, T4 value4, T5 value5, T6 value6, T7 value7)
     {
         uint hc1 = (uint)(value1?.GetHashCode() ?? 0);
         uint hc2 = (uint)(value2?.GetHashCode() ?? 0);
@@ -220,7 +220,7 @@ public struct HashCode
         return (int)hash;
     }
 
-    public static int Combine<T1, T2, T3, T4, T5, T6, T7, T8>(T1 value1, T2 value2, T3 value3, T4 value4, T5 value5, T6 value6, T7 value7, T8 value8)
+    internal static int Combine<T1, T2, T3, T4, T5, T6, T7, T8>(T1 value1, T2 value2, T3 value3, T4 value4, T5 value5, T6 value6, T7 value7, T8 value8)
     {
         uint hc1 = (uint)(value1?.GetHashCode() ?? 0);
         uint hc2 = (uint)(value2?.GetHashCode() ?? 0);
@@ -293,12 +293,12 @@ public struct HashCode
         return hash;
     }
 
-    public void Add<T>(T value)
+    internal void Add<T>(T value)
     {
         Add(value?.GetHashCode() ?? 0);
     }
 
-    public void Add<T>(T value, IEqualityComparer<T>? comparer)
+    internal void Add<T>(T value, IEqualityComparer<T>? comparer)
     {
         Add(comparer != null ? comparer.GetHashCode(value!) : (value?.GetHashCode() ?? 0));
     }
@@ -353,7 +353,7 @@ public struct HashCode
         }
     }
 
-    public int ToHashCode()
+    internal int ToHashCode()
     {
         // Storing the value of _length locally shaves of quite a few bytes
         // in the resulting machine code.
