@@ -8,7 +8,7 @@ namespace MBW.Generators.OverloadGenerator.Tests;
 
 public class OverloadResolutionTests
 {
-    [Fact(Skip = "Test compilation does not include source-genned code atm")]
+    [Fact]
     public void ResolvesToGeneratedOverload_WhenArgumentMatches()
     {
         // Compile both class and a call site, ensure no ambiguity errors.

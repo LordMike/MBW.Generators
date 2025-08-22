@@ -13,7 +13,8 @@ internal static class TestsHelper
         string[]? expectedDiagnostics = null)
     {
         (IReadOnlyDictionary<string, string> sources, IReadOnlyList<Diagnostic> diags) =
-            GeneratorTestHelper.Run<OverloadGenerator>(input, expectedDiagnostics ?? [], [],
+            GeneratorTestHelper.Run<OverloadGenerator>(input, expectedDiagnostics ?? [], 
+                ["MBW.Generators.OverloadGenerator.Attributes"],
                 typeof(DefaultOverloadAttribute));
 
         return sources.Count switch
