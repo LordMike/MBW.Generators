@@ -6,7 +6,6 @@ using System.Text;
 using MBW.Generators.Common;
 using MBW.Generators.Common.Helpers;
 using MBW.Generators.NonTryMethods.GenerationModels;
-using MBW.Generators.NonTryMethods.Helpers;
 using MBW.Generators.NonTryMethods.Models;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -173,57 +172,5 @@ public sealed class NonTryGenerator : GeneratorBase<NonTryGenerator>
                     Logger.Log(e, "Emit");
                 }
             });
-
-        HandleErrorDiagnostics(context);
-    }
-
-    private static void HandleErrorDiagnostics(IncrementalGeneratorInitializationContext context)
-    {
-        // Prepare known symbols
-        IncrementalValueProvider<INamedTypeSymbol?> symbolProvider = context.CompilationProvider
-            .Select((compilation, _) => compilation.GetTypeByMetadataName("System.Exception"));
-
-        // NonTry Attributes that are invalid
-        IncrementalValuesProvider<AttributeData> attributesProvider = context.SyntaxProvider
-            .ForAttributeWithMetadataName(
-                fullyQualifiedMetadataName: KnownSymbols.NonTryAttribute,
-                predicate: static (_, _) => true, // already filtered by name; keep cheap
-                transform: static (ctx, _) => ctx.Attributes)
-            .SelectMany((datas, _) => datas);
-
-        IncrementalValuesProvider<Diagnostic> diagnostics =
-            attributesProvider.Combine(symbolProvider)
-                .SelectMany((tuple, token) =>
-                {
-                    (AttributeData? attributeData, INamedTypeSymbol? exceptionSymbol) = tuple;
-
-                    Location loc = attributeData.ApplicationSyntaxReference?.GetSyntax(token).GetLocation() ??
-                                   Location.None;
-
-                    GenerateNonTryMethodAttributeInfo info = AttributeConverters.ToNonTry(in attributeData);
-                    string pattern = info.MethodNamePattern;
-
-                    List<Diagnostic>? results = null;
-                    if (string.IsNullOrWhiteSpace(pattern) ||
-                        !AttributeValidation.IsValidRegexPattern(pattern, out _))
-                    {
-                        results ??= [];
-                        results.Add(Diagnostic.Create(Diagnostics.RegularExpressionIsInvalid, loc, pattern));
-                    }
-
-                    if (info.ExceptionType is INamedTypeSymbol provided &&
-                        exceptionSymbol != null && !provided.IsDerivedFrom(exceptionSymbol))
-                    {
-                        results ??= [];
-                        results.Add(Diagnostic.Create(
-                            Diagnostics.InvalidExceptionType,
-                            loc,
-                            info.ExceptionType?.Name));
-                    }
-
-                    return results?.ToImmutableArray() ?? [];
-                });
-
-        context.RegisterSourceOutput(diagnostics, static (spc, diag) => spc.ReportDiagnostic(diag));
     }
 }
