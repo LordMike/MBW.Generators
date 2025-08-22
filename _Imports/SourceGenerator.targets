@@ -1,10 +1,6 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
-  <!-- Package as analyzer -->
   <PropertyGroup>
-    <IsPackable>false</IsPackable>
-    <IncludeBuildOutput>false</IncludeBuildOutput>
-    <IncludeSymbols>false</IncludeSymbols>
     <IsRoslynComponent>true</IsRoslynComponent>
 
     <!-- Our analyzer package has no 'lib' folder but _does_ have dependencies. 
@@ -15,16 +11,49 @@
     <NoWarn>$(NoWarn);RS2008</NoWarn>
   </PropertyGroup>
 
-<!--  <ItemGroup>-->
-<!--    <ProjectReference Include="$(MSBuildProjectDirectory)/../$(MSBuildProjectName).Attributes/$(MSBuildProjectName).Attributes.csproj" />-->
-<!--  </ItemGroup>-->
-
+  <PropertyGroup>
+    <Nullable>enable</Nullable>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+    
+    <AttributesProject>$(MSBuildProjectName).Attributes</AttributesProject>
+  </PropertyGroup>
+  
   <ItemGroup>
-    <Compile Include="../MBW.Generators.Common/**/*.cs"
-             Exclude="../MBW.Generators.Common/bin/**;../MBW.Generators.Common/obj/**"
-             LinkBase="MBW.Generators.Common/"
-    />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="4.14.0" PrivateAssets="all" />
   </ItemGroup>
+
+  <!-- Only when packing: embed the Common sources inside this project, for dev time: reference as project -->
+  <Choose>
+    <When Condition="'$(_IsPacking)' == 'true'">
+      <ItemGroup>
+        <Compile Include="$(MSBuildThisFileDirectory)/../src/Common/MBW.Generators.Common/**/*.cs"
+                 Exclude="$(MSBuildThisFileDirectory)/../src/Common/MBW.Generators.Common/bin/**;$(MSBuildThisFileDirectory)/../src/Common/MBW.Generators.Common/obj/**"
+                 LinkBase="MBW.Generators.Common/" />
+      </ItemGroup>
+    </When>
+    <Otherwise>
+      <ItemGroup>
+        <ProjectReference Include="$(MSBuildThisFileDirectory)/../src/Common/MBW.Generators.Common/MBW.Generators.Common.csproj" />
+      </ItemGroup>
+    </Otherwise>
+  </Choose>
+
+  <!-- Only when packing: embed the Attributes sources inside this project, for dev time: reference as project -->
+  <Choose>
+    <When Condition="'$(_IsPacking)' == 'true'">
+      <ItemGroup>
+        <Compile Include="$(MSBuildProjectDirectory)../$(AttributesProject)/**/*.cs"
+                 Exclude="$(MSBuildProjectDirectory)../$(AttributesProject)/bin/**;$(MSBuildProjectDirectory)/../$(AttributesProject)/obj/**"
+                 LinkBase="$(AttributesProject)/" />
+      </ItemGroup>
+    </When>
+    <Otherwise>
+      <ItemGroup>
+        <ProjectReference Include="$(MSBuildProjectDirectory)/../$(AttributesProject)/$(AttributesProject).csproj" />
+      </ItemGroup>
+    </Otherwise>
+  </Choose>
 
   <ItemGroup>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">

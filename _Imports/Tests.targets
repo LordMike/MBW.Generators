@@ -1,10 +1,17 @@
-<Project Sdk="Microsoft.NET.Sdk">
-  
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
     <IsPackable>false</IsPackable>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+
+  <PropertyGroup>
+    <ProjectBaseName>$(MSBuildProjectName.Replace(".Tests",""))</ProjectBaseName>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="$(MSBuildProjectDirectory)\..\$(ProjectBaseName)\$(ProjectBaseName).csproj" />
+  </ItemGroup>
   
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
@@ -17,8 +24,7 @@
   </ItemGroup>
   
   <ItemGroup>
-    <ProjectReference Include="..\MBW.Generators.OverloadGenerator\MBW.Generators.OverloadGenerator.csproj" />
-    <ProjectReference Include="..\MBW.Generators.Tests.Common\MBW.Generators.Tests.Common.csproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)\..\src\Common\MBW.Generators.Tests.Common\MBW.Generators.Tests.Common.csproj" />
   </ItemGroup>
   
 </Project>
