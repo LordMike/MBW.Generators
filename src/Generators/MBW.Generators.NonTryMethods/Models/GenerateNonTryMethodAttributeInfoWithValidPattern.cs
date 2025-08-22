@@ -8,8 +8,6 @@ internal sealed record GenerateNonTryMethodAttributeInfoWithValidPattern(
     INamedTypeSymbol exceptionType,
     Regex methodNamePatternRegex)
 {
-    public Location Location { get; } = info.Location;
-
     public INamedTypeSymbol ExceptionType { get; } = exceptionType;
 
     public string MethodNamePattern { get; } = info.MethodNamePattern;

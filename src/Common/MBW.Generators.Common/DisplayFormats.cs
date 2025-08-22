@@ -1,8 +1,8 @@
 using Microsoft.CodeAnalysis;
 
-namespace MBW.Generators.NonTryMethods;
+namespace MBW.Generators.Common;
 
-internal static class Display
+internal static class DisplayFormats
 {
     public static readonly SymbolDisplayFormat CrefFormat =
         new(

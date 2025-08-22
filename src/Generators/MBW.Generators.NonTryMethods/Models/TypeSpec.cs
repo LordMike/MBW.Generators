@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Immutable;
+using MBW.Generators.Common;
 using MBW.Generators.Common.Helpers;
 using MBW.Generators.NonTryMethods.Helpers;
 using Microsoft.CodeAnalysis;
@@ -8,18 +9,15 @@ namespace MBW.Generators.NonTryMethods.Models;
 
 internal sealed class TypeSpec : IEquatable<TypeSpec>
 {
-    private INamedTypeSymbol? _type;
+    public readonly INamedTypeSymbol Type;
     public readonly int Key;
     public readonly KnownSymbols Symbols;
     public readonly ImmutableArray<MethodSpec> Methods;
 
-    public INamedTypeSymbol Type =>
-        _type ?? throw new InvalidOperationException("Attempted to access Type after cleaning");
-
     public TypeSpec(KnownSymbols symbols, INamedTypeSymbol type, ImmutableArray<MethodSpec> methods)
     {
         Symbols = symbols;
-        _type = type;
+        Type = type;
         Methods = methods;
 
         // Structural identity
@@ -57,11 +55,6 @@ internal sealed class TypeSpec : IEquatable<TypeSpec>
         if (other is null) return false;
         if (ReferenceEquals(this, other)) return true;
         return Key == other.Key;
-    }
-
-    public void Clean()
-    {
-        _type = null;
     }
 
     public override bool Equals(object? obj) => ReferenceEquals(this, obj) || obj is TypeSpec other && Equals(other);

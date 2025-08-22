@@ -7,18 +7,6 @@ namespace MBW.Generators.Common.Helpers;
 
 internal static class Extensions
 {
-    private static readonly SymbolDisplayFormat NamespaceFormat =
-        SymbolDisplayFormat.FullyQualifiedFormat
-            .WithGlobalNamespaceStyle(SymbolDisplayGlobalNamespaceStyle.Omitted);
-
-    internal static NameSyntax? RenderNamespaceName(this INamespaceSymbol ns)
-    {
-        if (ns.IsGlobalNamespace)
-            return null;
-
-        return SyntaxFactory.ParseName(ns.ToDisplayString(NamespaceFormat));
-    }
-
     internal static bool IsPartial(this INamedTypeSymbol type)
     {
         foreach (SyntaxReference? r in type.DeclaringSyntaxReferences)

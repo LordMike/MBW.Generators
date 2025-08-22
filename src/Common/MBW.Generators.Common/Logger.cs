@@ -6,6 +6,8 @@ using System.IO.Pipes;
 using System.Text;
 using System.Threading;
 
+namespace MBW.Generators.Common;
+
 [SuppressMessage("MicrosoftCodeAnalysisCorrectness", "RS1035:Do not use APIs banned for analyzers")]
 internal static class Logger
 {

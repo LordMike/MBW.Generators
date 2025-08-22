@@ -23,7 +23,7 @@ namespace MBW.Generators.NonTryMethods;
 internal record struct InvalidAttribute(string Pattern, Location Location);
 
 [Generator]
-public sealed class AutogenNonTryGenerator : GeneratorBase<AutogenNonTryGenerator>
+public sealed class NonTryGenerator : GeneratorBase<NonTryGenerator>
 {
     protected override void InitializeInternal(IncrementalGeneratorInitializationContext context)
     {
@@ -570,7 +570,7 @@ public sealed class AutogenNonTryGenerator : GeneratorBase<AutogenNonTryGenerato
         foreach (var ad in type.ContainingAssembly.GetAttributes())
             if (SymbolEqualityComparer.Default.Equals(ad.AttributeClass, ks.GenerateNonTryOptionsAttribute))
                 return AttributeConverters.ToOptions(ad);
-        return new GenerateNonTryOptionsAttributeInfo(Location.None);
+        return new GenerateNonTryOptionsAttributeInfo();
     }
 
     private static MethodDeclarationSyntax BuildMethodDeclaration(PlannedMethod pm)
@@ -592,7 +592,7 @@ public sealed class AutogenNonTryGenerator : GeneratorBase<AutogenNonTryGenerato
         decl = decl.WithModifiers(TokenList(mods));
 
         // Add XML docs
-        var crefName = pm.Source.Method.ToDisplayString(Display.CrefFormat);
+        var crefName = pm.Source.Method.ToDisplayString(DisplayFormats.CrefFormat);
         var lines = new[]
         {
             "/// <summary>",

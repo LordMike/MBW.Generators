@@ -6,25 +6,6 @@ namespace MBW.Generators.Common;
 
 public abstract class GeneratorBase<TGenerator> : IIncrementalGenerator where TGenerator : GeneratorBase<TGenerator>
 {
-    protected void TryExecute<TState>(Action<TGenerator, TState> action, TState state)
-    {
-        try
-        {
-            action((TGenerator)this, state);
-        }
-        catch (Exception e)
-        {
-            Logger.Log("Exception: " + $"""
-                                        /*
-                                        Error:   {e.GetType().FullName}
-                                        Message: {e.Message}
-                                        Stack:
-                                        {e.StackTrace}
-                                        */
-                                        """);
-        }
-    }
-
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         try
@@ -37,6 +18,16 @@ public abstract class GeneratorBase<TGenerator> : IIncrementalGenerator where TG
         catch (Exception e)
         {
             Logger.Log(e, "Initialization failed");
+
+            context.RegisterSourceOutput(context.CompilationProvider,
+                (productionContext, _) =>
+                {
+                    // "The {0} Generator encountered an issue when generating, exception: {1}, message: {2}, Stack: {3}",
+                    productionContext.ReportDiagnostic(Diagnostic.Create(
+                        Diagnostics.ExceptionError,
+                        Location.None,
+                        typeof(TGenerator).Name, e.GetType().Name, e.Message, e.StackTrace));
+                });
         }
     }
 

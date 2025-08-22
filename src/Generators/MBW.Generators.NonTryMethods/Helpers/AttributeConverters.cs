@@ -34,8 +34,7 @@ internal static class AttributeConverters
         if (args.Length >= 2 && args[1].Value is int g) returnGenerationStrategy = (ReturnGenerationStrategy)g;
         if (args.Length >= 3 && args[2].Value is int m) methodsGenerationStrategy = (MethodsGenerationStrategy)m;
 
-        return new GenerateNonTryOptionsAttributeInfo(
-            a.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? Location.None, asyncCandidateStrategy,
+        return new GenerateNonTryOptionsAttributeInfo(asyncCandidateStrategy,
             returnGenerationStrategy,
             methodsGenerationStrategy);
     }

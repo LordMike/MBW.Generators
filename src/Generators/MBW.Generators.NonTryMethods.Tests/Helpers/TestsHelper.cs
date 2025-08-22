@@ -13,7 +13,7 @@ internal static class TestsHelper
         string[]? expectedDiagnostics = null)
     {
         (IReadOnlyDictionary<string, string> sources, IReadOnlyList<Diagnostic> diags) =
-            GeneratorTestHelper.Run<AutogenNonTryGenerator>(input, expectedDiagnostics ?? [],
+            GeneratorTestHelper.Run<NonTryGenerator>(input, expectedDiagnostics ?? [],
                 ["MBW.Generators.NonTryMethods.Attributes"], typeof(GenerateNonTryMethodAttribute));
 
         return sources.Count switch
