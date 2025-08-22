@@ -1,3 +1,4 @@
+using MBW.Generators.NonTryMethods.Attributes;
 using Microsoft.CodeAnalysis;
 
 namespace MBW.Generators.NonTryMethods;

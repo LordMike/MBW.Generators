@@ -1,11 +1,9 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
-using System.Threading;
 using MBW.Generators.Common;
 using MBW.Generators.Common.Helpers;
 using MBW.Generators.NonTryMethods.Attributes;
@@ -19,8 +17,6 @@ using Microsoft.CodeAnalysis.Text;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace MBW.Generators.NonTryMethods;
-
-internal record struct InvalidAttribute(string Pattern, Location Location);
 
 [Generator]
 public sealed class NonTryGenerator : GeneratorBase<NonTryGenerator>
@@ -164,7 +160,7 @@ public sealed class NonTryGenerator : GeneratorBase<NonTryGenerator>
             });
 
         context.RegisterSourceOutput(sourceProvider
-                // .Combine(context.CompilationProvider)
+            // .Combine(context.CompilationProvider)
             ,
             (productionContext, source1) =>
             {
@@ -188,24 +184,22 @@ public sealed class NonTryGenerator : GeneratorBase<NonTryGenerator>
 
     private static void HandleErrorDiagnostics(IncrementalGeneratorInitializationContext context)
     {
+        // Prepare known symbols
         var symbolProvider = context.CompilationProvider
-            .Select((compilation, token) =>
-            {
-                return (ExceptionType: compilation.GetTypeByMetadataName("System.Exception"), a: 1);
-            });
+            .Select((compilation, _) => compilation.GetTypeByMetadataName("System.Exception"));
 
         // NonTry Attributes that are invalid
         var attributesProvider = context.SyntaxProvider.ForAttributeWithMetadataName(
                 fullyQualifiedMetadataName: KnownSymbols.NonTryAttribute,
                 predicate: static (_, _) => true, // already filtered by name; keep cheap
-                transform: static (ctx, ct) => ctx.Attributes)
+                transform: static (ctx, _) => ctx.Attributes)
             .SelectMany((datas, _) => datas);
 
         var diagnostics =
             attributesProvider.Combine(symbolProvider)
                 .SelectMany((tuple, token) =>
                 {
-                    var (attributeData, symbols) = tuple;
+                    var (attributeData, exceptionSymbol) = tuple;
 
                     var loc = attributeData.ApplicationSyntaxReference?.GetSyntax(token).GetLocation() ?? Location.None;
 
@@ -221,7 +215,7 @@ public sealed class NonTryGenerator : GeneratorBase<NonTryGenerator>
                     }
 
                     if (info.ExceptionType is INamedTypeSymbol provided &&
-                        symbols.ExceptionType != null && !provided.IsDerivedFrom(symbols.ExceptionType))
+                        exceptionSymbol != null && !provided.IsDerivedFrom(exceptionSymbol))
                     {
                         results ??= [];
                         results.Add(Diagnostic.Create(
@@ -284,7 +278,6 @@ public sealed class NonTryGenerator : GeneratorBase<NonTryGenerator>
         var opts = GetEffectiveOptions(spec);
         var type = spec.Type;
         bool isInterface = type.TypeKind == TypeKind.Interface;
-        bool supportsIfaceDefaults = true; // assume C# 8+
 
         var strategy = opts.MethodsGenerationStrategy == MethodsGenerationStrategy.Auto
             ? MethodsGenerationStrategy.PartialType
@@ -461,8 +454,10 @@ public sealed class NonTryGenerator : GeneratorBase<NonTryGenerator>
         }
         else
         {
+            Debug.Assert(ks is { ValueTaskOfT: not null, TaskOfT: not null });
+
             var payload = AdjustForReturnStrategy(cls.PayloadType!, opts.ReturnGenerationStrategy);
-            INamedTypeSymbol wrapper = isValueTask ? ks.ValueTaskOfT : ks.TaskOfT;
+            INamedTypeSymbol wrapper = isValueTask ? ks.ValueTaskOfT! : ks.TaskOfT!;
             returnType = wrapper.Construct(payload);
             parameters = [..method.Parameters];
         }

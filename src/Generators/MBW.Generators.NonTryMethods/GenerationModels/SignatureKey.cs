@@ -2,7 +2,6 @@ using System;
 using System.Collections.Immutable;
 using System.Linq;
 using MBW.Generators.Common.Helpers;
-using MBW.Generators.NonTryMethods.Helpers;
 using Microsoft.CodeAnalysis;
 
 namespace MBW.Generators.NonTryMethods.GenerationModels;

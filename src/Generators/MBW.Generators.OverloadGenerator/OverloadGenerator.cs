@@ -56,7 +56,7 @@ public sealed class OverloadGenerator : IIncrementalGenerator
             context.CompilationProvider.Combine(methods);
 
         context.RegisterSourceOutput(compilationAndMethods,
-            static (spc, source) => Execute(spc, source.Left, source.Right));
+            static (spc, source) => Execute(spc, source.Right));
     }
 
     private static bool IsCandidate(SyntaxNode node)
@@ -167,7 +167,7 @@ public sealed class OverloadGenerator : IIncrementalGenerator
         return ImmutableArray<string>.Empty;
     }
 
-    private static void Execute(SourceProductionContext context, Compilation compilation,
+    private static void Execute(SourceProductionContext context,
         ImmutableArray<MethodModel> methods)
     {
         if (methods.IsDefaultOrEmpty)
@@ -176,7 +176,7 @@ public sealed class OverloadGenerator : IIncrementalGenerator
         foreach (IGrouping<ISymbol?, MethodModel>? group in methods.GroupBy(m => m.Method.ContainingType,
                      SymbolEqualityComparer.Default))
         {
-            INamedTypeSymbol? type = (INamedTypeSymbol)group.Key;
+            INamedTypeSymbol type = (INamedTypeSymbol)group.Key!;
             string? fileText = BuildFileForType(context, type, group);
             string hint = GetHintName(type);
 
