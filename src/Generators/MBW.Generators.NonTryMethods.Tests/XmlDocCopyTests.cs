@@ -50,6 +50,7 @@ public class XmlDocCopyTests
                                     """);
 
         Assert.Empty(diags);
+        Assert.NotNull(output);
         var seeString = Regex.Match(output, @"\<see cref=\""(.*?)\""/>");
         Assert.True(seeString.Success);
 

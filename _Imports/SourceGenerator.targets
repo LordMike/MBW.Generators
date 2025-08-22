@@ -23,6 +23,11 @@
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="4.14.0" PrivateAssets="all" />
   </ItemGroup>
 
+  <!-- Only when dev: enable logging output -->
+  <PropertyGroup Condition="'$(_IsPacking)' != 'true'">
+    <DefineConstants>$(DefineConstants);ENABLE_PIPE_LOGGING</DefineConstants>
+  </PropertyGroup>
+
   <!-- Only when packing: embed the Common sources inside this project, for dev time: reference as project -->
   <Choose>
     <When Condition="'$(_IsPacking)' == 'true'">

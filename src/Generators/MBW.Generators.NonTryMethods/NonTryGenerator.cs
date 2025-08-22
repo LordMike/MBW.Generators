@@ -1,12 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using MBW.Generators.Common;
 using MBW.Generators.Common.Helpers;
-using MBW.Generators.NonTryMethods.Attributes;
 using MBW.Generators.NonTryMethods.GenerationModels;
 using MBW.Generators.NonTryMethods.Helpers;
 using MBW.Generators.NonTryMethods.Models;
@@ -14,7 +12,6 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
-using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace MBW.Generators.NonTryMethods;
 
@@ -131,14 +128,13 @@ public sealed class NonTryGenerator : GeneratorBase<NonTryGenerator>
 
                 try
                 {
-                    TypeEmissionPlan plan = DetermineTypeStrategy(typeSpec);
+                    TypeEmissionPlan plan = Gen.DetermineTypeStrategy(typeSpec);
                     ImmutableArray<PlannedMethod>
-                        planned = PlanAllMethods(ref diagnostics, typeSpec, plan);
+                        planned = Gen.PlanAllMethods(ref diagnostics, typeSpec, plan);
                     ImmutableArray<PlannedMethod> filtered =
-                        FilterCollisionsAndDuplicates(ref diagnostics, typeSpec, planned);
+                        Gen.FilterCollisionsAndDuplicates(ref diagnostics, typeSpec, planned);
 
-                    Logger.Log(
-                        $"Generating for {typeSpec.Type.Name}, plan: {plan}, methods: {string.Join(", ", filtered.Select(x => x.Source.Method.Name))}");
+                    Logger.Log($"Generating for {typeSpec.Type.Name}, plan: {plan}, methods: {string.Join(", ", filtered.Select(x => x.Source.Method.Name))}");
 
                     if (filtered.Length == 0)
                     {
@@ -146,7 +142,7 @@ public sealed class NonTryGenerator : GeneratorBase<NonTryGenerator>
                         return default;
                     }
 
-                    CompilationUnitSyntax cu = BuildCompilationUnit(typeSpec, filtered,
+                    CompilationUnitSyntax cu = Gen.BuildCompilationUnit(typeSpec, filtered,
                         needsTasks: filtered.Any(pm => pm.IsAsync));
 
                     return new TypeSource(GenerationHelpers.GetHintName("NonTry", typeSpec.Type),
@@ -159,12 +155,9 @@ public sealed class NonTryGenerator : GeneratorBase<NonTryGenerator>
                 }
             });
 
-        context.RegisterSourceOutput(sourceProvider
-            // .Combine(context.CompilationProvider)
-            ,
-            (productionContext, source1) =>
+        context.RegisterSourceOutput(sourceProvider,
+            (productionContext, source) =>
             {
-                var source = source1;
                 if (source == default)
                     return;
 
@@ -185,26 +178,26 @@ public sealed class NonTryGenerator : GeneratorBase<NonTryGenerator>
     private static void HandleErrorDiagnostics(IncrementalGeneratorInitializationContext context)
     {
         // Prepare known symbols
-        var symbolProvider = context.CompilationProvider
+        IncrementalValueProvider<INamedTypeSymbol?> symbolProvider = context.CompilationProvider
             .Select((compilation, _) => compilation.GetTypeByMetadataName("System.Exception"));
 
         // NonTry Attributes that are invalid
-        var attributesProvider = context.SyntaxProvider.ForAttributeWithMetadataName(
+        IncrementalValuesProvider<AttributeData> attributesProvider = context.SyntaxProvider.ForAttributeWithMetadataName(
                 fullyQualifiedMetadataName: KnownSymbols.NonTryAttribute,
                 predicate: static (_, _) => true, // already filtered by name; keep cheap
                 transform: static (ctx, _) => ctx.Attributes)
             .SelectMany((datas, _) => datas);
 
-        var diagnostics =
+        IncrementalValuesProvider<Diagnostic> diagnostics =
             attributesProvider.Combine(symbolProvider)
                 .SelectMany((tuple, token) =>
                 {
-                    var (attributeData, exceptionSymbol) = tuple;
+                    (AttributeData? attributeData, INamedTypeSymbol? exceptionSymbol) = tuple;
 
-                    var loc = attributeData.ApplicationSyntaxReference?.GetSyntax(token).GetLocation() ?? Location.None;
+                    Location loc = attributeData.ApplicationSyntaxReference?.GetSyntax(token).GetLocation() ?? Location.None;
 
-                    var info = AttributeConverters.ToNonTry(in attributeData);
-                    var pattern = info.MethodNamePattern;
+                    GenerateNonTryMethodAttributeInfo info = AttributeConverters.ToNonTry(in attributeData);
+                    string pattern = info.MethodNamePattern;
 
                     List<Diagnostic>? results = null;
                     if (string.IsNullOrWhiteSpace(pattern) ||
@@ -228,591 +221,5 @@ public sealed class NonTryGenerator : GeneratorBase<NonTryGenerator>
                 });
 
         context.RegisterSourceOutput(diagnostics, static (spc, diag) => spc.ReportDiagnostic(diag));
-    }
-
-    private static ImmutableArray<PlannedMethod> PlanAllMethods(ref List<Diagnostic>? diagnostics, TypeSpec spec,
-        TypeEmissionPlan plan)
-    {
-        List<PlannedMethod> methods = [];
-        foreach (var m in spec.Methods)
-            if (TryPlanMethod(ref diagnostics, spec, plan, m, out var planned))
-                methods.Add(planned);
-
-        return [..methods];
-    }
-
-    private static CompilationUnitSyntax BuildCompilationUnit(TypeSpec spec,
-        ImmutableArray<PlannedMethod> planned, bool needsTasks)
-    {
-        var headerTrivia = TriviaList(
-            Comment("// <auto-generated/>"),
-            CarriageReturnLineFeed,
-            Trivia(NullableDirectiveTrivia(Token(SyntaxKind.EnableKeyword), isActive: true)),
-            CarriageReturnLineFeed
-        );
-
-        // Usings: System, optionally Tasks
-        List<UsingDirectiveSyntax> usings = [UsingDirective(ParseName("System"))];
-        if (needsTasks) usings.Add(UsingDirective(ParseName("System.Threading.Tasks")));
-
-        var ns = spec.Type.ContainingNamespace;
-        var container = BuildTypeContainer(spec, planned);
-
-        CompilationUnitSyntax cu = CompilationUnit().WithUsings(List(usings));
-        if (ns is { IsGlobalNamespace: false })
-        {
-            var nsDecl = FileScopedNamespaceDeclaration(ParseName(ns.ToDisplayString()))
-                .WithMembers(SingletonList(container));
-            cu = cu.WithMembers(SingletonList<MemberDeclarationSyntax>(nsDecl));
-        }
-        else
-        {
-            cu = cu.WithMembers(SingletonList(container));
-        }
-
-        return cu.WithLeadingTrivia(headerTrivia);
-    }
-
-    private static TypeEmissionPlan DetermineTypeStrategy(TypeSpec spec)
-    {
-        var opts = GetEffectiveOptions(spec);
-        var type = spec.Type;
-        bool isInterface = type.TypeKind == TypeKind.Interface;
-
-        var strategy = opts.MethodsGenerationStrategy == MethodsGenerationStrategy.Auto
-            ? MethodsGenerationStrategy.PartialType
-            : opts.MethodsGenerationStrategy;
-
-        return new TypeEmissionPlan(strategy, isInterface: isInterface);
-    }
-
-    private static MethodClassification ClassifyMethodShape(IMethodSymbol method,
-        GenerateNonTryOptionsAttributeInfo opts, KnownSymbols ks)
-    {
-        // sync bool + out T
-        if (method.ReturnType.SpecialType == SpecialType.System_Boolean)
-        {
-            IParameterSymbol? outParam = null;
-            foreach (var p in method.Parameters)
-            {
-                if (p.RefKind == RefKind.Out)
-                {
-                    if (outParam != null)
-                        return new MethodClassification(MethodShape.NotEligible, null, isValueTask: false,
-                            payloadType: null);
-                    outParam = p;
-                }
-            }
-
-            if (outParam != null)
-                return new MethodClassification(MethodShape.SyncBoolOut, outParam, isValueTask: false,
-                    payloadType: null);
-            return new MethodClassification(MethodShape.NotEligible, null, isValueTask: false, payloadType: null);
-        }
-
-        // async Task<(bool,T)> / ValueTask<(bool,T)>
-        if ((opts.AsyncCandidateStrategy & AsyncCandidateStrategy.TupleBooleanAndValue) != 0)
-        {
-            if (method.ReturnType is INamedTypeSymbol rt && rt.IsGenericType)
-            {
-                if (ks.TaskOfT is not null && SymbolEqualityComparer.Default.Equals(rt.OriginalDefinition, ks.TaskOfT))
-                {
-                    var tArg = rt.TypeArguments[0];
-                    if (TryGetTupleBoolPayload(tArg, out var payload))
-                        return new MethodClassification(MethodShape.AsyncTuple, null, isValueTask: false,
-                            payloadType: payload);
-                }
-
-                if (ks.ValueTaskOfT is not null &&
-                    SymbolEqualityComparer.Default.Equals(rt.OriginalDefinition, ks.ValueTaskOfT))
-                {
-                    var tArg = rt.TypeArguments[0];
-                    if (TryGetTupleBoolPayload(tArg, out var payload))
-                        return new MethodClassification(MethodShape.AsyncTuple, null, isValueTask: true,
-                            payloadType: payload);
-                }
-            }
-        }
-
-        return new MethodClassification(MethodShape.NotEligible, null, isValueTask: false, payloadType: null);
-
-        static bool TryGetTupleBoolPayload(ITypeSymbol t, out ITypeSymbol? payload)
-        {
-            payload = null;
-            if (t is INamedTypeSymbol nt && nt.IsTupleType)
-            {
-                var elems = nt.TupleElements;
-                if (elems.Length == 2 && elems[0].Type.SpecialType == SpecialType.System_Boolean)
-                {
-                    payload = elems[1].Type;
-                    return true;
-                }
-
-                return false;
-            }
-
-            if (t is INamedTypeSymbol nt2 && nt2.Arity == 2)
-            {
-                if (nt2.MetadataName.StartsWith("ValueTuple`2", StringComparison.Ordinal) &&
-                    IsInSystemNamespace(nt2.ContainingNamespace))
-                {
-                    var args = nt2.TypeArguments;
-                    if (args.Length == 2 && args[0].SpecialType == SpecialType.System_Boolean)
-                    {
-                        payload = args[1];
-                        return true;
-                    }
-                }
-            }
-
-            return false;
-
-            static bool IsInSystemNamespace(INamespaceSymbol? ns)
-            {
-                while (ns is not null && !ns.IsGlobalNamespace)
-                {
-                    if (ns.Name == "System" && (ns.ContainingNamespace?.IsGlobalNamespace ?? true))
-                        return true;
-                    ns = ns.ContainingNamespace;
-                }
-
-                return false;
-            }
-        }
-    }
-
-    private static bool TryPlanMethod(ref List<Diagnostic>? diagnostics, TypeSpec typeSpec,
-        TypeEmissionPlan plan,
-        MethodSpec methodSpec, out PlannedMethod planned)
-    {
-        planned = default;
-        var method = methodSpec.Method;
-        var ks = typeSpec.Symbols;
-
-        // 1) pick attribute (report NT007 MultiplePatternsMatchMethod if >1)
-        GenerateNonTryMethodAttributeInfoWithValidPattern attrib;
-        {
-            var matches = methodSpec.ApplicableAttributes.Where(a => a.Pattern.IsMatch(method.Name)).ToArray();
-            if (matches.Length == 0)
-                throw new InvalidOperationException("Expected method to have 1+ matching attributes");
-            if (matches.Length >= 2)
-            {
-                diagnostics ??= [];
-                diagnostics.Add(Diagnostic.Create(
-                    Diagnostics.MultiplePatternsMatchMethod,
-                    method.Locations.FirstOrDefault(),
-                    method.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat), method.Name,
-                    typeSpec.Type.Name,
-                    string.Join(", ", matches.Select(s => $"'{s.Pattern}'"))));
-            }
-
-            attrib = matches[0];
-        }
-
-        var opts = GetEffectiveOptions(typeSpec);
-        var cls = ClassifyMethodShape(method, opts, ks);
-        if (cls.Shape == MethodShape.NotEligible)
-        {
-            var looksSync = method.ReturnType.SpecialType == SpecialType.System_Boolean ||
-                            method.Parameters.Any(p => p.RefKind == RefKind.Out);
-            diagnostics ??= [];
-            diagnostics.Add(Diagnostic.Create(
-                looksSync ? Diagnostics.NotEligibleSync : Diagnostics.NotEligibleAsyncShape,
-                method.Locations.FirstOrDefault(),
-                method.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat), attrib.MethodNamePattern,
-                opts.AsyncCandidateStrategy));
-            return false;
-        }
-
-        string newName = ComputeGeneratedName(method.Name, attrib);
-
-        EmissionKind kind = plan.Strategy == MethodsGenerationStrategy.Extensions ? EmissionKind.Extension
-            : plan.IsInterface ? EmissionKind.InterfaceDefault
-            : EmissionKind.Partial;
-
-        if (kind == EmissionKind.Extension && method.IsStatic)
-        {
-            diagnostics ??= [];
-            diagnostics.Add(Diagnostic.Create(
-                Diagnostics.UnableToGenerateExtensionMethodForStaticMethod,
-                method.Locations.FirstOrDefault(),
-                method.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat), method.Name, typeSpec.Type.Name));
-            return false;
-        }
-
-        bool isAsync = cls.Shape == MethodShape.AsyncTuple;
-        bool isValueTask = cls.IsValueTask;
-
-        ITypeSymbol returnType;
-        ImmutableArray<IParameterSymbol> parameters;
-
-        if (!isAsync)
-        {
-            var outP = cls.OutParam!;
-            returnType = AdjustForReturnStrategy(outP.Type, opts.ReturnGenerationStrategy);
-            parameters = [..method.Parameters.Where(p => !SymbolEqualityComparer.Default.Equals(p, outP))];
-        }
-        else
-        {
-            Debug.Assert(ks is { ValueTaskOfT: not null, TaskOfT: not null });
-
-            var payload = AdjustForReturnStrategy(cls.PayloadType!, opts.ReturnGenerationStrategy);
-            INamedTypeSymbol wrapper = isValueTask ? ks.ValueTaskOfT! : ks.TaskOfT!;
-            returnType = wrapper.Construct(payload);
-            parameters = [..method.Parameters];
-        }
-
-        bool genIsStatic = kind switch
-        {
-            EmissionKind.Partial => method.IsStatic,
-            EmissionKind.InterfaceDefault => false,
-            EmissionKind.Extension => true,
-            _ => method.IsStatic
-        };
-
-        var sig = new PlannedSignature(kind, newName, returnType, parameters, genIsStatic);
-        planned = new PlannedMethod(methodSpec, sig, attrib.ExceptionType, isAsync);
-        return true;
-
-        static string ComputeGeneratedName(string original, GenerateNonTryMethodAttributeInfoWithValidPattern info)
-        {
-            var m = info.Pattern.Match(original);
-            Debug.Assert(m.Success);
-
-            return m.Groups[1].Value;
-        }
-
-        static ITypeSymbol AdjustForReturnStrategy(ITypeSymbol t, ReturnGenerationStrategy strat)
-        {
-            if (strat == ReturnGenerationStrategy.Verbatim) return t;
-            if (t is INamedTypeSymbol nt && nt.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T)
-                return nt.TypeArguments[0];
-            if (t.NullableAnnotation == NullableAnnotation.Annotated && (t.IsReferenceType || t.IsAnonymousType))
-                return t.WithNullableAnnotation(NullableAnnotation.NotAnnotated);
-            return t;
-        }
-    }
-
-    private static ImmutableArray<PlannedMethod> FilterCollisionsAndDuplicates(ref List<Diagnostic>? diagnostics,
-        TypeSpec typeSpec, IEnumerable<PlannedMethod> candidates)
-    {
-        var seen = new Dictionary<SignatureKey, PlannedMethod>();
-        var deduped = new List<PlannedMethod>();
-        foreach (var pm in candidates)
-        {
-            var key = SignatureKey.From(pm);
-            if (seen.ContainsKey(key))
-            {
-                diagnostics ??= [];
-                diagnostics.Add(Diagnostic.Create(
-                    Diagnostics.DuplicateGeneratedSignature,
-                    pm.Source.Method.Locations.FirstOrDefault(),
-                    pm.Signature.Name,
-                    typeSpec.Type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)));
-                continue;
-            }
-
-            seen[key] = pm;
-            deduped.Add(pm);
-        }
-
-        if (deduped.Count == 0) return ImmutableArray<PlannedMethod>.Empty;
-
-        if (deduped.Any(p => p.Signature.Kind != EmissionKind.Extension))
-        {
-            var existing = new HashSet<SignatureKey>();
-            foreach (var m in typeSpec.Type.GetMembers().OfType<IMethodSymbol>())
-                if (m.MethodKind == MethodKind.Ordinary)
-                    existing.Add(SignatureKey.FromExisting(m));
-
-            var filtered = new List<PlannedMethod>(deduped.Count);
-            foreach (var pm in deduped)
-            {
-                if (pm.Signature.Kind == EmissionKind.Extension)
-                {
-                    filtered.Add(pm);
-                    continue;
-                }
-
-                var genKey = SignatureKey.From(pm);
-                if (existing.Contains(genKey))
-                {
-                    diagnostics ??= [];
-                    diagnostics.Add(Diagnostic.Create(
-                        Diagnostics.SignatureCollision,
-                        pm.Source.Method.Locations.FirstOrDefault(),
-                        pm.Signature.Name,
-                        typeSpec.Type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)));
-                    continue;
-                }
-
-                filtered.Add(pm);
-            }
-
-            return [..filtered];
-        }
-
-        return [..deduped];
-    }
-
-    private static GenerateNonTryOptionsAttributeInfo GetEffectiveOptions(TypeSpec spec)
-    {
-        var ks = spec.Symbols;
-        var type = spec.Type;
-        foreach (var ad in type.GetAttributes())
-            if (SymbolEqualityComparer.Default.Equals(ad.AttributeClass, ks.GenerateNonTryOptionsAttribute))
-                return AttributeConverters.ToOptions(ad);
-        foreach (var ad in type.ContainingAssembly.GetAttributes())
-            if (SymbolEqualityComparer.Default.Equals(ad.AttributeClass, ks.GenerateNonTryOptionsAttribute))
-                return AttributeConverters.ToOptions(ad);
-        return new GenerateNonTryOptionsAttributeInfo();
-    }
-
-    private static MethodDeclarationSyntax BuildMethodDeclaration(PlannedMethod pm)
-        => pm.IsAsync ? BuildNonTryAsync(pm) : BuildNonTrySync(pm);
-
-    private static MethodDeclarationSyntax CreateShell(PlannedMethod pm, bool isAsync)
-    {
-        var (visibilityKind, isStatic) = GetModifiers(pm);
-        var ret = ParseTypeName(pm.Signature.ReturnType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat));
-        var decl = MethodDeclaration(ret, pm.Signature.Name);
-
-        var mods = new List<SyntaxToken>();
-        if (visibilityKind.HasValue)
-            mods.Add(Token(visibilityKind.Value));
-        if (isStatic)
-            mods.Add(Token(SyntaxKind.StaticKeyword));
-        if (isAsync)
-            mods.Add(Token(SyntaxKind.AsyncKeyword));
-        decl = decl.WithModifiers(TokenList(mods));
-
-        // Add XML docs
-        var crefName = pm.Source.Method.ToDisplayString(DisplayFormats.CrefFormat);
-        var lines = new[]
-        {
-            "/// <summary>",
-            $"/// This is a non-try variant of <see cref=\"{crefName}\"/>.",
-            "/// </summary>",
-            "/// <remarks>This was auto-generated.</remarks>",
-        };
-        var trivia = TriviaList(lines.Select(Comment));
-        decl = decl.WithLeadingTrivia(trivia.Add(ElasticCarriageReturnLineFeed));
-
-        return decl;
-    }
-
-    private static (SyntaxKind? visibilityKind, bool isStatic) GetModifiers(PlannedMethod pm)
-    {
-        var src = pm.Source.Method;
-
-        // Interface members: omit visibility keyword so C# defaults to 'public'
-        if (src.ContainingType?.TypeKind == TypeKind.Interface)
-        {
-            if (pm.Signature.Kind == EmissionKind.Extension)
-            {
-                // If we're emitting extensions, we must mark these public
-                return (SyntaxKind.PublicKeyword, GetIsStatic(pm));
-            }
-
-            return (null, GetIsStatic(pm));
-        }
-
-        SyntaxKind? visibility = src.DeclaredAccessibility switch
-        {
-            Accessibility.Public => SyntaxKind.PublicKeyword,
-            Accessibility.Internal => SyntaxKind.InternalKeyword,
-            Accessibility.Private => SyntaxKind.PrivateKeyword,
-            Accessibility.Protected => SyntaxKind.ProtectedKeyword,
-
-            // Compound accessibilities need two tokens; return null here.
-            // If you need them later, change the return type to SyntaxTokenList.
-            Accessibility.ProtectedOrInternal => null, // would be 'protected internal'
-            Accessibility.ProtectedAndInternal => null, // would be 'private protected'
-
-            _ => null
-        };
-
-        return (visibility, GetIsStatic(pm));
-
-        static bool GetIsStatic(PlannedMethod pm) => pm.Signature.Kind switch
-        {
-            EmissionKind.Partial => pm.Signature.IsStatic,
-            EmissionKind.Extension => true,
-            EmissionKind.InterfaceDefault => false,
-            _ => pm.Signature.IsStatic
-        };
-    }
-
-    private static bool NeedsInReceiver(IMethodSymbol m)
-        => m.ContainingType.IsValueType && !m.IsStatic && m.IsReadOnly;
-
-    private static bool NeedsRefReceiver(IMethodSymbol m)
-        => m.ContainingType.IsValueType && !m.IsStatic && !m.IsReadOnly;
-
-    private static ParameterSyntax BuildExtensionThisParam(PlannedMethod pm, string receiverName)
-    {
-        var m = pm.Source.Method;
-        var recvType = ParseTypeName(m.ContainingType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat));
-        List<SyntaxToken> mods = [Token(SyntaxKind.ThisKeyword)];
-        if (NeedsRefReceiver(m)) mods.Add(Token(SyntaxKind.RefKeyword));
-        else if (NeedsInReceiver(m)) mods.Add(Token(SyntaxKind.InKeyword));
-        return Parameter(Identifier(receiverName)).WithType(recvType).WithModifiers(TokenList(mods));
-    }
-
-    // Returns params list and call target expression (method identifier or receiver.member)
-    private static (SeparatedSyntaxList<ParameterSyntax> @params, ExpressionSyntax target)
-        ComputeExtensionBits(PlannedMethod pm)
-    {
-        var renderedParams = pm.Signature.Parameters.Select(p => RenderParameter(p));
-        if (pm.Signature.Kind != EmissionKind.Extension)
-            return (SeparatedList(renderedParams), IdentifierName(pm.Source.Method.Name));
-
-        string recv = GenerationHelpers.FindUnusedParamName(pm.Signature.Parameters, "self");
-        var thisParam = BuildExtensionThisParam(pm, recv);
-        var allParams = new[] { thisParam }.Concat(renderedParams);
-        var target = MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName(recv),
-            IdentifierName(pm.Source.Method.Name));
-        return (SeparatedList(allParams), target);
-    }
-
-    private static IEnumerable<ArgumentSyntax> RenderTryArgs(PlannedMethod pm, bool isAsync)
-    {
-        foreach (var p in pm.Source.Method.Parameters)
-        {
-            if (!isAsync && p.RefKind == RefKind.Out)
-            {
-                // Sync pattern: out var <originalName>
-                yield return Argument(
-                        DeclarationExpression(
-                            IdentifierName("var"),
-                            SingleVariableDesignation(Identifier(p.Name))))
-                    .WithRefKindKeyword(Token(SyntaxKind.OutKeyword));
-                continue;
-            }
-
-            var arg = Argument(IdentifierName(p.Name));
-            if (p.RefKind == RefKind.Ref) arg = arg.WithRefKindKeyword(Token(SyntaxKind.RefKeyword));
-            if (p.RefKind == RefKind.In) arg = arg.WithRefKindKeyword(Token(SyntaxKind.InKeyword));
-            yield return arg;
-        }
-    }
-
-    private static ThrowStatementSyntax BuildThrow(PlannedMethod pm)
-        => ThrowStatement(
-            ObjectCreationExpression(
-                    ParseTypeName(pm.ExceptionType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)))
-                .WithArgumentList(ArgumentList()));
-
-    // [public] [static] T Foo([this C self,] ...) { if (target.TryFoo(..., out outParam)) return outParam; throw new Ex(); }
-    private static MethodDeclarationSyntax BuildNonTrySync(PlannedMethod pm)
-    {
-        var decl = CreateShell(pm, isAsync: false);
-        var (pars, target) = ComputeExtensionBits(pm);
-        decl = decl.WithParameterList(ParameterList(pars));
-
-        var outParam = pm.Source.Method.Parameters.First(p => p.RefKind == RefKind.Out).Name;
-        var tryCall = InvocationExpression(target)
-            .WithArgumentList(ArgumentList(SeparatedList(RenderTryArgs(pm, isAsync: false))));
-
-        return decl.WithBody(Block(
-            IfStatement(tryCall, Block(ReturnStatement(IdentifierName(outParam)))),
-            BuildThrow(pm)
-        ));
-    }
-
-    // [public] [static] async Task<T> FooAsync([this C self,] ...) { var t = await target.TryFooAsync(...); if (t.Item1) return t.Item2; throw new Ex(); }
-    private static MethodDeclarationSyntax BuildNonTryAsync(PlannedMethod pm)
-    {
-        var decl = CreateShell(pm, isAsync: true);
-        var (pars, target) = ComputeExtensionBits(pm);
-        decl = decl.WithParameterList(ParameterList(pars));
-
-        var awaitCall = AwaitExpression(InvocationExpression(target)
-            .WithArgumentList(ArgumentList(SeparatedList(RenderTryArgs(pm, isAsync: true)))));
-
-        var varName = GenerationHelpers.FindUnusedParamName(pm.Signature.Parameters, "tmp");
-
-        var t = Identifier(varName);
-        var declLocal = LocalDeclarationStatement(
-            VariableDeclaration(IdentifierName("var"))
-                .WithVariables(SeparatedList([VariableDeclarator(t).WithInitializer(EqualsValueClause(awaitCall))])));
-
-        var ok = MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName(t),
-            IdentifierName("Item1"));
-        var val = MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName(t),
-            IdentifierName("Item2"));
-
-        return decl.WithBody(Block(
-            declLocal,
-            IfStatement(ok, Block(ReturnStatement(val))),
-            BuildThrow(pm)
-        ));
-    }
-
-    private static ParameterSyntax RenderParameter(IParameterSymbol p)
-    {
-        var mods = new List<SyntaxToken>();
-        if (p.IsThis) mods.Add(Token(SyntaxKind.ThisKeyword));
-        switch (p.RefKind)
-        {
-            case RefKind.Ref: mods.Add(Token(SyntaxKind.RefKeyword)); break;
-            case RefKind.Out: mods.Add(Token(SyntaxKind.OutKeyword)); break;
-            case RefKind.In: mods.Add(Token(SyntaxKind.InKeyword)); break;
-        }
-
-        var typeSyntax = ParseTypeName(p.Type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat));
-        var param = Parameter(Identifier(p.Name)).WithType(typeSyntax);
-
-        if (mods.Count > 0) param = param.WithModifiers(TokenList(mods));
-        if (p.IsParams)
-            param = param.WithModifiers(TokenList(param.Modifiers.Concat([Token(SyntaxKind.ParamsKeyword)])));
-        if (p.HasExplicitDefaultValue)
-        {
-            var equals = EqualsValueClause(GenerationHelpers.ToCSharpLiteralExpression(p.ExplicitDefaultValue));
-            param = param.WithDefault(equals);
-        }
-
-        return param;
-    }
-
-    private static MemberDeclarationSyntax BuildTypeContainer(TypeSpec spec,
-        ImmutableArray<PlannedMethod> planned)
-    {
-        var partials = planned.Where(p => p.Signature.Kind is EmissionKind.Partial or EmissionKind.InterfaceDefault)
-            .ToArray();
-        var extensions = planned.Where(p => p.Signature.Kind == EmissionKind.Extension).ToArray();
-
-        var baseTypeDecl = BuildTargetTypeDeclaration(spec.Type, partials);
-        if (extensions.Length == 0) return baseTypeDecl;
-
-        var extDecl = BuildExtensionsContainer(spec.Type, extensions);
-        if (partials.Length == 0) return extDecl;
-        return baseTypeDecl; // driver emits extDecl in separate hint if desired
-    }
-
-    private static MemberDeclarationSyntax BuildTargetTypeDeclaration(INamedTypeSymbol type,
-        IReadOnlyList<PlannedMethod> methods)
-    {
-        var identifier = Identifier(type.Name);
-        var modifiers = TokenList(Token(SyntaxKind.PartialKeyword));
-        TypeDeclarationSyntax decl = type.TypeKind switch
-        {
-            TypeKind.Interface => InterfaceDeclaration(identifier).WithModifiers(modifiers),
-            TypeKind.Structure => StructDeclaration(identifier).WithModifiers(modifiers),
-            _ => ClassDeclaration(identifier).WithModifiers(modifiers)
-        };
-
-        var members = methods.Select(pm => BuildMethodDeclaration(pm));
-        return decl.WithMembers(List<MemberDeclarationSyntax>(members));
-    }
-
-    private static MemberDeclarationSyntax BuildExtensionsContainer(INamedTypeSymbol type,
-        IReadOnlyList<PlannedMethod> methods)
-    {
-        var extName = Identifier($"{type.Name}_NonTryExtensions");
-        var decl = ClassDeclaration(extName)
-            .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword)));
-        var members = methods.Select(pm => BuildMethodDeclaration(pm));
-        return decl.WithMembers(List<MemberDeclarationSyntax>(members));
     }
 }

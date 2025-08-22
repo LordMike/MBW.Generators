@@ -1,7 +1,6 @@
 using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
 using System.IO.Pipes;
 using System.Text;
 using System.Threading;
@@ -11,64 +10,53 @@ namespace MBW.Generators.Common;
 [SuppressMessage("MicrosoftCodeAnalysisCorrectness", "RS1035:Do not use APIs banned for analyzers")]
 internal static class Logger
 {
+    private const string PipeName = "MBW.GeneratorsLogPipe";
     private static readonly Process Proc = Process.GetCurrentProcess();
 
-    // lazy init, but swallow failures
-    private static readonly Lazy<StreamWriter?> LogDestination = new(() =>
+    // Lazy connect; if it fails once we stay "disabled".
+    private static readonly Lazy<NamedPipeClientStream?> Pipe = new(() =>
     {
         try
         {
-            var client = new NamedPipeClientStream(".", "MBW.SourcegenLogger", PipeDirection.Out);
-            client.Connect(50); // fail fast (don’t hang the compiler)
-
-            var sw = new StreamWriter(client, Encoding.UTF8) { AutoFlush = true };
-            return sw;
+            var client = new NamedPipeClientStream(".", PipeName, PipeDirection.Out);
+            client.Connect(50); // fail fast; don't hang the compiler
+            return client;
         }
         catch
         {
-            // Could not connect — disable logging
             return null;
         }
     }, LazyThreadSafetyMode.ExecutionAndPublication);
 
-    internal static void Log(string message)
+    [Conditional("ENABLE_PIPE_LOGGING")]
+    internal static void Log(string message) => TrySend($"{Proc.Id}: {message}");
+
+    [Conditional("ENABLE_PIPE_LOGGING")]
+    internal static void Log(Exception e, string message = "An error occurred") =>
+        TrySend($"""
+                 {Proc.Id}: {message}
+                 Error:   {e.GetType().FullName}
+                 Message: {e.Message}
+                 Stack:
+                 {e.StackTrace}
+                 """);
+
+    private static void TrySend(string payload)
     {
         try
         {
-            var sw = LogDestination.Value;
-            if (sw is null)
+            var p = Pipe.Value;
+            if (p is null)
                 return;
 
-            var line = $"{Proc.Id} - {DateTime.Now:HHmmss}:  {message}";
-            sw.WriteLine(line);
+            // One write == one message boundary in Message mode.
+            var bytes = Encoding.UTF8.GetBytes(payload);
+            p.Write(bytes, 0, bytes.Length);
+            p.Flush();
         }
         catch
         {
-            // never propagate log failures into the generator
-        }
-    }
-
-    internal static void Log(Exception e, string message = "An error occurred")
-    {
-        try
-        {
-            var sw = LogDestination.Value;
-            if (sw is null)
-                return;
-
-            var line = $"""
-                        {Proc.Id} - {DateTime.Now:HHmmss}:  {message}
-                        Error:   {e.GetType().FullName}
-                        Message: {e.Message}
-                        Stack:
-                        {e.StackTrace}
-
-                        """;
-            sw.WriteLine(line);
-        }
-        catch
-        {
-            // ignore
+            // Swallow all logging failures unconditionally.
         }
     }
 }
