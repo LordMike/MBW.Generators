@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\..\..\_Imports\SourceGenerator.targets" />
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Description>Overload source generator driven by attributes</Description>
+  </PropertyGroup>
+  
+</Project>
