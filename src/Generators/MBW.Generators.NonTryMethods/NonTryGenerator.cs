@@ -135,7 +135,8 @@ public sealed class NonTryGenerator : GeneratorBase<NonTryGenerator>
                     ImmutableArray<PlannedMethod> filtered =
                         Gen.FilterCollisionsAndDuplicates(ref diagnostics, typeSpec, planned);
 
-                    Logger.Log($"Generating for {typeSpec.Type.Name}, plan: {plan}, methods: {string.Join(", ", filtered.Select(x => x.Source.Method.Name))}");
+                    Logger.Log(
+                        $"Generating for {typeSpec.Type.Name}, plan: {plan}, methods: {string.Join(", ", filtered.Select(x => x.Source.Method.Name))}");
 
                     if (filtered.Length == 0)
                     {
@@ -164,7 +165,7 @@ public sealed class NonTryGenerator : GeneratorBase<NonTryGenerator>
 
                 try
                 {
-                    Logger.Log("Emitting " + source.HintName);
+                    Logger.Log($"Emitting {source.HintName}");
                     productionContext.AddSource(source.HintName, source.Source);
                 }
                 catch (Exception e)
@@ -183,7 +184,8 @@ public sealed class NonTryGenerator : GeneratorBase<NonTryGenerator>
             .Select((compilation, _) => compilation.GetTypeByMetadataName("System.Exception"));
 
         // NonTry Attributes that are invalid
-        IncrementalValuesProvider<AttributeData> attributesProvider = context.SyntaxProvider.ForAttributeWithMetadataName(
+        IncrementalValuesProvider<AttributeData> attributesProvider = context.SyntaxProvider
+            .ForAttributeWithMetadataName(
                 fullyQualifiedMetadataName: KnownSymbols.NonTryAttribute,
                 predicate: static (_, _) => true, // already filtered by name; keep cheap
                 transform: static (ctx, _) => ctx.Attributes)
@@ -195,7 +197,8 @@ public sealed class NonTryGenerator : GeneratorBase<NonTryGenerator>
                 {
                     (AttributeData? attributeData, INamedTypeSymbol? exceptionSymbol) = tuple;
 
-                    Location loc = attributeData.ApplicationSyntaxReference?.GetSyntax(token).GetLocation() ?? Location.None;
+                    Location loc = attributeData.ApplicationSyntaxReference?.GetSyntax(token).GetLocation() ??
+                                   Location.None;
 
                     GenerateNonTryMethodAttributeInfo info = AttributeConverters.ToNonTry(in attributeData);
                     string pattern = info.MethodNamePattern;

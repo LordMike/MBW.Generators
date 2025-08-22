@@ -254,7 +254,7 @@ internal static class Gen
             EmissionKind.Partial => method.IsStatic,
             EmissionKind.InterfaceDefault => false,
             EmissionKind.Extension => true,
-            _ => throw new InvalidOperationException("Unsupported kind " + kind)
+            _ => throw new InvalidOperationException($"Unsupported kind {kind}")
         };
 
         var sig = new PlannedSignature(kind, newName, returnType, parameters, genIsStatic);
