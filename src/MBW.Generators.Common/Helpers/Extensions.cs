@@ -1,5 +1,4 @@
 using System.Linq;
-using MBW.Generators.Common.Models;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -38,12 +37,5 @@ internal static class Extensions
             if (SymbolEqualityComparer.Default.Equals(cur, baseType))
                 return true;
         return false;
-    }
-
-    internal static string ToMinimalDisplayString(this ISymbol symbol,
-        MinimalStringInfo info,
-        SymbolDisplayFormat? format = null)
-    {
-        return symbol.ToMinimalDisplayString(info.SemanticModel, info.Position, format);
     }
 }

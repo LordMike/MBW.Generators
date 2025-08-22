@@ -30,14 +30,14 @@ public static class GeneratorTestHelper
             new[] { globalUsings, syntaxTree },
             refs,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
-        
+
         // Ignore expected syntax errors, and:
         // CS0122 (attribute is inaccessible due to protection level) -- we first emit attributes later on
         var syntaxDiagnostics = compilation.GetDiagnostics()
             .Where(s => !expectedDiagnostics.Contains(s.Id) && s.Id != "CS0122")
             .Where(s => s.Severity == DiagnosticSeverity.Error)
             .ToArray();
-        
+
         if (syntaxDiagnostics.Length > 0)
             throw new InvalidOperationException("Syntax error in test:\n" +
                                                 string.Join("\n", syntaxDiagnostics.Select(x => x.ToString())));
@@ -45,12 +45,13 @@ public static class GeneratorTestHelper
         IIncrementalGenerator generator = new TGenerator();
 
         GeneratorDriver driver = CSharpGeneratorDriver.Create(generator);
-        driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out _);
+        driver = driver.RunGenerators(compilation);
+
         GeneratorRunResult result = driver.GetRunResult().Results.Single();
-        
+
         Dictionary<string, string> sources =
             result.GeneratedSources
-                .Where(s => s.HintName != "Microsoft.CodeAnalysis.EmbeddedAttribute.cs" && 
+                .Where(s => s.HintName != "Microsoft.CodeAnalysis.EmbeddedAttribute.cs" &&
                             !s.HintName.StartsWith("MBW.Generators.", StringComparison.OrdinalIgnoreCase))
                 .ToDictionary(x => x.HintName, x => x.SourceText.ToString());
 

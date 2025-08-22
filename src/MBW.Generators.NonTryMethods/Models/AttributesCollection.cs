@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using MBW.Generators.Common.Helpers;
 using MBW.Generators.NonTryMethods.Helpers;
 using Microsoft.CodeAnalysis;
 
@@ -21,10 +22,23 @@ internal static class AttributesCollection
 
             var info = AttributeConverters.ToNonTry(attr);
 
-            if (AttributeValidation.IsValidRegexPattern(info.MethodNamePattern))
+            var providedExceptionType = info.ExceptionType as INamedTypeSymbol;
+
+            if (info.ExceptionType == null ||
+                (
+                    providedExceptionType != null &&
+                    providedExceptionType.IsDerivedFrom(knownSymbols.ExceptionBase)
+                ))
             {
-                res ??= [];
-                res.Add(new GenerateNonTryMethodAttributeInfoWithValidPattern(info));
+                if (AttributeValidation.IsValidRegexPattern(info.MethodNamePattern, out var methodNamePatternRegex))
+                {
+                    // Fall back to InvalidOperationException
+                    var exceptionType = providedExceptionType ?? knownSymbols.InvalidOperationException;
+
+                    res ??= [];
+                    res.Add(new GenerateNonTryMethodAttributeInfoWithValidPattern(info, exceptionType,
+                        methodNamePatternRegex));
+                }
             }
         }
 

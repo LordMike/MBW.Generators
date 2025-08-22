@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using MBW.Generators.Common.Models;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -49,20 +48,5 @@ internal class GenerationHelpers
         int i = 1;
         while (reserved.Contains(name)) name = prefix + i++;
         return name;
-    }
-
-    internal static MinimalStringInfo GetMinimalDisplayContext(Compilation comp, ISymbol symbol)
-    {
-        var decl = symbol.DeclaringSyntaxReferences.First().GetSyntax();
-        var tree = decl.SyntaxTree;
-        var model = comp.GetSemanticModel(tree, ignoreAccessibility: true);
-
-        var pos = decl switch
-        {
-            MethodDeclarationSyntax m => m.Identifier.SpanStart,
-            TypeDeclarationSyntax t => t.Identifier.SpanStart,
-            _ => decl.SpanStart
-        };
-        return new(model, pos);
     }
 }

@@ -29,24 +29,14 @@ public abstract class GeneratorBase<TGenerator> : IIncrementalGenerator where TG
     {
         try
         {
+            Logger.Log(string.Empty);
             Logger.Log("Initializing");
             InitializeInternal(context);
             Logger.Log("Initialized");
         }
         catch (Exception e)
         {
-            context.RegisterPostInitializationOutput(initializationContext =>
-            {
-                initializationContext.AddSource("GeneratorError.g.cs",
-                    $"""
-                     /*
-                     Error:   {e.GetType().FullName}
-                     Message: {e.Message}
-                     Stack:
-                     {e.StackTrace}
-                     */
-                     """);
-            });
+            Logger.Log(e, "Initialization failed");
         }
     }
 
