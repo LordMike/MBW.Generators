@@ -20,7 +20,9 @@ public sealed class NonTryGenerator : GeneratorBase<NonTryGenerator>
 {
     protected override void InitializeInternal(IncrementalGeneratorInitializationContext context)
     {
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
         context.RegisterSourceOutput(context.CompilationProvider, (_, _) => { Logger.Log("## Compilation run"); });
+#endif
 
         // Known types by reference, empty if not present
         IncrementalValueProvider<KnownSymbols?> knownSymbolsProvider =
@@ -118,7 +120,6 @@ public sealed class NonTryGenerator : GeneratorBase<NonTryGenerator>
             });
 
         // Generate source
-        // Bonus: Also ensure we render on EACH iteration, due to CompilationProvider
         IncrementalValuesProvider<TypeSource> sourceProvider = includedTypesProvider
             .Select((typeSpec, _) =>
             {
