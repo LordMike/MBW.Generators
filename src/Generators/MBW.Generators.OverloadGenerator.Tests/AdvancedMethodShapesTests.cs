@@ -40,7 +40,7 @@ public class AdvancedMethodShapesTests
     [Fact]
     public void UnsupportedMembers_AreIgnoredWithDiagnostic()
     {
-        (string? output, IReadOnlyList<Diagnostic> diags) =
+        (string? output, _) =
             TestsHelper.RunHelper("""
                                   using MBW.Generators.OverloadGenerator;
                                   using MBW.Generators.OverloadGenerator.Attributes;

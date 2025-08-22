@@ -6,7 +6,7 @@ using Xunit;
 
 namespace MBW.Generators.NonTryMethods.Tests;
 
-public class Nullability_Reference
+public class NullabilityReference
 {
     [Fact]
     public void Async_Verbatim_PreservesQuestion()

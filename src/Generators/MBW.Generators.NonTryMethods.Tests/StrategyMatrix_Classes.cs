@@ -6,7 +6,7 @@ using Xunit;
 
 namespace MBW.Generators.NonTryMethods.Tests;
 
-public class StrategyMatrix_Classes
+public class StrategyMatrixClasses
 {
     [Fact]
     public void Auto_PartialInPlace()

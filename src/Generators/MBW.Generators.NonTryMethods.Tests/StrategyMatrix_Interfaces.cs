@@ -6,7 +6,7 @@ using Xunit;
 
 namespace MBW.Generators.NonTryMethods.Tests;
 
-public class StrategyMatrix_Interfaces
+public class StrategyMatrixInterfaces
 {
     [Fact]
     public void Auto_DefaultImplementation_InInterface()

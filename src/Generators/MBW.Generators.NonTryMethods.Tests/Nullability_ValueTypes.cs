@@ -6,7 +6,7 @@ using Xunit;
 
 namespace MBW.Generators.NonTryMethods.Tests;
 
-public class Nullability_ValueTypes
+public class NullabilityValueTypes
 {
     [Fact]
     public void Async_Verbatim_PreservesNullableT()

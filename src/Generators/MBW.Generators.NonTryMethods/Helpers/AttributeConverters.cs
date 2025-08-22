@@ -10,7 +10,7 @@ internal static class AttributeConverters
     public static GenerateNonTryMethodAttributeInfo ToNonTry(in AttributeData a)
     {
         ITypeSymbol? exceptionType = null;
-        string? pattern = "^[Tt]ry(.*)";
+        string pattern = "^[Tt]ry(.*)";
 
         ImmutableArray<TypedConstant> args = a.ConstructorArguments;
         if (args.Length >= 1 && args[0].Kind == TypedConstantKind.Type && args[0].Value is ITypeSymbol et)

@@ -88,7 +88,7 @@ public sealed class OverloadGenerator : IIncrementalGenerator
     private static MethodModel? GetMethod(GeneratorSyntaxContext context)
     {
         MethodDeclarationSyntax methodSyntax = (MethodDeclarationSyntax)context.Node;
-        if (context.SemanticModel.GetDeclaredSymbol(methodSyntax) is not IMethodSymbol methodSymbol)
+        if (context.SemanticModel.GetDeclaredSymbol(methodSyntax) is not { } methodSymbol)
             return null;
 
         List<Rule> rules = new List<Rule>();
