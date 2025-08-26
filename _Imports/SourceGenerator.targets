@@ -3,10 +3,6 @@
   <PropertyGroup>
     <IsRoslynComponent>true</IsRoslynComponent>
 
-    <!-- Our analyzer package has no 'lib' folder but _does_ have dependencies. 
-         So we cannot use SuppressDependenciesWhenPacking which would be the normal way to workaround NU5128 -->
-    <NoWarn>$(NoWarn);NU5128</NoWarn>
-
     <!-- Source generator guidelines indicates to ignore this --> 
     <NoWarn>$(NoWarn);RS2008</NoWarn>
   </PropertyGroup>
