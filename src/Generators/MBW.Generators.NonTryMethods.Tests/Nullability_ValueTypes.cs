@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using MBW.Generators.NonTryMethods.Tests.Helpers;
 using MBW.Generators.Tests.Common;
 using Microsoft.CodeAnalysis;
@@ -9,10 +10,10 @@ namespace MBW.Generators.NonTryMethods.Tests;
 public class NullabilityValueTypes
 {
     [Fact]
-    public void Async_Verbatim_PreservesNullableT()
+    public async Task Async_Verbatim_PreservesNullableT()
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
-            TestsHelper.RunHelper("""
+            await TestsHelper.RunHelperAsync("""
                                   using System.Threading.Tasks;
                                   
                                   [GenerateNonTryMethod]
@@ -47,10 +48,10 @@ public class NullabilityValueTypes
     }
 
     [Fact]
-    public void Async_TrueMeansNotNull_UnwrapsNullable()
+    public async Task Async_TrueMeansNotNull_UnwrapsNullable()
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
-            TestsHelper.RunHelper("""
+            await TestsHelper.RunHelperAsync("""
                                   using System.Threading.Tasks;
                                   
                                   [GenerateNonTryMethod]
@@ -75,7 +76,7 @@ public class NullabilityValueTypes
                                    var tmp = await TryMethodAsync();
                                    if (tmp.Item1)
                                    {
-                                       return tmp.Item2;
+                                       return tmp.Item2.Value;
                                    }
 
                                    throw new InvalidOperationException();
@@ -85,10 +86,10 @@ public class NullabilityValueTypes
     }
 
     [Fact]
-    public void Sync_Verbatim_PreservesNullableT()
+    public async Task Sync_Verbatim_PreservesNullableT()
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
-            TestsHelper.RunHelper("""
+            await TestsHelper.RunHelperAsync("""
                                   [GenerateNonTryMethod]
                                   [GenerateNonTryOptions]
                                   public partial class TestClass
@@ -122,10 +123,10 @@ public class NullabilityValueTypes
     }
 
     [Fact]
-    public void Sync_TrueMeansNotNull_UnwrapsNullable()
+    public async Task Sync_TrueMeansNotNull_UnwrapsNullable()
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
-            TestsHelper.RunHelper("""
+            await TestsHelper.RunHelperAsync("""
                                   [GenerateNonTryMethod]
                                   [GenerateNonTryOptions(returnGenerationStrategy: ReturnGenerationStrategy.TrueMeansNotNull)]
                                   public partial class TestClass
@@ -149,7 +150,7 @@ public class NullabilityValueTypes
                                {
                                    if (TryMethod(out var value))
                                    {
-                                       return value;
+                                       return value.Value;
                                    }
 
                                    throw new InvalidOperationException();

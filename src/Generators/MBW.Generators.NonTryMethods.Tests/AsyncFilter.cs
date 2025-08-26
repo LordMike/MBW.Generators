@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using MBW.Generators.NonTryMethods.Tests.Helpers;
 using Microsoft.CodeAnalysis;
 using Xunit;
@@ -8,10 +9,10 @@ namespace MBW.Generators.NonTryMethods.Tests;
 public class AsyncFilter
 {
     [Fact]
-    public void WrongTupleOrder()
+    public async Task WrongTupleOrder()
     {
         (string? _, IReadOnlyList<Diagnostic> diags) =
-            TestsHelper.RunHelper("""
+            await TestsHelper.RunHelperAsync("""
                                   using System.Threading.Tasks;
                                   
                                   [GenerateNonTryMethod]
@@ -27,10 +28,10 @@ public class AsyncFilter
     }
 
     [Fact]
-    public void BoolOnlyTask()
+    public async Task BoolOnlyTask()
     {
         (string? _, IReadOnlyList<Diagnostic> diags) =
-            TestsHelper.RunHelper("""
+            await TestsHelper.RunHelperAsync("""
                                   using System.Threading.Tasks;
                                   
                                   [GenerateNonTryMethod]
@@ -46,10 +47,10 @@ public class AsyncFilter
     }
 
     [Fact]
-    public void NonTupleValueTask()
+    public async Task NonTupleValueTask()
     {
         (string? _, IReadOnlyList<Diagnostic> diags) =
-            TestsHelper.RunHelper("""
+            await TestsHelper.RunHelperAsync("""
                                   using System.Threading.Tasks;
                                   
                                   [GenerateNonTryMethod]
@@ -65,10 +66,10 @@ public class AsyncFilter
     }
 
     [Fact]
-    public void AsyncDisabledByOptions()
+    public async Task AsyncDisabledByOptions()
     {
         (string? _, IReadOnlyList<Diagnostic> diags) =
-            TestsHelper.RunHelper("""
+            await TestsHelper.RunHelperAsync("""
                                   using System.Threading.Tasks;
                                   
                                   [GenerateNonTryMethod]

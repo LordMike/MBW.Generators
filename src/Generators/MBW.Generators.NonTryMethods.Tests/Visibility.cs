@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using MBW.Generators.NonTryMethods.Tests.Helpers;
 using MBW.Generators.Tests.Common;
 using Microsoft.CodeAnalysis;
@@ -13,10 +14,10 @@ public class Visibility
     [InlineData("internal")]
     [InlineData("protected")]
     [InlineData("private")]
-    public void EmittedCode_UsesVisibilityOfSource_Method(string accessibility)
+    public async Task EmittedCode_UsesVisibilityOfSource_Method(string accessibility)
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
-            TestsHelper.RunHelper($$"""
+            await TestsHelper.RunHelperAsync($$"""
                                     [GenerateNonTryMethod]
                                     internal partial class TestClass
                                     {
@@ -49,11 +50,11 @@ public class Visibility
     }
     
     [Fact]
-    public void EmittedCode_UsesVisibilityOfSource_InterfaceMethods()
+    public async Task EmittedCode_UsesVisibilityOfSource_InterfaceMethods()
     {
         // Interface methods must never have any visibility modifier, they are public by default.
         (string? output, IReadOnlyList<Diagnostic> diags) =
-            TestsHelper.RunHelper("""
+            await TestsHelper.RunHelperAsync("""
                                   
                                   [GenerateNonTryMethod]
                                   public partial interface TestInterface

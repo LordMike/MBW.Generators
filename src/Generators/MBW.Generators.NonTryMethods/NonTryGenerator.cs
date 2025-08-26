@@ -90,6 +90,7 @@ public sealed class NonTryGenerator : GeneratorBase<NonTryGenerator>
                 ImmutableArray<GenerateNonTryMethodAttributeInfoWithValidPattern> classAttributes =
                     AttributesCollection.From(knownSymbols, typeSymbol);
 
+                Logger.Log($"  Determining methods for {typeSymbol.Name}");
                 List<MethodSpec>? res = null;
                 foreach (IMethodSymbol? method in typeSymbol.GetMembers().OfType<IMethodSymbol>())
                 {
@@ -119,12 +120,10 @@ public sealed class NonTryGenerator : GeneratorBase<NonTryGenerator>
             });
 
         // Generate source
-        IncrementalValuesProvider<TypeSource> sourceProvider = includedTypesProvider
+        IncrementalValuesProvider<TypeSourceAndDiagnostics> sourceProvider = includedTypesProvider
             .Select((typeSpec, _) =>
             {
                 List<Diagnostic>? diagnostics = null;
-
-                Logger.Log($"Generating for key: {typeSpec.Type.Name}");
 
                 try
                 {
@@ -135,19 +134,23 @@ public sealed class NonTryGenerator : GeneratorBase<NonTryGenerator>
                         Gen.FilterCollisionsAndDuplicates(ref diagnostics, typeSpec, planned);
 
                     Logger.Log(
-                        $"Generating for {typeSpec.Type.Name}, plan: {plan}, methods: {string.Join(", ", filtered.Select(x => x.Source.Method.Name))}");
+                        $"Generating for {typeSpec.Type.Name}, plan: {plan}, methods: [{string.Join(", ", filtered.Select(x => x.Source.Method.Name))}]. Diagnostics: {diagnostics?.Count ?? 0}");
 
                     if (filtered.Length == 0)
                     {
-                        Logger.Log("WARNING Not emitting");
-                        return default;
+                        Logger.Log(
+                            $"Not emitting for {typeSpec.Type.Name}, no methods after filtering. Originally had {planned.Length} methods to generate for");
+                        return new TypeSourceAndDiagnostics(null, null,
+                            diagnostics?.ToImmutableArray() ?? ImmutableArray<Diagnostic>.Empty);
                     }
 
                     CompilationUnitSyntax cu = Gen.BuildCompilationUnit(typeSpec, filtered,
                         needsTasks: filtered.Any(pm => pm.IsAsync));
 
-                    return new TypeSource(GenerationHelpers.GetHintName("NonTry", typeSpec.Type),
-                        SourceText.From(cu.NormalizeWhitespace().ToFullString(), Encoding.UTF8));
+                    return new TypeSourceAndDiagnostics(
+                        GenerationHelpers.GetHintName("NonTry", typeSpec.Type),
+                        SourceText.From(cu.NormalizeWhitespace().ToFullString(), Encoding.UTF8),
+                        diagnostics?.ToImmutableArray() ?? ImmutableArray<Diagnostic>.Empty);
                 }
                 catch (Exception e)
                 {
@@ -162,14 +165,17 @@ public sealed class NonTryGenerator : GeneratorBase<NonTryGenerator>
                 if (source == default)
                     return;
 
-                try
+                if (!source.Diagnostics.IsDefaultOrEmpty)
+                {
+                    Logger.Log($"Emitting {source.Diagnostics.Length} diagnostics");
+                    foreach (var sourceDiagnostic in source.Diagnostics)
+                        productionContext.ReportDiagnostic(sourceDiagnostic);
+                }
+
+                if (source is { HintName: not null, Source: not null })
                 {
                     Logger.Log($"Emitting {source.HintName}");
                     productionContext.AddSource(source.HintName, source.Source);
-                }
-                catch (Exception e)
-                {
-                    Logger.Log(e, "Emit");
                 }
             });
     }

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using MBW.Generators.NonTryMethods.Tests.Helpers;
 using MBW.Generators.Tests.Common;
 using Microsoft.CodeAnalysis;
@@ -9,10 +10,10 @@ namespace MBW.Generators.NonTryMethods.Tests;
 public class Functionality
 {
     [Fact]
-    public void SyncBoolOut_Defaults()
+    public async Task SyncBoolOut_Defaults()
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
-            TestsHelper.RunHelper("""
+            await TestsHelper.RunHelperAsync("""
                                   [GenerateNonTryMethod]
                                   [GenerateNonTryOptions]
                                   public partial class TestClass
@@ -47,10 +48,10 @@ public class Functionality
     }
 
     [Fact]
-    public void SyncBoolOut_CustomException()
+    public async Task SyncBoolOut_CustomException()
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
-            TestsHelper.RunHelper("""
+            await TestsHelper.RunHelperAsync("""
                                   using System;
                                   
                                   public class MyEx : Exception {}
@@ -89,10 +90,10 @@ public class Functionality
     }
 
     [Fact]
-    public void TaskTuple_Verbatim()
+    public async Task TaskTuple_Verbatim()
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
-            TestsHelper.RunHelper("""
+            await TestsHelper.RunHelperAsync("""
                                   using System.Threading.Tasks;
                                   
                                   [GenerateNonTryMethod]
@@ -128,10 +129,10 @@ public class Functionality
     }
 
     [Fact]
-    public void ValueTaskTuple_Verbatim()
+    public async Task ValueTaskTuple_Verbatim()
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
-            TestsHelper.RunHelper("""
+            await TestsHelper.RunHelperAsync("""
                                   using System.Threading.Tasks;
                                   
                                   [GenerateNonTryMethod]
@@ -167,10 +168,10 @@ public class Functionality
     }
 
     [Fact]
-    public void TaskTuple_TrueMeansNotNull_ReferencePayload()
+    public async Task TaskTuple_TrueMeansNotNull_ReferencePayload()
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
-            TestsHelper.RunHelper("""
+            await TestsHelper.RunHelperAsync("""
                                   using System.Threading.Tasks;
                                   
                                   [GenerateNonTryMethod]

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using MBW.Generators.NonTryMethods.Tests.Helpers;
 using MBW.Generators.Tests.Common;
 using Microsoft.CodeAnalysis;
@@ -9,10 +10,10 @@ namespace MBW.Generators.NonTryMethods.Tests;
 public class Exceptions
 {
     [Fact]
-    public void CustomException_Valid()
+    public async Task CustomException_Valid()
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
-            TestsHelper.RunHelper("""
+            await TestsHelper.RunHelperAsync("""
                                   using System;
                                   
                                   public class MyEx : Exception {}
@@ -46,10 +47,10 @@ public class Exceptions
     }
 
     [Fact]
-    public void CustomException_Invalid_FallbackAndDiagnostic()
+    public async Task CustomException_Invalid_FallbackAndDiagnostic()
     {
         (string? _, IReadOnlyList<Diagnostic> diags) =
-            TestsHelper.RunHelper("""
+            await TestsHelper.RunHelperAsync("""
                                   [GenerateNonTryMethod(typeof(int))]
                                   [GenerateNonTryOptions]
                                   public partial class TestClass

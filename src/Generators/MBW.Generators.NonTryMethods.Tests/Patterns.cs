@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using MBW.Generators.NonTryMethods.Tests.Helpers;
 using MBW.Generators.Tests.Common;
 using Microsoft.CodeAnalysis;
@@ -9,10 +10,10 @@ namespace MBW.Generators.NonTryMethods.Tests;
 public class Patterns
 {
     [Fact]
-    public void DefaultRegex_RemovesTryPrefix()
+    public async Task DefaultRegex_RemovesTryPrefix()
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
-            TestsHelper.RunHelper("""
+            await TestsHelper.RunHelperAsync("""
                                   using System.Threading.Tasks;
                                   
                                   [GenerateNonTryMethod] // default ^[Tt]ry(.*)
@@ -47,10 +48,10 @@ public class Patterns
     }
 
     [Fact]
-    public void MultiplePatterns_SameSignature_Dedup()
+    public async Task MultiplePatterns_SameSignature_Dedup()
     {
         (string? _, IReadOnlyList<Diagnostic> diags) =
-            TestsHelper.RunHelper("""
+            await TestsHelper.RunHelperAsync("""
                                                                     using System.Threading.Tasks;
 
                                   [GenerateNonTryMethod(methodNamePattern: "^[Tt]ry(.*)$")]

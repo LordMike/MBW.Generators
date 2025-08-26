@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using MBW.Generators.NonTryMethods.Tests.Helpers;
 using MBW.Generators.Tests.Common;
 using Microsoft.CodeAnalysis;
@@ -9,10 +10,10 @@ namespace MBW.Generators.NonTryMethods.Tests;
 public class StrategyMatrixInterfaces
 {
     [Fact]
-    public void Auto_DefaultImplementation_InInterface()
+    public async Task Auto_DefaultImplementation_InInterface()
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
-            TestsHelper.RunHelper("""
+            await TestsHelper.RunHelperAsync("""
                                   [GenerateNonTryMethod]
                                   [GenerateNonTryOptions(methodsGenerationStrategy: MethodsGenerationStrategy.Auto)]
                                   public partial interface TestInterface
@@ -42,10 +43,10 @@ public class StrategyMatrixInterfaces
     }
 
     [Fact]
-    public void PartialType_DefaultImplementation_InInterface()
+    public async Task PartialType_DefaultImplementation_InInterface()
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
-            TestsHelper.RunHelper("""
+            await TestsHelper.RunHelperAsync("""
                                   
                                   [GenerateNonTryMethod]
                                   [GenerateNonTryOptions(methodsGenerationStrategy: MethodsGenerationStrategy.PartialType)]
@@ -76,10 +77,10 @@ public class StrategyMatrixInterfaces
     }
 
     [Fact]
-    public void Extensions_Interface_GeneratesExtension()
+    public async Task Extensions_Interface_GeneratesExtension()
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
-            TestsHelper.RunHelper("""
+            await TestsHelper.RunHelperAsync("""
                                   
                                   [GenerateNonTryMethod]
                                   [GenerateNonTryOptions(methodsGenerationStrategy: MethodsGenerationStrategy.Extensions)]

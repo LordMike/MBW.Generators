@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using MBW.Generators.NonTryMethods.Tests.Helpers;
 using Microsoft.CodeAnalysis;
 using Xunit;
@@ -8,10 +9,10 @@ namespace MBW.Generators.NonTryMethods.Tests;
 public class SyncFilter
 {
     [Fact]
-    public void Bool_NoOut()
+    public async Task Bool_NoOut()
     {
         (string? _, IReadOnlyList<Diagnostic> diags) =
-            TestsHelper.RunHelper("""
+            await TestsHelper.RunHelperAsync("""
                                   [GenerateNonTryMethod]
                                   [GenerateNonTryOptions]
                                   public partial class TestClass
@@ -24,10 +25,10 @@ public class SyncFilter
     }
 
     [Fact]
-    public void Bool_TwoOuts()
+    public async Task Bool_TwoOuts()
     {
         (string? _, IReadOnlyList<Diagnostic> diags) =
-            TestsHelper.RunHelper("""
+            await TestsHelper.RunHelperAsync("""
                                   
                                   [GenerateNonTryMethod]
                                   [GenerateNonTryOptions]

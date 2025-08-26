@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using MBW.Generators.NonTryMethods.Tests.Helpers;
 using Microsoft.CodeAnalysis;
 using Xunit;
@@ -32,10 +33,10 @@ public class XmlDocCopyTests
     [InlineData(true,
         "bool TryMethod(ref global::System.Int32 x, in global::System.ReadOnlySpan<int> span, out string value)",
         "TestClass.TryMethod(ref int, in ReadOnlySpan<int>, out string)")]
-    public void XmlDocs_ReferenceToOriginal(bool useNamespace, string originalMethod, string expected)
+    public async Task XmlDocs_ReferenceToOriginal(bool useNamespace, string originalMethod, string expected)
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
-            TestsHelper.RunHelper($$"""
+            await TestsHelper.RunHelperAsync($$"""
                                     {{(useNamespace ? "namespace TestNamespace;" : "")}}
 
                                     [GenerateNonTryMethod]

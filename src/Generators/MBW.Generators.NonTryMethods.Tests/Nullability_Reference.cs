@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using MBW.Generators.NonTryMethods.Tests.Helpers;
 using MBW.Generators.Tests.Common;
 using Microsoft.CodeAnalysis;
@@ -9,10 +10,10 @@ namespace MBW.Generators.NonTryMethods.Tests;
 public class NullabilityReference
 {
     [Fact]
-    public void Async_Verbatim_PreservesQuestion()
+    public async Task Async_Verbatim_PreservesQuestion()
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
-            TestsHelper.RunHelper("""
+            await TestsHelper.RunHelperAsync("""
                                   using System.Threading.Tasks;
                                   
                                   [GenerateNonTryMethod]
@@ -48,10 +49,10 @@ public class NullabilityReference
     }
 
     [Fact]
-    public void Async_TrueMeansNotNull_StripsQuestion()
+    public async Task Async_TrueMeansNotNull_StripsQuestion()
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
-            TestsHelper.RunHelper("""
+            await TestsHelper.RunHelperAsync("""
                                   using System.Threading.Tasks;
                                   
                                   [GenerateNonTryMethod]
@@ -87,10 +88,10 @@ public class NullabilityReference
     }
 
     [Fact]
-    public void Sync_Verbatim_PreservesQuestion()
+    public async Task Sync_Verbatim_PreservesQuestion()
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
-            TestsHelper.RunHelper("""
+            await TestsHelper.RunHelperAsync("""
                                   [GenerateNonTryMethod]
                                   [GenerateNonTryOptions]
                                   public partial class TestClass
@@ -124,10 +125,10 @@ public class NullabilityReference
     }
 
     [Fact]
-    public void Sync_TrueMeansNotNull_StripsQuestion()
+    public async Task Sync_TrueMeansNotNull_StripsQuestion()
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
-            TestsHelper.RunHelper("""
+            await TestsHelper.RunHelperAsync("""
                                   [GenerateNonTryMethod]
                                   [GenerateNonTryOptions(returnGenerationStrategy: ReturnGenerationStrategy.TrueMeansNotNull)]
                                   public partial class TestClass

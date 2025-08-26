@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using MBW.Generators.OverloadGenerator.Tests.Helpers;
 using Microsoft.CodeAnalysis;
 using Xunit;

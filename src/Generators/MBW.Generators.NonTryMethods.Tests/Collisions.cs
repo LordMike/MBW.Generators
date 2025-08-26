@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using MBW.Generators.NonTryMethods.Tests.Helpers;
 using Microsoft.CodeAnalysis;
 using Xunit;
@@ -8,10 +9,10 @@ namespace MBW.Generators.NonTryMethods.Tests;
 public class Collisions
 {
     [Fact]
-    public void GeneratedVsExisting_SignatureCollision()
+    public async Task GeneratedVsExisting_SignatureCollision()
     {
         (string? _, IReadOnlyList<Diagnostic> diags) =
-            TestsHelper.RunHelper("""
+            await TestsHelper.RunHelperAsync("""
                                   [GenerateNonTryMethod]
                                   [GenerateNonTryOptions]
                                   public partial class TestClass
@@ -27,10 +28,10 @@ public class Collisions
     }
 
     [Fact]
-    public void MultipleAttributes_DuplicateSignature()
+    public async Task MultipleAttributes_DuplicateSignature()
     {
         (string? _, IReadOnlyList<Diagnostic> diags) =
-            TestsHelper.RunHelper("""
+            await TestsHelper.RunHelperAsync("""
                                   using System.Threading.Tasks;
                                   
                                   [GenerateNonTryMethod(methodNamePattern: "^Try(.*)$")]

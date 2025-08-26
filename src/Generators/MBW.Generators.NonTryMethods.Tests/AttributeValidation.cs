@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using MBW.Generators.NonTryMethods.Tests.Helpers;
 using Microsoft.CodeAnalysis;
 using Xunit;
@@ -8,10 +9,10 @@ namespace MBW.Generators.NonTryMethods.Tests;
 public class AttributeValidation
 {
     [Fact]
-    public void MRegularExpressionIsInvalid_Reported()
+    public async Task MRegularExpressionIsInvalid_Reported()
     {
         (string? _, IReadOnlyList<Diagnostic> diags) =
-            TestsHelper.RunHelper("""
+            await TestsHelper.RunHelperAsync("""
                                   [GenerateNonTryMethod(methodNamePattern: "^(Try)(.*)$")]
                                   
                                   public class TestClass

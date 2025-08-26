@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using MBW.Generators.NonTryMethods.Tests.Helpers;
 using MBW.Generators.Tests.Common;
 using Microsoft.CodeAnalysis;
@@ -9,10 +10,10 @@ namespace MBW.Generators.NonTryMethods.Tests;
 public class OutputNamespace
 {
     [Fact]
-    public void EmittedCode_HasNamespaceOfSource()
+    public async Task EmittedCode_HasNamespaceOfSource()
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
-            TestsHelper.RunHelper("""
+            await TestsHelper.RunHelperAsync("""
                                   namespace TestNamespace;
 
                                   [GenerateNonTryMethod]

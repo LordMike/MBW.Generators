@@ -19,7 +19,7 @@ internal static class AttributeConverters
             pattern = p;
 
         return new GenerateNonTryMethodAttributeInfo(
-            a.ApplicationSyntaxReference?.GetSyntax()?.GetLocation() ?? Location.None,
+            a.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? Location.None,
             exceptionType, pattern);
     }
 
