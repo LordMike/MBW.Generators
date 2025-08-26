@@ -3,55 +3,48 @@
   <PropertyGroup>
     <IsRoslynComponent>true</IsRoslynComponent>
 
-    <!-- Source generator guidelines indicates to ignore this --> 
+    <!-- Source generator guidelines indicates to ignore this -->
     <NoWarn>$(NoWarn);RS2008</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup>
     <Nullable>enable</Nullable>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
-    
     <AttributesProject>$(MSBuildProjectName).Attributes</AttributesProject>
   </PropertyGroup>
-  
+
   <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" PrivateAssets="all" />
-    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="4.14.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" PrivateAssets="all"/>
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="4.14.0" PrivateAssets="all"/>
   </ItemGroup>
 
-  <!-- Only when dev: enable logging output -->
-  <PropertyGroup Condition="'$(_IsPacking)' != 'true'">
-    <DefineConstants>$(DefineConstants);ENABLE_PIPE_LOGGING</DefineConstants>
-  </PropertyGroup>
-
-  <!-- Only when packing: embed the Common sources inside this project, for dev time: reference as project -->
   <Choose>
     <When Condition="'$(_IsPacking)' == 'true'">
+      <!-- Only when packing: embed the Common sources inside this project, for dev time: reference as project -->
       <ItemGroup>
         <Compile Include="$(MSBuildThisFileDirectory)/../src/Common/MBW.Generators.Common/**/*.cs"
                  Exclude="$(MSBuildThisFileDirectory)/../src/Common/MBW.Generators.Common/bin/**;$(MSBuildThisFileDirectory)/../src/Common/MBW.Generators.Common/obj/**"
-                 LinkBase="MBW.Generators.Common/" />
+                 LinkBase="MBW.Generators.Common/"/>
       </ItemGroup>
-    </When>
-    <Otherwise>
-      <ItemGroup>
-        <ProjectReference Include="$(MSBuildThisFileDirectory)/../src/Common/MBW.Generators.Common/MBW.Generators.Common.csproj" />
-      </ItemGroup>
-    </Otherwise>
-  </Choose>
 
-  <!-- Only when packing: embed the Attributes sources inside this project, for dev time: reference as project -->
-  <Choose>
-    <When Condition="'$(_IsPacking)' == 'true'">
+      <!-- Only when packing: embed the Attributes sources inside this project, for dev time: reference as project -->
       <ItemGroup>
         <Compile Include="$(MSBuildProjectDirectory)/../$(AttributesProject)/**/*.cs"
                  Exclude="$(MSBuildProjectDirectory)/../$(AttributesProject)/bin/**;$(MSBuildProjectDirectory)/../$(AttributesProject)/obj/**"
-                 LinkBase="$(AttributesProject)/" />
+                 LinkBase="$(AttributesProject)/"/>
       </ItemGroup>
+
     </When>
     <Otherwise>
+      <!-- Only when dev: enable logging output -->
+      <PropertyGroup>
+        <DefineConstants>$(DefineConstants);ENABLE_PIPE_LOGGING</DefineConstants>
+      </PropertyGroup>
+
+      <!-- Only in dev: reference attributes/common project directly -->
       <ItemGroup>
-        <ProjectReference Include="$(MSBuildProjectDirectory)/../$(AttributesProject)/$(AttributesProject).csproj" />
+        <ProjectReference Include="$(MSBuildThisFileDirectory)/../src/Common/MBW.Generators.Common/MBW.Generators.Common.csproj"/>
+        <ProjectReference Include="$(MSBuildProjectDirectory)/../$(AttributesProject)/$(AttributesProject).csproj"/>
       </ItemGroup>
     </Otherwise>
   </Choose>
