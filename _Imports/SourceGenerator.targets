@@ -48,8 +48,8 @@
   <Choose>
     <When Condition="'$(_IsPacking)' == 'true'">
       <ItemGroup>
-        <Compile Include="$(MSBuildProjectDirectory)../$(AttributesProject)/**/*.cs"
-                 Exclude="$(MSBuildProjectDirectory)../$(AttributesProject)/bin/**;$(MSBuildProjectDirectory)/../$(AttributesProject)/obj/**"
+        <Compile Include="$(MSBuildProjectDirectory)/../$(AttributesProject)/**/*.cs"
+                 Exclude="$(MSBuildProjectDirectory)/../$(AttributesProject)/bin/**;$(MSBuildProjectDirectory)/../$(AttributesProject)/obj/**"
                  LinkBase="$(AttributesProject)/" />
       </ItemGroup>
     </When>
