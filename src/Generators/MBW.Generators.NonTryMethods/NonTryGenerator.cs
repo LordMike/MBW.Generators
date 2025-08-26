@@ -19,7 +19,7 @@ public sealed class NonTryGenerator : GeneratorBase<NonTryGenerator>
 {
     protected override void InitializeInternal(IncrementalGeneratorInitializationContext context)
     {
-#if ENABLE_UNITY_COLLECTIONS_CHECKS
+#if ENABLE_PIPE_LOGGING
         context.RegisterSourceOutput(context.CompilationProvider, (_, _) => { Logger.Log("## Compilation run"); });
 #endif
 
@@ -111,10 +111,12 @@ public sealed class NonTryGenerator : GeneratorBase<NonTryGenerator>
                     }
                 }
 
+                var options = Gen.GetEffectiveOptions(knownSymbols!, typeSymbol);
+                
                 if (res == null)
                     return ImmutableArray<TypeSpec>.Empty;
 
-                TypeSpec typeSpec = new TypeSpec(knownSymbols!, typeSymbol, [..res]);
+                TypeSpec typeSpec = new TypeSpec(knownSymbols!, typeSymbol, [..res],options);
                 Logger.Log($"Type {typeSymbol.Name}, spec: {res.Count} methods, key: {typeSpec.Key}");
                 return [typeSpec];
             });

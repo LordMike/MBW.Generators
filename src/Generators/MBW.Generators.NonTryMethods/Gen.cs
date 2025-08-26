@@ -63,7 +63,7 @@ internal static class Gen
 
     public static TypeEmissionPlan DetermineTypeStrategy(TypeSpec spec)
     {
-        var opts = GetEffectiveOptions(spec);
+        var opts = spec.Options;
         var type = spec.Type;
         bool isInterface = type.TypeKind == TypeKind.Interface;
 
@@ -200,7 +200,7 @@ internal static class Gen
             attrib = matches[0];
         }
 
-        var opts = GetEffectiveOptions(typeSpec);
+        var opts = typeSpec.Options;
         var cls = ClassifyMethodShape(method, opts, ks);
         if (cls.Shape == MethodShape.NotEligible)
         {
@@ -367,10 +367,8 @@ internal static class Gen
         return [..deduped];
     }
 
-    private static GenerateNonTryOptionsAttributeInfo GetEffectiveOptions(TypeSpec spec)
+    internal static GenerateNonTryOptionsAttributeInfo GetEffectiveOptions(KnownSymbols ks, INamedTypeSymbol type)
     {
-        var ks = spec.Symbols;
-        var type = spec.Type;
         foreach (var ad in type.GetAttributes())
             if (SymbolEqualityComparer.Default.Equals(ad.AttributeClass, ks.GenerateNonTryOptionsAttribute))
                 return AttributeConverters.ToOptions(ad);

@@ -12,12 +12,15 @@ internal sealed class TypeSpec : IEquatable<TypeSpec>
     public readonly int Key;
     public readonly KnownSymbols Symbols;
     public readonly ImmutableArray<MethodSpec> Methods;
+    public readonly GenerateNonTryOptionsAttributeInfo Options;
 
-    public TypeSpec(KnownSymbols symbols, INamedTypeSymbol type, ImmutableArray<MethodSpec> methods)
+    public TypeSpec(KnownSymbols symbols, INamedTypeSymbol type, ImmutableArray<MethodSpec> methods,
+        GenerateNonTryOptionsAttributeInfo options)
     {
         Symbols = symbols;
         Type = type;
         Methods = methods;
+        Options = options;
 
         // Structural identity
         var hc = new HashCode();
@@ -38,6 +41,11 @@ internal sealed class TypeSpec : IEquatable<TypeSpec>
         // Methods
         foreach (var methodSpec in methods)
             hc.Add(methodSpec.Key);
+
+        // Options
+        hc.Add(options.AsyncCandidateStrategy);
+        hc.Add(options.MethodsGenerationStrategy);
+        hc.Add(options.ReturnGenerationStrategy);
 
         Key = hc.ToHashCode();
     }
