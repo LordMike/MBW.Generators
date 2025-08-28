@@ -1,4 +1,4 @@
-namespace MBW.Generators.NonTryMethods.GenerationModels;
+namespace MBW.Generators.NonTryMethods.Emitter;
 
 internal enum EmissionKind
 {

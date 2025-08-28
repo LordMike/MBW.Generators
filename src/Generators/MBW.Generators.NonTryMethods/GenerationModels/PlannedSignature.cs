@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using MBW.Generators.NonTryMethods.Emitter;
 using Microsoft.CodeAnalysis;
 
 namespace MBW.Generators.NonTryMethods.GenerationModels;

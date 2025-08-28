@@ -38,10 +38,8 @@ public class OutputNamespace
                            {
                                public int Method()
                                {
-                                   if (TryMethod(out var value))
-                                   {
+                                   if (this.TryMethod(out var value))
                                        return value;
-                                   }
 
                                    throw new InvalidOperationException();
                                }

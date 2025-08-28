@@ -129,25 +129,28 @@ public sealed class NonTryGenerator : GeneratorBase<NonTryGenerator>
 
                 try
                 {
-                    TypeEmissionPlan plan = Gen.DetermineTypeStrategy(typeSpec);
-                    ImmutableArray<PlannedMethod>
-                        planned = Gen.PlanAllMethods(ref diagnostics, typeSpec, plan);
-                    ImmutableArray<PlannedMethod> filtered =
-                        Gen.FilterCollisionsAndDuplicates(ref diagnostics, typeSpec, planned);
-
+                    var cu = Gen.BuildCompilationUnit(
+                        ref diagnostics,
+                        typeSpec,
+                        needsTasks: typeSpec.Methods.Any(m =>
+                        {
+                            // quick check: async tuple shape means Task/ValueTask
+                            return m.Method.ReturnType is INamedTypeSymbol rt &&
+                                   (SymbolEqualityComparer.Default.Equals(rt.OriginalDefinition, typeSpec.Symbols.TaskOfT) ||
+                                    SymbolEqualityComparer.Default.Equals(rt.OriginalDefinition, typeSpec.Symbols.ValueTaskOfT));
+                        }));
+                    
                     Logger.Log(
-                        $"Generating for {typeSpec.Type.Name}, plan: {plan}, methods: [{string.Join(", ", filtered.Select(x => x.Source.Method.Name))}]. Diagnostics: {diagnostics?.Count ?? 0}");
+                        $"Generating for {typeSpec.Type.Name}, plan: . Diagnostics: {diagnostics?.Count ?? 0}");
 
-                    if (filtered.Length == 0)
+                    if (!cu.Members.Any())
                     {
-                        Logger.Log(
-                            $"Not emitting for {typeSpec.Type.Name}, no methods after filtering. Originally had {planned.Length} methods to generate for");
-                        return new TypeSourceAndDiagnostics(null, null,
+                        Logger.Log($"Not emitting for {typeSpec.Type.Name}, no methods to generate");
+                        return new TypeSourceAndDiagnostics(
+                            null,
+                            null,
                             diagnostics?.ToImmutableArray() ?? ImmutableArray<Diagnostic>.Empty);
                     }
-
-                    CompilationUnitSyntax cu = Gen.BuildCompilationUnit(typeSpec, filtered,
-                        needsTasks: filtered.Any(pm => pm.IsAsync));
 
                     return new TypeSourceAndDiagnostics(
                         GenerationHelpers.GetHintName("NonTry", typeSpec.Type),

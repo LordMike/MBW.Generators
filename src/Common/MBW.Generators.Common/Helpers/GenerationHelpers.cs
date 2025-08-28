@@ -49,4 +49,12 @@ internal class GenerationHelpers
         while (reserved.Contains(name)) name = prefix + i++;
         return name;
     }
+
+    internal static string FindUnusedParamName(ISet<string> @params, string prefix)
+    {
+        string name = prefix;
+        int i = 1;
+        while (@params.Contains(name)) name = prefix + i++;
+        return name;
+    }
 }

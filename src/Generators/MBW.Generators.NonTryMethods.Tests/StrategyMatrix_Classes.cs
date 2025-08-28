@@ -33,10 +33,8 @@ public class StrategyMatrixClasses
                            {
                                public int Method()
                                {
-                                   if (TryMethod(out var v))
-                                   {
-                                       return v;
-                                   }
+                                   if (this.TryMethod(out var value))
+                                       return value;
 
                                    throw new InvalidOperationException();
                                }
@@ -66,10 +64,8 @@ public class StrategyMatrixClasses
                            {
                                public int Method()
                                {
-                                   if (TryMethod(out var v))
-                                   {
-                                       return v;
-                                   }
+                                   if (this.TryMethod(out var value))
+                                       return value;
 
                                    throw new InvalidOperationException();
                                }
@@ -99,10 +95,8 @@ public class StrategyMatrixClasses
                            {
                                public static int Method(this TestClass self)
                                {
-                                   if (self.TryMethod(out var v))
-                                   {
-                                       return v;
-                                   }
+                                   if (self.TryMethod(out var value))
+                                       return value;
 
                                    throw new InvalidOperationException();
                                }

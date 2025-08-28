@@ -38,10 +38,8 @@ public class Visibility
                              {
                                  {{accessibility}} int Method()
                                  {
-                                     if (TryMethod(out var value))
-                                     {
+                                     if (this.TryMethod(out var value))
                                          return value;
-                                     }
 
                                      throw new InvalidOperationException();
                                  }
@@ -59,7 +57,7 @@ public class Visibility
                                   [GenerateNonTryMethod]
                                   public partial interface TestInterface
                                   {
-                                      bool TryMethod(out int v);
+                                      bool TryMethod(out int value);
                                   }
                                   """);
         Assert.Empty(diags);
@@ -72,10 +70,8 @@ public class Visibility
                            {
                                int Method()
                                {
-                                   if (TryMethod(out var v))
-                                   {
-                                       return v;
-                                   }
+                                   if (this.TryMethod(out var value))
+                                       return value;
 
                                    throw new InvalidOperationException();
                                }

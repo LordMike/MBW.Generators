@@ -35,11 +35,9 @@ public class Patterns
                            {
                                public async Task<string?> MethodAsync()
                                {
-                                   var tmp = await TryMethodAsync();
-                                   if (tmp.Item1)
-                                   {
-                                       return tmp.Item2;
-                                   }
+                                   var t = await this.TryMethodAsync();
+                                   if (t.Item1)
+                                       return t.Item2;
 
                                    throw new InvalidOperationException();
                                }

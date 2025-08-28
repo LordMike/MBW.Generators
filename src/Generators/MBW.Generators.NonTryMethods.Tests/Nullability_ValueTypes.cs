@@ -35,11 +35,9 @@ public class NullabilityValueTypes
                            {
                                public async Task<int?> MethodAsync()
                                {
-                                   var tmp = await TryMethodAsync();
-                                   if (tmp.Item1)
-                                   {
-                                       return tmp.Item2;
-                                   }
+                                   var t = await this.TryMethodAsync();
+                                   if (t.Item1)
+                                       return t.Item2;
 
                                    throw new InvalidOperationException();
                                }
@@ -73,11 +71,9 @@ public class NullabilityValueTypes
                            {
                                public async Task<int> MethodAsync()
                                {
-                                   var tmp = await TryMethodAsync();
-                                   if (tmp.Item1)
-                                   {
-                                       return tmp.Item2.Value;
-                                   }
+                                   var t = await this.TryMethodAsync();
+                                   if (t.Item1)
+                                       return t.Item2.Value;
 
                                    throw new InvalidOperationException();
                                }
@@ -111,10 +107,8 @@ public class NullabilityValueTypes
                            {
                                public int? Method()
                                {
-                                   if (TryMethod(out var value))
-                                   {
+                                   if (this.TryMethod(out var value))
                                        return value;
-                                   }
 
                                    throw new InvalidOperationException();
                                }
@@ -148,10 +142,8 @@ public class NullabilityValueTypes
                            {
                                public int Method()
                                {
-                                   if (TryMethod(out var value))
-                                   {
+                                   if (this.TryMethod(out var value))
                                        return value.Value;
-                                   }
 
                                    throw new InvalidOperationException();
                                }

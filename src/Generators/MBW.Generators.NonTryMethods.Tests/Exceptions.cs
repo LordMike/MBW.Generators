@@ -35,10 +35,8 @@ public class Exceptions
                            {
                                public int Method()
                                {
-                                   if (TryMethod(out var v))
-                                   {
-                                       return v;
-                                   }
+                                   if (this.TryMethod(out var value))
+                                       return value;
 
                                    throw new MyEx();
                                }

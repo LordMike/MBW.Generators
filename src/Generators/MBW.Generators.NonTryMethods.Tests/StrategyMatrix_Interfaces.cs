@@ -18,7 +18,7 @@ public class StrategyMatrixInterfaces
                                   [GenerateNonTryOptions(methodsGenerationStrategy: MethodsGenerationStrategy.Auto)]
                                   public partial interface TestInterface
                                   {
-                                      bool TryMethod(out int v);
+                                      bool TryMethod(out int value);
                                   }
                                   """);
         Assert.Empty(diags);
@@ -31,10 +31,8 @@ public class StrategyMatrixInterfaces
                            {
                                int Method()
                                {
-                                   if (TryMethod(out var v))
-                                   {
-                                       return v;
-                                   }
+                                   if (this.TryMethod(out var value))
+                                       return value;
 
                                    throw new InvalidOperationException();
                                }
@@ -65,10 +63,8 @@ public class StrategyMatrixInterfaces
                            {
                                int Method()
                                {
-                                   if (TryMethod(out var v))
-                                   {
-                                       return v;
-                                   }
+                                   if (this.TryMethod(out var value))
+                                       return value;
 
                                    throw new InvalidOperationException();
                                }
@@ -99,10 +95,8 @@ public class StrategyMatrixInterfaces
                            {
                                public static int Method(this TestInterface self)
                                {
-                                   if (self.TryMethod(out var v))
-                                   {
-                                       return v;
-                                   }
+                                   if (self.TryMethod(out var value))
+                                       return value;
 
                                    throw new InvalidOperationException();
                                }
