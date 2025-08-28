@@ -112,18 +112,18 @@ public sealed class NonTryGenerator : GeneratorBase<NonTryGenerator>
                 }
 
                 var options = Gen.GetEffectiveOptions(knownSymbols!, typeSymbol);
-                
+
                 if (res == null)
                     return ImmutableArray<TypeSpec>.Empty;
 
-                TypeSpec typeSpec = new TypeSpec(knownSymbols!, typeSymbol, [..res],options);
+                TypeSpec typeSpec = new TypeSpec(knownSymbols!, typeSymbol, [..res], options);
                 Logger.Log($"Type {typeSymbol.Name}, spec: {res.Count} methods, key: {typeSpec.Key}");
                 return [typeSpec];
             });
 
         // Generate source
-        IncrementalValuesProvider<TypeSourceAndDiagnostics> sourceProvider = includedTypesProvider
-            .Select((typeSpec, _) =>
+        context.RegisterSourceOutput(includedTypesProvider,
+            (productionContext, typeSpec) =>
             {
                 List<Diagnostic>? diagnostics = null;
 
@@ -142,42 +142,30 @@ public sealed class NonTryGenerator : GeneratorBase<NonTryGenerator>
                     {
                         Logger.Log(
                             $"Not emitting for {typeSpec.Type.Name}, no methods after filtering. Originally had {planned.Length} methods to generate for");
-                        return new TypeSourceAndDiagnostics(null, null,
-                            diagnostics?.ToImmutableArray() ?? ImmutableArray<Diagnostic>.Empty);
+                        return;
                     }
 
                     CompilationUnitSyntax cu = Gen.BuildCompilationUnit(typeSpec, filtered,
                         needsTasks: filtered.Any(pm => pm.IsAsync));
 
-                    return new TypeSourceAndDiagnostics(
-                        GenerationHelpers.GetHintName("NonTry", typeSpec.Type),
-                        SourceText.From(cu.NormalizeWhitespace().ToFullString(), Encoding.UTF8),
-                        diagnostics?.ToImmutableArray() ?? ImmutableArray<Diagnostic>.Empty);
+                    string hintName = GenerationHelpers.GetHintName("NonTry", typeSpec.Type);
+
+                    Logger.Log($"Emitting {hintName}");
+                    productionContext.AddSource(hintName,
+                        SourceText.From(cu.NormalizeWhitespace().ToFullString(), Encoding.UTF8));
                 }
                 catch (Exception e)
                 {
-                    Logger.Log(e, "Generate");
-                    return default;
+                    Logger.Log(e, "Generate threw an exception");
                 }
-            });
-
-        context.RegisterSourceOutput(sourceProvider,
-            (productionContext, source) =>
-            {
-                if (source == default)
-                    return;
-
-                if (!source.Diagnostics.IsDefaultOrEmpty)
+                finally
                 {
-                    Logger.Log($"Emitting {source.Diagnostics.Length} diagnostics");
-                    foreach (var sourceDiagnostic in source.Diagnostics)
-                        productionContext.ReportDiagnostic(sourceDiagnostic);
-                }
-
-                if (source is { HintName: not null, Source: not null })
-                {
-                    Logger.Log($"Emitting {source.HintName}");
-                    productionContext.AddSource(source.HintName, source.Source);
+                    if (diagnostics != null)
+                    {
+                        Logger.Log($"Emitting {diagnostics.Count} diagnostics");
+                        foreach (var sourceDiagnostic in diagnostics)
+                            productionContext.ReportDiagnostic(sourceDiagnostic);
+                    }
                 }
             });
     }
