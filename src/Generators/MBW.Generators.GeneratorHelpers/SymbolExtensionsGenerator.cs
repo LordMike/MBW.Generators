@@ -203,6 +203,10 @@ public sealed class SymbolExtensionsGenerator : IIncrementalGenerator
         var methodSuffix = field.MethodName;
         var innermost = field.TypeSegments![field.TypeSegments.Length - 1];
 
+        var nsString = string.Join(".", field.NamespaceSegments);
+        var typeString = string.Join("+", field.TypeSegments.Select(s => s.Value));
+        var fullName = nsString + "." + typeString;
+
         // Build dynamic chains for containing types
         var containingTypes = new StringBuilder();
         string current = "t0";
@@ -240,6 +244,9 @@ public sealed class SymbolExtensionsGenerator : IIncrementalGenerator
                """;
 
         return $$"""
+                     /// <summary>Returns <see langword="true"/> when <paramref name="symbol"/> is exactly <c>{{fullName}}</c>.</summary>
+                     /// <param name="symbol">Symbol to check.</param>
+                     /// <returns><see langword="true"/> if <paramref name="symbol"/> is <c>{{fullName}}</c>.</returns>
                      public static bool IsNamedExactlyType{{methodSuffix}}(this ISymbol? symbol)
                      {
                  {{head}}{{containingTypes}}        if ({{current}}.ContainingType is not null) return false;
@@ -254,6 +261,7 @@ public sealed class SymbolExtensionsGenerator : IIncrementalGenerator
     {
         var suffix = field.MethodName;
         var segments = field.NamespaceSegments;
+        var nsString = string.Join(".", segments);
 
         // Build the aligned "IsInNamespace" ladder
         var inNsChecks = new StringBuilder();
@@ -278,16 +286,25 @@ public sealed class SymbolExtensionsGenerator : IIncrementalGenerator
         }
 
         return $$"""
+                     /// <summary>Returns <see langword="true"/> when the namespace of <paramref name="symbol"/> is <c>{{nsString}}</c> or nested within it.</summary>
+                     /// <param name="symbol">Symbol to check.</param>
+                     /// <returns><see langword="true"/> if <paramref name="symbol"/> is declared in <c>{{nsString}}</c> or a sub-namespace.</returns>
                      public static bool IsInNamespace{{suffix}}(this ISymbol? symbol)
                      {
                          return IsInNamespace{{suffix}}(symbol as INamespaceSymbol ?? symbol?.ContainingNamespace);
                      }
 
+                     /// <summary>Returns <see langword="true"/> when the namespace of <paramref name="symbol"/> is exactly <c>{{nsString}}</c>.</summary>
+                     /// <param name="symbol">Symbol to check.</param>
+                     /// <returns><see langword="true"/> if the namespace is exactly <c>{{nsString}}</c>.</returns>
                      public static bool IsExactlyInNamespace{{suffix}}(this ISymbol? symbol)
                      {
                          return IsExactlyNamespace{{suffix}}(symbol as INamespaceSymbol ?? symbol?.ContainingNamespace);
                      }
 
+                     /// <summary>Returns <see langword="true"/> when <paramref name="ns"/> is <c>{{nsString}}</c> or nested within it.</summary>
+                     /// <param name="ns">Namespace symbol to check.</param>
+                     /// <returns><see langword="true"/> if <paramref name="ns"/> is <c>{{nsString}}</c> or a sub-namespace.</returns>
                      public static bool IsInNamespace{{suffix}}(this INamespaceSymbol? ns)
                      {
                          if (ns is null) return false;
@@ -298,6 +315,9 @@ public sealed class SymbolExtensionsGenerator : IIncrementalGenerator
                  {{inNsChecks}}        return true;
                      }
 
+                     /// <summary>Returns <see langword="true"/> when <paramref name="ns"/> is exactly <c>{{nsString}}</c>.</summary>
+                     /// <param name="ns">Namespace symbol to check.</param>
+                     /// <returns><see langword="true"/> if <paramref name="ns"/> equals <c>{{nsString}}</c>.</returns>
                      public static bool IsExactlyNamespace{{suffix}}(this INamespaceSymbol? ns)
                      {
                          if (ns is null) return false;
