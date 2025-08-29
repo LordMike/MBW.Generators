@@ -8,6 +8,7 @@ namespace MBW.Generators.OverloadGenerator.Attributes;
 public sealed class DefaultOverloadAttribute(string parameterName, string defaultExpression) : Attribute
 {
     public string ParameterName { get; } = parameterName;
+    public Type? ParameterType { get; set; }
     public string DefaultExpression { get; } = defaultExpression;
     public string MethodNameMatch { get; set; } = "^(.*)$";
     public string? MethodNameReplace { get; set; }

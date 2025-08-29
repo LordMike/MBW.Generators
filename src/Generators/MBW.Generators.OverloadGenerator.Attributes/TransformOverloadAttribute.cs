@@ -13,6 +13,7 @@ public sealed class TransformOverloadAttribute(
     : Attribute
 {
     public string ParameterName { get; } = parameterName;
+    public Type? ParameterType { get; set; }
     public Type NewType { get; } = newType;
     public string TransformExpression { get; } = transformExpression;
     public TypeNullability NewTypeNullability { get; } = newTypeNullability;
