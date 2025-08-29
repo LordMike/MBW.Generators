@@ -8,7 +8,7 @@ Picture a repository with a `TryFind` method that returns a `bool` and an `out` 
 ## Quick Start
 - Install the `MBW.Generators.NonTryMethods` and `MBW.Generators.NonTryMethods.Attributes` packages.
 - Add `[GenerateNonTryMethod]` (and optionally `[GenerateNonTryOptions]`) at the assembly or type level.
-- By default, methods matching the regex `^[Tt]ry(.*)` with a `bool` return and an `out` parameter are wrapped. Generated methods return the `out` value or throw `InvalidOperationException`. Generated members are emitted into partial types; set `MethodsGenerationStrategy.Extensions` to produce extension methods instead.
+- By default, methods matching the regex `^[Tt]ry(.*)` with a `bool` return and an `out` parameter are wrapped, as are async methods returning `Task<(bool, T)>` or `ValueTask<(bool, T)>`. Generated methods return the success value or throw `InvalidOperationException`. Generated members are emitted into partial types; set `MethodsGenerationStrategy.Extensions` to produce extension methods instead.
 
 Attributes and generator are in separate packages so you can reference the attributes without running the generator.
 
@@ -53,7 +53,8 @@ partial class Repository
 - Emits diagnostics to guide correct usage, including invalid regex patterns, duplicate signatures, and collisions with existing members.
 - Generated methods include XML documentation that references the source method.
 - Generates partial members, extensions, and interface implementations with default bodies.
-- Preserves visibility and parameter names from the source methods.
+- Preserves visibility, parameter names, modifiers (`ref`, `in`, `out`, `params`) and default values from the source methods.
+- Extension methods respect value-type receivers by adding `ref` or `in` where required.
 
 ## Attributes
 - **GenerateNonTryMethodAttribute** – apply to an assembly, class, interface or struct. Selects which try methods are wrapped.

@@ -1,9 +1,17 @@
 # AGENTS
 
 ## Naming conventions
-- Each source generator lives under `src/MBW.Generators.{Feature}`.
-- The generator project itself is named `MBW.Generators.{Feature}`.
-- Any related project (tests, abstractions, samples, etc.) should be prefixed with the same name, e.g. `MBW.Generators.{Feature}.Tests`, `MBW.Generators.{Feature}.Abstracts`.
+- Each source generator lives under `src/Generators/MBW.Generators.{Feature}`.
+- Projects use the prefix `MBW.Generators.{Feature}`:
+  - `MBW.Generators.{Feature}` – generator.
+  - `MBW.Generators.{Feature}.Attributes` – attribute definitions.
+  - `MBW.Generators.{Feature}.Tests` – tests.
+- Any additional project (abstractions, samples, etc.) should keep the same prefix.
+
+## Project structure
+- Generators, attributes, and tests are separate projects wired together via the `_Imports` targets.
+- During development the generator references the attributes project so editors can navigate attribute sources and namespaces.
+- When packing, `_Imports/SourceGenerator.targets` links attribute files instead of referencing the project, avoiding a package dependency while retaining editor support.
 
 ## Building
 - Build the entire solution:
@@ -12,7 +20,7 @@
   ```
 - Build a specific generator project:
   ```
-  dotnet build src/MBW.Generators.{Feature}/MBW.Generators.{Feature}.csproj
+  dotnet build src/Generators/MBW.Generators.{Feature}/MBW.Generators.{Feature}.csproj
   ```
 
 ## Testing
@@ -22,12 +30,12 @@
   ```
 - Run tests for a specific project:
   ```
-  dotnet test src/MBW.Generators.{Feature}.Tests/MBW.Generators.{Feature}.Tests.csproj
+  dotnet test src/Generators/MBW.Generators.{Feature}.Tests/MBW.Generators.{Feature}.Tests.csproj
   ```
 
 ## Documentation
 - The repository root `README.md` introduces the project and lists all generators in a table. Each entry links to the generator's `README.md` using a relative path with the `#readme` fragment.
-- Each generator project under `src/MBW.Generators.{Feature}` must have a `README.md` with these sections in order:
+- Each generator project under `src/Generators/MBW.Generators.{Feature}` must have a `README.md` with these sections in order:
   1. `## About` – two or three short paragraphs describing the generator and a sample scenario.
   2. `## Quick Start` – a short bullet list covering:
      - installing both the generator and attribute packages,
