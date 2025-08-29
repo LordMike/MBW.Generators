@@ -73,7 +73,7 @@ public static class GeneratorTestHelper
 
         CSharpCompilation compilation = CSharpCompilation.Create(
             "Tests",
-            new[] { globalUsings, syntaxTree },
+            [globalUsings, syntaxTree],
             refs,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true));
 
