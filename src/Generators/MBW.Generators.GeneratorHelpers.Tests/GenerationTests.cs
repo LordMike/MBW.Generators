@@ -143,18 +143,26 @@ public class GenerationTests
         Assert.Empty(diags);
 
         var harness = """
+                      using System;
+                      using System.Linq;
                       using Microsoft.CodeAnalysis;
                       using Microsoft.CodeAnalysis.CSharp;
+                      
                       public static class RuntimeHarness
                       {
                           public static bool[] Run()
                           {
-                              var compilation = CSharpCompilation.Create("X");
+                              var refs = AppDomain.CurrentDomain.GetAssemblies()
+                                  .Where(a => !a.IsDynamic && !string.IsNullOrEmpty(a.Location))
+                                  .Select(a => MetadataReference.CreateFromFile(a.Location));
+                              
+                              var compilation = CSharpCompilation.Create("X", references: refs);
                               var exceptionType = compilation.GetTypeByMetadataName("System.Exception");
                               var intType = compilation.GetTypeByMetadataName("System.Int32");
                               var ns = exceptionType!.ContainingNamespace;
                               var global = ns.ContainingNamespace;
-                              return new[]{
+                              
+                              return new bool[]{
                                   exceptionType!.IsNamedExactlyTypeExceptionType(),
                                   intType!.IsNamedExactlyTypeExceptionType(),
                                   exceptionType!.IsInNamespaceSystemNs(),
@@ -165,8 +173,13 @@ public class GenerationTests
                       }
                       """;
 
+        SyntaxTree globalUsings = CSharpSyntaxTree.ParseText(
+            "global using MBW.Generators.GeneratorHelpers.Attributes;",
+            new CSharpParseOptions(LanguageVersion.Latest));
+
         var syntaxTrees = new[]
         {
+            globalUsings,
             CSharpSyntaxTree.ParseText(source),
             CSharpSyntaxTree.ParseText(generated!),
             CSharpSyntaxTree.ParseText(harness)
@@ -179,11 +192,15 @@ public class GenerationTests
         var compilation = CSharpCompilation.Create("Runtime", syntaxTrees, refs,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
+        Assert.Empty(compilation.GetDiagnostics()
+            .Where(s => s.Severity == DiagnosticSeverity.Error));
+
         using var ms = new MemoryStream();
-        var result = compilation.Emit(ms);
+        using var msPdb = new MemoryStream();
+        var result = compilation.Emit(ms, msPdb);
         Assert.True(result.Success);
 
-        var asm = Assembly.Load(ms.ToArray());
+        var asm = Assembly.Load(ms.ToArray(), msPdb.ToArray());
         var run = asm.GetType("RuntimeHarness")!.GetMethod("Run")!;
         var arr = (bool[])run.Invoke(null, null)!;
 
