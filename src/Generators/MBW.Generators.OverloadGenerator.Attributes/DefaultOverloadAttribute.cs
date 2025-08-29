@@ -5,15 +5,9 @@ namespace MBW.Generators.OverloadGenerator.Attributes;
 
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = true, Inherited = false)]
 [Conditional("NEVER_RENDER")]
-public sealed class DefaultOverloadAttribute : Attribute
+public sealed class DefaultOverloadAttribute(string parameterName, string defaultExpression) : Attribute
 {
-    public DefaultOverloadAttribute(string parameter, string defaultExpression)
-    {
-        Parameter = parameter;
-        DefaultExpression = defaultExpression;
-    }
-
-    public string Parameter { get; }
-    public string DefaultExpression { get; }
+    public string ParameterName { get; } = parameterName;
+    public string DefaultExpression { get; } = defaultExpression;
     public string[]? Usings { get; set; }
 }
