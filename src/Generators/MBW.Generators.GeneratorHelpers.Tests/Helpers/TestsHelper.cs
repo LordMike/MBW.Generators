@@ -12,13 +12,15 @@ internal static class TestsHelper
 {
     internal static async Task<(string? output, IReadOnlyList<Diagnostic> diags)> RunHelperAsync(string input, string[]? expectedDiagnostics = null)
     {
-        // var analysis = await GeneratorTestHelper.RunAnalyzer<SymbolExtensionsAnalyzer>(input, expectedDiagnostics ?? Array.Empty<string>(),
-        //     new[] { "MBW.Generators.GeneratorHelpers" }, typeof(GenerateSymbolExtensionsAttribute));
-        //
-        // if (analysis.Length > 0)
-        //     return (null, analysis);
+        var analysis = await GeneratorTestHelper.RunAnalyzer<SymbolExtensionsAnalyzer>(input,
+            expectedDiagnostics ?? Array.Empty<string>(),
+            new[] { "MBW.Generators.GeneratorHelpers" }, typeof(GenerateSymbolExtensionsAttribute));
 
-        var (sources, diags) = GeneratorTestHelper.RunGenerator<SymbolExtensionsGenerator>(input, expectedDiagnostics ?? Array.Empty<string>(),
+        if (analysis.Length > 0)
+            return (null, analysis);
+
+        var (sources, diags) = GeneratorTestHelper.RunGenerator<SymbolExtensionsGenerator>(input,
+            expectedDiagnostics ?? Array.Empty<string>(),
             new[] { "MBW.Generators.GeneratorHelpers" }, typeof(GenerateSymbolExtensionsAttribute));
 
         return sources.Count switch
