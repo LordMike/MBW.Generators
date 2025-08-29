@@ -2,16 +2,23 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace MBW.Generators.NonTryMethods.Attributes;
 
+/// <summary>
+/// Controls how the return type of generated non-<c>Try</c> methods is
+/// inferred from the original method's <c>out</c> parameter.
+/// </summary>
 [SuppressMessage("ReSharper", "RedundantNameQualifier")]
 public enum ReturnGenerationStrategy
 {
     /// <summary>
-    /// Ensure the returned type on non-try methods exactly matches that of the Try-methods out parameter "value".
+    /// Match the return type exactly to the <c>out</c> parameter, preserving
+    /// any nullability annotations.
     /// </summary>
     Verbatim = 0,
-    
+
     /// <summary>
-    /// The non-try variant of the Try method will assume that a "true" value indicates a non-null "value". The generated method will therefore not have any nullability associated.
+    /// Assume that a <c>true</c> result from the <c>Try</c> method implies a
+    /// non-null <c>out</c> value and remove nullable annotations from the
+    /// generated return type.
     /// </summary>
-    TrueMeansNotNull = 1
+    TrueMeansNotNull = 1,
 }
