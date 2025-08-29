@@ -8,21 +8,21 @@ Useful when analyzing large code bases where repeated string construction would 
 ## Quick Start
 - Install the `MBW.Generators.GeneratorHelpers` and `MBW.Generators.GeneratorHelpers.Attributes` packages.
 - Apply `[GenerateSymbolExtensions]` to a `class` or `struct` containing annotated `const string` fields.
-- By default, generated extension classes reside in `Microsoft.CodeAnalysis` and are named `<TypeName>Extensions`.
+- Override the generated extensions class name and namespace via the attribute’s `Name` and `Namespace` properties. Defaults to `<TypeName>Extensions` in `Microsoft.CodeAnalysis`.
+- Per-field `MethodName` overrides customise the method suffix for `[SymbolNameExtension]` and `[NamespaceNameExtension]`.
+- Fully qualified strings support the `global::` prefix, nested types using `+`, and generic metadata names like ``Dictionary`2``.
 - Attributes and generator ship in separate packages so you can opt out of running the generator.
 
 ## Example
 ```csharp
 using MBW.Generators.GeneratorHelpers;
+using MBW.Generators.GeneratorHelpers.Attributes;
 
-[GenerateSymbolExtensions]
+[GenerateSymbolExtensions(Name = "KnownExtensions", Namespace = "My.Helpers")]
 internal static class Known
 {
-    [SymbolNameExtension]
+    [SymbolNameExtension(MethodName = "Exception")]
     public const string ExceptionType = "global::System.Exception";
-
-    [NamespaceNameExtension]
-    public const string SystemNs = "System";
 }
 ```
 Generates
@@ -31,60 +31,34 @@ Generates
 using System;
 using Microsoft.CodeAnalysis;
 
-namespace Microsoft.CodeAnalysis;
+namespace My.Helpers;
 
 internal static class KnownExtensions
 {
-    public static bool IsNamedExactlyTypeExceptionType(this ISymbol? symbol)
+    public static bool IsNamedExactlyTypeException(this ISymbol? symbol)
     {
+        if (symbol is null) return false;
+        if (!symbol.Name.Equals("Exception", StringComparison.Ordinal)) return false;
         if (symbol is not INamedTypeSymbol t0) return false;
-        if (!string.Equals(t0.MetadataName, "Exception", StringComparison.Ordinal)) return false;
         if (t0.ContainingType is not null) return false;
         var ns = t0.ContainingNamespace;
-        if (!string.Equals(ns.Name, "System", StringComparison.Ordinal)) return false;
+        if (ns is null || !ns.Name.Equals("System", StringComparison.Ordinal)) return false;
         ns = ns.ContainingNamespace;
-        return ns.IsGlobalNamespace;
-    }
-
-    public static bool IsInNamespaceSystemNs(this ISymbol? symbol)
-    {
-        return IsInNamespaceSystemNs(symbol as INamespaceSymbol ?? symbol?.ContainingNamespace);
-    }
-
-    public static bool IsExactlyInNamespaceSystemNs(this ISymbol? symbol)
-    {
-        return IsExactlyNamespaceSystemNs(symbol as INamespaceSymbol ?? symbol?.ContainingNamespace);
-    }
-
-    public static bool IsInNamespaceSystemNs(this INamespaceSymbol? ns)
-    {
-        for (var current = ns; current is not null && !current.IsGlobalNamespace; current = current.ContainingNamespace)
-        {
-            if (string.Equals(current.Name, "System", StringComparison.Ordinal))
-                return true;
-        }
-        return false;
-    }
-
-    public static bool IsExactlyNamespaceSystemNs(this INamespaceSymbol? ns)
-    {
-        if (ns is null) return false;
-        if (!string.Equals(ns.Name, "System", StringComparison.Ordinal)) return false;
-        ns = ns.ContainingNamespace;
-        return ns.IsGlobalNamespace;
+        return ns != null && ns.IsGlobalNamespace;
     }
 }
 ```
 
 ## Features
 - Generates allocation-free helpers for types and namespaces.
-- Handles nested and generic types.
+- Handles nested and generic types, including names with `global::` and multiple containing types.
 - Provides `ISymbol` and `INamespaceSymbol` overloads for namespace checks.
+- Supports custom extension class name/namespace and per-field method name overrides.
 
 ## Attributes
 - **GenerateSymbolExtensionsAttribute** – apply to a type to opt in. Controls generated class name and namespace.
-- **SymbolNameExtensionAttribute** – place on a `const string` field containing a fully qualified type name. Generates `IsNamedExactlyTypeN`.
-- **NamespaceNameExtensionAttribute** – place on a `const string` field containing a fully qualified namespace. Generates `IsInNamespaceN`, `IsExactlyInNamespaceN`, `IsInNamespaceN` (`INamespaceSymbol`), and `IsExactlyNamespaceN`.
+- **SymbolNameExtensionAttribute** – place on a `const string` field containing a fully qualified type name. Optional `MethodName` override for the generated method suffix.
+- **NamespaceNameExtensionAttribute** – place on a `const string` field containing a fully qualified namespace. Generates `IsInNamespaceN`, `IsExactlyInNamespaceN`, `IsInNamespaceN` (`INamespaceSymbol`), and `IsExactlyNamespaceN`. Optional `MethodName` override.
 
 ## More information
 This project is provided as-is without support. Additional examples will be available in the [tests](../MBW.Generators.GeneratorHelpers.Tests).
