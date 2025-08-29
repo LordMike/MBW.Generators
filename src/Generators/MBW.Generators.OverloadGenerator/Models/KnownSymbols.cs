@@ -4,11 +4,8 @@ namespace MBW.Generators.OverloadGenerator.Models;
 
 internal sealed class KnownSymbols
 {
-    public const string DefaultOverloadAttributeName =
-        "MBW.Generators.OverloadGenerator.Attributes.DefaultOverloadAttribute";
-
-    public const string TransformOverloadAttributeName =
-        "MBW.Generators.OverloadGenerator.Attributes.TransformOverloadAttribute";
+    public const string DefaultOverloadAttributeName = "MBW.Generators.OverloadGenerator.Attributes.DefaultOverloadAttribute";
+    public const string TransformOverloadAttributeName = "MBW.Generators.OverloadGenerator.Attributes.TransformOverloadAttribute";
 
     public readonly INamedTypeSymbol DefaultOverloadAttribute;
     public readonly INamedTypeSymbol TransformOverloadAttribute;

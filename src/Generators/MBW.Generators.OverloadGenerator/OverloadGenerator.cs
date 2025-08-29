@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using MBW.Generators.Common;
-using MBW.Generators.OverloadGenerator.Attributes;
 using MBW.Generators.OverloadGenerator.Models;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -12,118 +12,115 @@ namespace MBW.Generators.OverloadGenerator;
 [Generator]
 public sealed class OverloadGenerator : GeneratorBase<OverloadGenerator>
 {
-    private const string TransformAttributeName =
-        "MBW.Generators.OverloadGenerator.Attributes.TransformOverloadAttribute";
-
-    private const string DefaultAttributeName = "MBW.Generators.OverloadGenerator.Attributes.DefaultOverloadAttribute";
-
     protected override void InitializeInternal(IncrementalGeneratorInitializationContext context)
     {
-        IncrementalValueProvider<ImmutableArray<MethodModel>> methods = context.SyntaxProvider.CreateSyntaxProvider(
-                static (node, _) => IsCandidate(node),
-                static (ctx, _) => GetMethod(ctx))
-            .Where(static m => m is not null)
-            .Select((m, _) => m!)
-            .Collect();
+#if ENABLE_PIPE_LOGGING
+        context.RegisterSourceOutput(context.CompilationProvider, (_, _) => { Logger.Log("## Compilation run"); });
+#endif
 
-        IncrementalValueProvider<(Compilation Left, ImmutableArray<MethodModel> Right)> compilationAndMethods =
-            context.CompilationProvider.Combine(methods);
+        IncrementalValueProvider<KnownSymbols?> knownSymbolsProvider =
+            context.CompilationProvider.Select((comp, _) => KnownSymbols.TryCreateInstance(comp));
 
-        context.RegisterSourceOutput(compilationAndMethods,
-            static (spc, source) => OverloadCodeGen.Execute(spc, source.Right));
-    }
+        IncrementalValueProvider<AttributesCollection> assemblyAttributesProvider = knownSymbolsProvider
+            .Combine(context.CompilationProvider)
+            .Select((t, _) => AttributesCollection.From(t.Left, t.Right.Assembly));
 
-    private static bool IsCandidate(SyntaxNode node)
-    {
-        if (node is MethodDeclarationSyntax m)
-        {
-            if (HasOurAttribute(m.AttributeLists))
-                return true;
-            if (m.Parent is TypeDeclarationSyntax t && HasOurAttribute(t.AttributeLists))
-                return true;
-        }
+        IncrementalValuesProvider<INamedTypeSymbol> allTypesProvider = context.SyntaxProvider
+            .CreateSyntaxProvider(
+                static (node, _) => node is TypeDeclarationSyntax asType &&
+                                    asType.Kind() is SyntaxKind.ClassDeclaration or
+                                        SyntaxKind.InterfaceDeclaration or
+                                        SyntaxKind.StructDeclaration or
+                                        SyntaxKind.RecordDeclaration or
+                                        SyntaxKind.RecordStructDeclaration,
+                static (ctx, _) => (INamedTypeSymbol)ctx.SemanticModel.GetDeclaredSymbol(ctx.Node)!);
 
-        return false;
-    }
-
-    private static bool HasOurAttribute(SyntaxList<AttributeListSyntax> lists)
-    {
-        foreach (AttributeListSyntax list in lists)
-        foreach (AttributeSyntax attr in list.Attributes)
-        {
-            string name = attr.Name.ToString();
-            if (name.Contains("TransformOverload") || name.Contains("DefaultOverload"))
-                return true;
-        }
-
-        return false;
-    }
-
-    private static MethodModel? GetMethod(GeneratorSyntaxContext context)
-    {
-        MethodDeclarationSyntax methodSyntax = (MethodDeclarationSyntax)context.Node;
-        if (context.SemanticModel.GetDeclaredSymbol(methodSyntax) is not { } methodSymbol)
-            return null;
-
-        List<Rule> rules = new List<Rule>();
-
-        // class-level attributes
-        foreach (AttributeData? attr in methodSymbol.ContainingType.GetAttributes())
-        {
-            if (attr.AttributeClass?.ToDisplayString() == TransformAttributeName)
+        IncrementalValuesProvider<TypeSpec> includedTypesProvider = allTypesProvider
+            .Combine(knownSymbolsProvider)
+            .Combine(assemblyAttributesProvider)
+            .SelectMany(static (tuple, _) =>
             {
-                TransformRule? rule = ParseTransform(attr);
-                if (rule != null)
-                    rules.Add(rule);
-            }
-            else if (attr.AttributeClass?.ToDisplayString() == DefaultAttributeName)
-            {
-                DefaultRule? rule = ParseDefault(attr);
-                if (rule != null)
-                    rules.Add(rule);
-            }
-        }
+                ((INamedTypeSymbol? typeSymbol, KnownSymbols? knownSymbols), AttributesCollection assemblyAttributes) = tuple;
 
-        // method-level attributes override
-        foreach (AttributeData? attr in methodSymbol.GetAttributes())
+                if (knownSymbols == null)
+                    return ImmutableArray<TypeSpec>.Empty;
+
+                AttributesCollection classAttributes = AttributesCollection.From(knownSymbols, typeSymbol);
+
+                bool hasAnyAttributes =
+                    !assemblyAttributes.DefaultAttributes.IsDefaultOrEmpty ||
+                    !assemblyAttributes.TransformAttributes.IsDefaultOrEmpty ||
+                    !classAttributes.DefaultAttributes.IsDefaultOrEmpty ||
+                    !classAttributes.TransformAttributes.IsDefaultOrEmpty;
+
+                if (!hasAnyAttributes)
+                    return ImmutableArray<TypeSpec>.Empty;
+
+                ImmutableArray<DefaultOverloadAttributeInfoWithRegex> defaultAttrs = classAttributes.DefaultAttributes;
+                if (!assemblyAttributes.DefaultAttributes.IsDefaultOrEmpty)
+                    defaultAttrs = defaultAttrs.AddRange(assemblyAttributes.DefaultAttributes);
+
+                ImmutableArray<TransformOverloadAttributeInfoWithRegex> transformAttrs = classAttributes.TransformAttributes;
+                if (!assemblyAttributes.TransformAttributes.IsDefaultOrEmpty)
+                    transformAttrs = transformAttrs.AddRange(assemblyAttributes.TransformAttributes);
+
+                List<MethodSpec>? methods = null;
+                foreach (IMethodSymbol method in typeSymbol.GetMembers().OfType<IMethodSymbol>())
+                {
+                    List<Rule>? rules = null;
+
+                    foreach (var attr in defaultAttrs)
+                    {
+                        if (!attr.MethodNamePattern.IsMatch(method.Name))
+                            continue;
+
+                        foreach (var p in method.Parameters)
+                        {
+                            if (!attr.ParameterNamePattern.IsMatch(p.Name))
+                                continue;
+                            if (attr.ParameterType != null &&
+                                !SymbolEqualityComparer.Default.Equals(p.Type, attr.ParameterType))
+                                continue;
+
+                            rules ??= new();
+                            rules.Add(new DefaultRule(p.Name, attr.DefaultExpression));
+                        }
+                    }
+
+                    foreach (var attr in transformAttrs)
+                    {
+                        if (!attr.MethodNamePattern.IsMatch(method.Name))
+                            continue;
+
+                        foreach (var p in method.Parameters)
+                        {
+                            if (!attr.ParameterNamePattern.IsMatch(p.Name))
+                                continue;
+                            if (attr.ParameterType != null &&
+                                !SymbolEqualityComparer.Default.Equals(p.Type, attr.ParameterType))
+                                continue;
+
+                            rules ??= new();
+                            rules.Add(new TransformRule(p.Name, attr.NewType, attr.TransformExpression, attr.NewTypeNullability));
+                        }
+                    }
+
+                    if (rules != null)
+                    {
+                        methods ??= new();
+                        methods.Add(new MethodSpec(method, [..rules]));
+                    }
+                }
+
+                if (methods == null)
+                    return ImmutableArray<TypeSpec>.Empty;
+
+                return [new TypeSpec(knownSymbols, typeSymbol, [..methods])];
+            });
+
+        context.RegisterSourceOutput(includedTypesProvider, static (spc, typeSpec) =>
         {
-            Rule? rule = null;
-            if (attr.AttributeClass?.ToDisplayString() == TransformAttributeName)
-                rule = ParseTransform(attr);
-            else if (attr.AttributeClass?.ToDisplayString() == DefaultAttributeName)
-                rule = ParseDefault(attr);
-
-            if (rule != null)
-            {
-                rules.RemoveAll(r => r.GetType() == rule.GetType() && r.Parameter == rule.Parameter);
-                rules.Add(rule);
-            }
-        }
-
-        if (rules.Count == 0)
-            return null;
-
-        return new MethodModel(methodSymbol, ImmutableArray.CreateRange(rules));
-    }
-
-    private static TransformRule? ParseTransform(AttributeData attr)
-    {
-        if (attr.ConstructorArguments.Length < 3) return null;
-        string parameter = attr.ConstructorArguments[0].Value as string ?? string.Empty;
-        INamedTypeSymbol? accept = attr.ConstructorArguments[1].Value as INamedTypeSymbol;
-        string transform = attr.ConstructorArguments[2].Value as string ?? string.Empty;
-        TypeNullability nullability = TypeNullability.NotNullable;
-        if (attr.ConstructorArguments.Length > 3 && attr.ConstructorArguments[3].Value is int n)
-            nullability = (TypeNullability)n;
-
-        return new TransformRule(parameter, accept, transform, nullability);
-    }
-
-    private static DefaultRule? ParseDefault(AttributeData attr)
-    {
-        if (attr.ConstructorArguments.Length < 2) return null;
-        string parameter = attr.ConstructorArguments[0].Value as string ?? string.Empty;
-        string expr = attr.ConstructorArguments[1].Value as string ?? string.Empty;
-        return new DefaultRule(parameter, expr);
+            // Code generation will be implemented later
+        });
     }
 }
