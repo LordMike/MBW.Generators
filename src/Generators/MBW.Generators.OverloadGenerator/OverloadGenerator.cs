@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using MBW.Generators.Common;
+using MBW.Generators.Common.Helpers;
 using MBW.Generators.OverloadGenerator.Models;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -120,7 +121,17 @@ public sealed class OverloadGenerator : GeneratorBase<OverloadGenerator>
 
         context.RegisterSourceOutput(includedTypesProvider, static (spc, typeSpec) =>
         {
-            // Code generation will be implemented later
+            List<Diagnostic>? diagnostics = null;
+            string? file = OverloadCodeGen.Generate(typeSpec, ref diagnostics);
+            if (file is not null)
+            {
+                string hint = GenerationHelpers.GetHintName("Overloads", typeSpec.Type);
+                spc.AddSource(hint, file);
+            }
+
+            if (diagnostics != null)
+                foreach (var d in diagnostics)
+                    spc.ReportDiagnostic(d);
         });
     }
 }
