@@ -9,5 +9,6 @@ public sealed class DefaultOverloadAttribute(string parameterName, string defaul
 {
     public string ParameterName { get; } = parameterName;
     public string DefaultExpression { get; } = defaultExpression;
-    public string[]? Usings { get; set; }
+    public string MethodNameMatch { get; set; } = "^(.*)$";
+    public string? MethodNameReplace { get; set; }
 }

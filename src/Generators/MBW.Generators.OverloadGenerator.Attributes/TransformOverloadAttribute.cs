@@ -8,11 +8,15 @@ namespace MBW.Generators.OverloadGenerator.Attributes;
 public sealed class TransformOverloadAttribute(
     string parameterName,
     Type newType,
-    string transformExpression = "{value}.ToString()")
+    string transformExpression = "{value}.ToString()",
+    TypeNullability newTypeNullability = TypeNullability.NotNullable)
     : Attribute
 {
     public string ParameterName { get; } = parameterName;
     public Type NewType { get; } = newType;
     public string TransformExpression { get; } = transformExpression;
-    public string[]? Usings { get; set; }
+    public TypeNullability NewTypeNullability { get; } = newTypeNullability;
+
+    public string MethodNameMatch { get; set; } = "^(.*)$";
+    public string? MethodNameReplace { get; set; }
 }
