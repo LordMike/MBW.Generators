@@ -37,8 +37,8 @@ namespace MBW.Generators.NonTryMethods.Attributes;
 [AttributeUsage(
     AttributeTargets.Assembly | AttributeTargets.Class | AttributeTargets.Interface | AttributeTargets.Struct,
     AllowMultiple = true, Inherited = false)]
-[SuppressMessage("ReSharper", "RedundantNameQualifier")]
 [Conditional("NEVER_RENDER")]
+[SuppressMessage("ReSharper", "RedundantNameQualifier")]
 public sealed class GenerateNonTryMethodAttribute(
     Type? exceptionType = null,
     [RegexPattern] string? methodNamePattern = "^[Tt]ry(.*)")
