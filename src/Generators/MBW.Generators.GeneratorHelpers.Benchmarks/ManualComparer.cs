@@ -4,8 +4,7 @@ namespace MBW.Generators.GeneratorHelpers.Benchmarks;
 
 static class ManualComparer
 {
-    // Fast equality against "global::A.B.C.Outer.Inner" (FullyQualifiedFormat shape).
-    public static bool IsNamedExactlyFullyQualified(ISymbol? symbol, string fullyQualifiedWithGlobal)
+    public static bool IsNamedExactlyType_SpanVersion(ISymbol? symbol, string fullyQualifiedWithGlobal)
     {
         if (symbol is not INamedTypeSymbol named)
             return false;
@@ -61,33 +60,33 @@ static class ManualComparer
         return ns is { IsGlobalNamespace: true };
     }
 
-    // Fast equality against "global::MBW.Generators.OverloadGenerator.Attributes"
-    public static bool IsNamedExactlyFullyQualified_Generated(ISymbol symbol)
+    /// <summary>Returns <see langword="true"/> when <paramref name="symbol"/> is exactly <c>MBW.Generators.OverloadGenerator.Attributes.TransformOverloadAttribute</c>.</summary>
+    /// <param name="symbol">Symbol to check.</param>
+    /// <returns><see langword="true"/> if <paramref name="symbol"/> is <c>MBW.Generators.OverloadGenerator.Attributes.TransformOverloadAttribute</c>.</returns>
+    public static bool IsNamedExactlyType_GeneratedByGenerator(this ISymbol? symbol)
     {
+        if (symbol is null)
+            return false;
         if (!symbol.Name.Equals("TransformOverloadAttribute", StringComparison.Ordinal))
             return false;
-
-        // OverloadGenerator
-        var ns = symbol.ContainingNamespace;
-        if (ns == null || !ns.Name.Equals("Attributes", StringComparison.Ordinal))
+        if (symbol is not INamedTypeSymbol t0)
             return false;
-
+        if (t0.ContainingType is not null)
+            return false;
+                                   
+        var ns = t0.ContainingNamespace;
+        if (ns is null || !ns.Name.Equals("Attributes", StringComparison.Ordinal))
+            return false;
         ns = ns.ContainingNamespace;
-        if (ns == null || !ns.Name.Equals("OverloadGenerator", StringComparison.Ordinal))
+        if (ns is null || !ns.Name.Equals("OverloadGenerator", StringComparison.Ordinal))
             return false;
-        
         ns = ns.ContainingNamespace;
-        if (ns == null || !ns.Name.Equals("Generators", StringComparison.Ordinal))
+        if (ns is null || !ns.Name.Equals("Generators", StringComparison.Ordinal))
             return false;
-
         ns = ns.ContainingNamespace;
-        if (ns == null || !ns.Name.Equals("MBW", StringComparison.Ordinal))
+        if (ns is null || !ns.Name.Equals("MBW", StringComparison.Ordinal))
             return false;
-
         ns = ns.ContainingNamespace;
-        if (ns == null || !ns.IsGlobalNamespace)
-            return false;
-
-        return true;
+        return ns != null && ns.IsGlobalNamespace;
     }
 }

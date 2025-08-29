@@ -43,10 +43,10 @@ public class SymbolCompareBenchmarks
     }
 
     [Benchmark]
-    public bool Manual_MetadataName_And_Namespace_Equals()
-        => ManualComparer.IsNamedExactlyFullyQualified(_symbol, FullyQualified);
+    public bool IsNamedExactlyType_SpanVersion()
+        => ManualComparer.IsNamedExactlyType_SpanVersion(_symbol, FullyQualified);
 
     [Benchmark]
-    public bool Manual_MetadataName_And_Namespace_Equals_Unrolled()
-        => ManualComparer.IsNamedExactlyFullyQualified_Generated(_symbol);
+    public bool IsNamedExactlyType_GeneratedByGenerator()
+        => ManualComparer.IsNamedExactlyType_GeneratedByGenerator(_symbol);
 }

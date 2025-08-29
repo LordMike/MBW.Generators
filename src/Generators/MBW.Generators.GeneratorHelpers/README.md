@@ -18,9 +18,11 @@ Useful when analyzing large code bases where repeated string construction would 
 using MBW.Generators.GeneratorHelpers;
 using MBW.Generators.GeneratorHelpers.Attributes;
 
+// Control the generated type, Name and Namespace are optional - the default is 'Microsoft.CodeAnalysis'
 [GenerateSymbolExtensions(Name = "KnownExtensions", Namespace = "My.Helpers")]
 internal static class Known
 {
+    // Generate 
     [SymbolNameExtension(MethodName = "Exception")]
     public const string ExceptionType = "global::System.Exception";
 }
@@ -54,11 +56,19 @@ internal static class KnownExtensions
 - Handles nested and generic types, including names with `global::` and multiple containing types.
 - Provides `ISymbol` and `INamespaceSymbol` overloads for namespace checks.
 - Supports custom extension class name/namespace and per-field method name overrides.
+- Benchmarks show this approach is 10 times faster than performing a `ToDisplayString()` and then string equality
 
 ## Attributes
-- **GenerateSymbolExtensionsAttribute** – apply to a type to opt in. Controls generated class name and namespace.
-- **SymbolNameExtensionAttribute** – place on a `const string` field containing a fully qualified type name. Optional `MethodName` override for the generated method suffix.
-- **NamespaceNameExtensionAttribute** – place on a `const string` field containing a fully qualified namespace. Generates `IsInNamespaceN`, `IsExactlyInNamespaceN`, `IsInNamespaceN` (`INamespaceSymbol`), and `IsExactlyNamespaceN`. Optional `MethodName` override.
+- **[GenerateSymbolExtensions]** – apply to a type to opt in. Controls generated class name and namespace.
+- **[SymbolNameExtension]** – place on a `const string` field containing a fully qualified type name.
+  - Generates:
+    - `IsNamedExactlyTypeN(this ISymbol)` - tests if the symbol is exactly named N
+- **[NamespaceNameExtension]** – place on a `const string` field containing a fully qualified namespace. 
+  - Generates:
+    - `IsInNamespaceN(this ISymbol)` - tests if the symbol is in the namespace N, or any namespace under N
+    - `IsExactlyInNamespaceN(this ISymbol)` - tests if the symbol is exactly in the namespace N
+    - `IsInNamespaceN(this INamespaceSymbol)` - tests if the namespace symbol is in the namespace N, or any namespace under N
+    - `IsExactlyNamespaceN(this INamespaceSymbol)` - tests if the namespace symbol is exactly the namespace N
 
 ## More information
 This project is provided as-is without support. Additional examples will be available in the [tests](../MBW.Generators.GeneratorHelpers.Tests).
