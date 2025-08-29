@@ -566,10 +566,9 @@ internal static class Gen
         var t = SyntaxFactory.Identifier(varName);
         var declLocal = SyntaxFactory.LocalDeclarationStatement(
             SyntaxFactory.VariableDeclaration(SyntaxFactory.IdentifierName("var"))
-                .WithVariables(SyntaxFactory.SeparatedList(new[]
-                {
+                .WithVariables(SyntaxFactory.SeparatedList([
                     SyntaxFactory.VariableDeclarator(t).WithInitializer(SyntaxFactory.EqualsValueClause(awaitCall))
-                })));
+                ])));
 
         var ok = SyntaxFactory.MemberAccessExpression(
             SyntaxKind.SimpleMemberAccessExpression,
