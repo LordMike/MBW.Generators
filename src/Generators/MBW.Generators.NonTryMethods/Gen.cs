@@ -393,6 +393,9 @@ internal static class Gen
             mods.Add(SyntaxFactory.Token(visibilityKind.Value));
         if (isStatic)
             mods.Add(SyntaxFactory.Token(SyntaxKind.StaticKeyword));
+        if (pm.Source.Method.ReturnType is IPointerTypeSymbol ||
+            pm.Source.Method.Parameters.Any(p => p.Type is IPointerTypeSymbol))
+            mods.Add(SyntaxFactory.Token(SyntaxKind.UnsafeKeyword));
         if (isAsync)
             mods.Add(SyntaxFactory.Token(SyntaxKind.AsyncKeyword));
         decl = decl.WithModifiers(SyntaxFactory.TokenList(mods));

@@ -2,21 +2,26 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace MBW.Generators.NonTryMethods.Attributes;
 
+/// <summary>
+/// Specifies where generated non-<c>Try</c> methods should be placed.
+/// </summary>
 [SuppressMessage("ReSharper", "RedundantNameQualifier")]
 public enum MethodsGenerationStrategy
 {
     /// <summary>
-    /// Automatically picks a strategy. Methods will be generated in partial types
+    /// Automatically pick the most suitable strategy. By default the
+    /// generator emits methods into partial types when available.
     /// </summary>
     Auto = 0,
-    
+
     /// <summary>
-    /// Generated non-try methods should be in partial types. Requires the relevant types to be marked partial as well
+    /// Emit methods directly into the original type. This requires that
+    /// the target type is declared <c>partial</c>.
     /// </summary>
     PartialType = 1,
-    
+
     /// <summary>
-    /// Generated non-try-methods should be in extensions types. 
+    /// Emit methods as extension methods in a separate static class.
     /// </summary>
-    Extensions = 2
+    Extensions = 2,
 }
