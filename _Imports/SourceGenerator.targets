@@ -1,18 +1,58 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
-  <!-- Package as analyzer -->
   <PropertyGroup>
-    <IncludeBuildOutput>false</IncludeBuildOutput>
-    <IncludeSymbols>false</IncludeSymbols>
+    <IsRoslynComponent>true</IsRoslynComponent>
 
-    <!-- Our analyzer package has no 'lib' folder but _does_ have dependencies. 
-         So we cannot use SuppressDependenciesWhenPacking which would be the normal way to workaround NU5128 -->
-    <NoWarn>$(NoWarn);NU5128</NoWarn>
+    <!-- Source generator guidelines indicates to ignore this -->
+    <NoWarn>$(NoWarn);RS2008</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <Nullable>enable</Nullable>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+    <AttributesProject>$(MSBuildProjectName).Attributes</AttributesProject>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Package the generator in the analyzer directory of the nuget package -->
-    <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" PrivateAssets="all"/>
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="4.14.0" PrivateAssets="all"/>
+  </ItemGroup>
+
+  <Choose>
+    <When Condition="'$(_IsPacking)' == 'true'">
+      <!-- Only when packing: embed the Common sources inside this project, for dev time: reference as project -->
+      <ItemGroup>
+        <Compile Include="$(MSBuildThisFileDirectory)/../src/Common/MBW.Generators.Common/**/*.cs"
+                 Exclude="$(MSBuildThisFileDirectory)/../src/Common/MBW.Generators.Common/bin/**;$(MSBuildThisFileDirectory)/../src/Common/MBW.Generators.Common/obj/**"
+                 LinkBase="MBW.Generators.Common/"/>
+      </ItemGroup>
+
+      <!-- Only when packing: embed the Attributes sources inside this project, for dev time: reference as project -->
+      <ItemGroup>
+        <Compile Include="$(MSBuildProjectDirectory)/../$(AttributesProject)/**/*.cs"
+                 Exclude="$(MSBuildProjectDirectory)/../$(AttributesProject)/bin/**;$(MSBuildProjectDirectory)/../$(AttributesProject)/obj/**"
+                 LinkBase="$(AttributesProject)/"/>
+      </ItemGroup>
+
+    </When>
+    <Otherwise>
+      <!-- Only when dev: enable logging output -->
+      <PropertyGroup>
+        <DefineConstants>$(DefineConstants);ENABLE_PIPE_LOGGING</DefineConstants>
+      </PropertyGroup>
+
+      <!-- Only in dev: reference attributes/common project directly -->
+      <ItemGroup>
+        <ProjectReference Include="$(MSBuildThisFileDirectory)/../src/Common/MBW.Generators.Common/MBW.Generators.Common.csproj"/>
+        <ProjectReference Include="$(MSBuildProjectDirectory)/../$(AttributesProject)/$(AttributesProject).csproj"/>
+      </ItemGroup>
+    </Otherwise>
+  </Choose>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>$(MSBuildProjectName).Tests</_Parameter1>
+    </AssemblyAttribute>
   </ItemGroup>
 
 </Project>
