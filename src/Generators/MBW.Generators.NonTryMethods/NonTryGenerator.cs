@@ -15,9 +15,14 @@ using Microsoft.CodeAnalysis.Text;
 namespace MBW.Generators.NonTryMethods;
 
 [Generator]
-public sealed class NonTryGenerator : GeneratorBase<NonTryGenerator>
+public sealed class NonTryGenerator : IIncrementalGenerator
 {
-    protected override void InitializeInternal(IncrementalGeneratorInitializationContext context)
+    public void Initialize(IncrementalGeneratorInitializationContext context)
+    {
+        GeneratorCommon.Initialize<NonTryGenerator>(ref context, InitializeInternal);
+    }
+
+    private void InitializeInternal(ref IncrementalGeneratorInitializationContext context)
     {
 #if ENABLE_PIPE_LOGGING
         context.RegisterSourceOutput(context.CompilationProvider, (_, _) => { Logger.Log("## Compilation run"); });

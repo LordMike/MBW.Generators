@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -11,9 +12,14 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace MBW.Generators.OverloadGenerator;
 
 [Generator]
-public sealed class OverloadGenerator : GeneratorBase<OverloadGenerator>
+public sealed class OverloadGenerator : IIncrementalGenerator
 {
-    protected override void InitializeInternal(IncrementalGeneratorInitializationContext context)
+    public void Initialize(IncrementalGeneratorInitializationContext context)
+    {
+        GeneratorCommon.Initialize<OverloadGenerator>(ref context, InitializeInternal);
+    }
+
+    private void InitializeInternal(ref IncrementalGeneratorInitializationContext context)
     {
 #if ENABLE_PIPE_LOGGING
         context.RegisterSourceOutput(context.CompilationProvider, (_, _) => { Logger.Log("## Compilation run"); });
@@ -41,7 +47,8 @@ public sealed class OverloadGenerator : GeneratorBase<OverloadGenerator>
             .Combine(assemblyAttributesProvider)
             .SelectMany(static (tuple, _) =>
             {
-                ((INamedTypeSymbol? typeSymbol, KnownSymbols? knownSymbols), AttributesCollection assemblyAttributes) = tuple;
+                ((INamedTypeSymbol? typeSymbol, KnownSymbols? knownSymbols), AttributesCollection assemblyAttributes) =
+                    tuple;
 
                 if (knownSymbols == null)
                     return ImmutableArray<TypeSpec>.Empty;
@@ -61,7 +68,8 @@ public sealed class OverloadGenerator : GeneratorBase<OverloadGenerator>
                 if (!assemblyAttributes.DefaultAttributes.IsDefaultOrEmpty)
                     defaultAttrs = defaultAttrs.AddRange(assemblyAttributes.DefaultAttributes);
 
-                ImmutableArray<TransformOverloadAttributeInfoWithRegex> transformAttrs = classAttributes.TransformAttributes;
+                ImmutableArray<TransformOverloadAttributeInfoWithRegex> transformAttrs =
+                    classAttributes.TransformAttributes;
                 if (!assemblyAttributes.TransformAttributes.IsDefaultOrEmpty)
                     transformAttrs = transformAttrs.AddRange(assemblyAttributes.TransformAttributes);
 
@@ -102,7 +110,8 @@ public sealed class OverloadGenerator : GeneratorBase<OverloadGenerator>
                                 continue;
 
                             rules ??= new();
-                            rules.Add(new TransformRule(p.Name, attr.NewType, attr.TransformExpression, attr.NewTypeNullability));
+                            rules.Add(new TransformRule(p.Name, attr.NewType, attr.TransformExpression,
+                                attr.NewTypeNullability));
                         }
                     }
 
