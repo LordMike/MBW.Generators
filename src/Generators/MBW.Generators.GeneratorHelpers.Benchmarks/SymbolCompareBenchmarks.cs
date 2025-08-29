@@ -3,6 +3,8 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
+namespace MBW.Generators.GeneratorHelpers.Benchmarks;
+
 [ShortRunJob]
 [MemoryDiagnoser]
 public class SymbolCompareBenchmarks

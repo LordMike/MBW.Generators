@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using MBW.Generators.GeneratorHelpers;
+using MBW.Generators.GeneratorHelpers.Attributes;
 using MBW.Generators.Tests.Common;
 using Microsoft.CodeAnalysis;
 
@@ -14,14 +15,14 @@ internal static class TestsHelper
     {
         var analysis = await GeneratorTestHelper.RunAnalyzer<SymbolExtensionsAnalyzer>(input,
             expectedDiagnostics ?? Array.Empty<string>(),
-            new[] { "MBW.Generators.GeneratorHelpers" }, typeof(GenerateSymbolExtensionsAttribute));
+            new[] { "MBW.Generators.GeneratorHelpers.Attributes" }, typeof(GenerateSymbolExtensionsAttribute));
 
         if (analysis.Length > 0)
             return (null, analysis);
 
         var (sources, diags) = GeneratorTestHelper.RunGenerator<SymbolExtensionsGenerator>(input,
             expectedDiagnostics ?? Array.Empty<string>(),
-            new[] { "MBW.Generators.GeneratorHelpers" }, typeof(GenerateSymbolExtensionsAttribute));
+            new[] { "MBW.Generators.GeneratorHelpers.Attributes" }, typeof(GenerateSymbolExtensionsAttribute));
 
         return sources.Count switch
         {

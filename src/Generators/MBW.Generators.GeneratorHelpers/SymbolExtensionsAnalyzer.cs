@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using MBW.Generators.GeneratorHelpers.Models;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
@@ -7,20 +8,11 @@ namespace MBW.Generators.GeneratorHelpers;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class SymbolExtensionsAnalyzer : DiagnosticAnalyzer
 {
-    private const string GenerateSymbolExtensionsAttributeName =
-        "MBW.Generators.GeneratorHelpers.GenerateSymbolExtensionsAttribute";
-
-    private const string SymbolNameExtensionAttributeName =
-        "MBW.Generators.GeneratorHelpers.SymbolNameExtensionAttribute";
-
-    private const string NamespaceNameExtensionAttributeName =
-        "MBW.Generators.GeneratorHelpers.NamespaceNameExtensionAttribute";
-
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-        [
-            Diagnostics.TypeMissingFields,
-            Diagnostics.FieldWithoutOptIn
-        ];
+    [
+        Diagnostics.TypeMissingFields,
+        Diagnostics.FieldWithoutOptIn
+    ];
 
     public override void Initialize(AnalysisContext context)
     {
@@ -38,7 +30,7 @@ public sealed class SymbolExtensionsAnalyzer : DiagnosticAnalyzer
 
         foreach (var attr in type.GetAttributes())
         {
-            if (attr.AttributeClass?.ToDisplayString() == GenerateSymbolExtensionsAttributeName)
+            if (attr.AttributeClass?.ToDisplayString() == KnownSymbols.GenerateSymbolExtensionsAttributeName)
             {
                 hasTypeAttr = true;
                 break;
@@ -53,11 +45,13 @@ public sealed class SymbolExtensionsAnalyzer : DiagnosticAnalyzer
             foreach (var attr in field.GetAttributes())
             {
                 var attrName = attr.AttributeClass?.ToDisplayString();
-                if (attrName == SymbolNameExtensionAttributeName || attrName == NamespaceNameExtensionAttributeName)
+                if (attrName == KnownSymbols.SymbolNameExtensionAttributeName ||
+                    attrName == KnownSymbols.NamespaceNameExtensionAttributeName)
                 {
                     hasFieldAttr = true;
                     if (!hasTypeAttr)
-                        context.ReportDiagnostic(Diagnostic.Create(Diagnostics.FieldWithoutOptIn, field.Locations[0], field.Name));
+                        context.ReportDiagnostic(Diagnostic.Create(Diagnostics.FieldWithoutOptIn, field.Locations[0],
+                            field.Name));
                     break;
                 }
             }
@@ -67,4 +61,3 @@ public sealed class SymbolExtensionsAnalyzer : DiagnosticAnalyzer
             context.ReportDiagnostic(Diagnostic.Create(Diagnostics.TypeMissingFields, type.Locations[0], type.Name));
     }
 }
-

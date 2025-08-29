@@ -1,5 +1,7 @@
 using Microsoft.CodeAnalysis;
 
+namespace MBW.Generators.GeneratorHelpers.Benchmarks;
+
 static class ManualComparer
 {
     // Fast equality against "global::A.B.C.Outer.Inner" (FullyQualifiedFormat shape).

@@ -1,6 +1,6 @@
 using System;
 
-namespace MBW.Generators.GeneratorHelpers;
+namespace MBW.Generators.GeneratorHelpers.Attributes;
 
 /// <summary>Marks a type for symbol extension generation.</summary>
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, AllowMultiple = false, Inherited = false)]

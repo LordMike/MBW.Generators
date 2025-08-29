@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using MBW.Generators.GeneratorHelpers.Attributes;
+using MBW.Generators.GeneratorHelpers.Models;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
@@ -11,19 +13,10 @@ namespace MBW.Generators.GeneratorHelpers;
 [Generator]
 public sealed class SymbolExtensionsGenerator : IIncrementalGenerator
 {
-    private const string GenerateSymbolExtensionsAttributeName =
-        "MBW.Generators.GeneratorHelpers.GenerateSymbolExtensionsAttribute";
-
-    private const string SymbolNameExtensionAttributeName =
-        "MBW.Generators.GeneratorHelpers.SymbolNameExtensionAttribute";
-
-    private const string NamespaceNameExtensionAttributeName =
-        "MBW.Generators.GeneratorHelpers.NamespaceNameExtensionAttribute";
-
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         var types = context.SyntaxProvider.ForAttributeWithMetadataName(
-                GenerateSymbolExtensionsAttributeName,
+                KnownSymbols.GenerateSymbolExtensionsAttributeName,
                 static (node, _) => node is TypeDeclarationSyntax,
                 static (ctx, _) => GetTypeToGenerate(ctx))
             .Where(static t => t is not null)
@@ -64,8 +57,8 @@ public sealed class SymbolExtensionsGenerator : IIncrementalGenerator
                 var attrName = fa.AttributeClass?.ToDisplayString();
                 FieldKind? kind = attrName switch
                 {
-                    SymbolNameExtensionAttributeName => FieldKind.Type,
-                    NamespaceNameExtensionAttributeName => FieldKind.Namespace,
+                    KnownSymbols.SymbolNameExtensionAttributeName => FieldKind.Type,
+                    KnownSymbols.NamespaceNameExtensionAttributeName => FieldKind.Namespace,
                     _ => null
                 };
                 if (kind is null)
@@ -213,12 +206,14 @@ public sealed class SymbolExtensionsGenerator : IIncrementalGenerator
         if (innermost.UseMetadataName)
         {
             sb.AppendLine("        if (symbol is not INamedTypeSymbol t0) return false;");
-            sb.AppendLine($"        if (!t0.MetadataName.Equals(\"{innermost.Value}\", StringComparison.Ordinal)) return false;");
+            sb.AppendLine(
+                $"        if (!t0.MetadataName.Equals(\"{innermost.Value}\", StringComparison.Ordinal)) return false;");
         }
         else
         {
             sb.AppendLine("        if (symbol is null) return false;");
-            sb.AppendLine($"        if (!symbol.Name.Equals(\"{innermost.Value}\", StringComparison.Ordinal)) return false;");
+            sb.AppendLine(
+                $"        if (!symbol.Name.Equals(\"{innermost.Value}\", StringComparison.Ordinal)) return false;");
             sb.AppendLine("        if (symbol is not INamedTypeSymbol t0) return false;");
         }
 
@@ -228,7 +223,8 @@ public sealed class SymbolExtensionsGenerator : IIncrementalGenerator
             var seg = field.TypeSegments[i];
             string varName = $"t{idx}";
             sb.AppendLine($"        var {varName} = {current}.ContainingType;");
-            sb.AppendLine($"        if ({varName} is null || !{varName}.{(seg.UseMetadataName ? "MetadataName" : "Name")}.Equals(\"{seg.Value}\", StringComparison.Ordinal)) return false;");
+            sb.AppendLine(
+                $"        if ({varName} is null || !{varName}.{(seg.UseMetadataName ? "MetadataName" : "Name")}.Equals(\"{seg.Value}\", StringComparison.Ordinal)) return false;");
             current = varName;
         }
 
@@ -238,7 +234,8 @@ public sealed class SymbolExtensionsGenerator : IIncrementalGenerator
         for (int i = field.NamespaceSegments.Length - 1; i >= 0; i--)
         {
             var seg = field.NamespaceSegments[i];
-            sb.AppendLine($"        if (ns is null || !ns.Name.Equals(\"{seg}\", StringComparison.Ordinal)) return false;");
+            sb.AppendLine(
+                $"        if (ns is null || !ns.Name.Equals(\"{seg}\", StringComparison.Ordinal)) return false;");
             sb.AppendLine("        ns = ns.ContainingNamespace;");
         }
 
@@ -254,12 +251,14 @@ public sealed class SymbolExtensionsGenerator : IIncrementalGenerator
 
         sb.AppendLine($"    public static bool IsInNamespace{suffix}(this ISymbol? symbol)");
         sb.AppendLine("    {");
-        sb.AppendLine($"        return IsInNamespace{suffix}(symbol as INamespaceSymbol ?? symbol?.ContainingNamespace);");
+        sb.AppendLine(
+            $"        return IsInNamespace{suffix}(symbol as INamespaceSymbol ?? symbol?.ContainingNamespace);");
         sb.AppendLine("    }");
         sb.AppendLine();
         sb.AppendLine($"    public static bool IsExactlyInNamespace{suffix}(this ISymbol? symbol)");
         sb.AppendLine("    {");
-        sb.AppendLine($"        return IsExactlyNamespace{suffix}(symbol as INamespaceSymbol ?? symbol?.ContainingNamespace);");
+        sb.AppendLine(
+            $"        return IsExactlyNamespace{suffix}(symbol as INamespaceSymbol ?? symbol?.ContainingNamespace);");
         sb.AppendLine("    }");
         sb.AppendLine();
 
@@ -267,15 +266,18 @@ public sealed class SymbolExtensionsGenerator : IIncrementalGenerator
         sb.AppendLine("    {");
         sb.AppendLine("        if (ns is null) return false;");
         sb.AppendLine("        int depth = 0;");
-        sb.AppendLine("        for (var current = ns; current is not null && !current.IsGlobalNamespace; current = current.ContainingNamespace) depth++;");
+        sb.AppendLine(
+            "        for (var current = ns; current is not null && !current.IsGlobalNamespace; current = current.ContainingNamespace) depth++;");
         sb.AppendLine($"        if (depth < {segments.Length}) return false;");
         sb.AppendLine($"        for (int i = 0; i < depth - {segments.Length}; i++) ns = ns!.ContainingNamespace;");
         for (int i = segments.Length - 1; i >= 0; i--)
         {
             var seg = segments[i];
-            sb.AppendLine($"        if (ns is null || !ns.Name.Equals(\"{seg}\", StringComparison.Ordinal)) return false;");
+            sb.AppendLine(
+                $"        if (ns is null || !ns.Name.Equals(\"{seg}\", StringComparison.Ordinal)) return false;");
             sb.AppendLine("        ns = ns.ContainingNamespace;");
         }
+
         sb.AppendLine("        return true;");
         sb.AppendLine("    }");
         sb.AppendLine();
@@ -283,13 +285,16 @@ public sealed class SymbolExtensionsGenerator : IIncrementalGenerator
         sb.AppendLine($"    public static bool IsExactlyNamespace{suffix}(this INamespaceSymbol? ns)");
         sb.AppendLine("    {");
         sb.AppendLine("        if (ns is null) return false;");
-        sb.AppendLine($"        if (!ns.Name.Equals(\"{segments[segments.Length - 1]}\", StringComparison.Ordinal)) return false;");
+        sb.AppendLine(
+            $"        if (!ns.Name.Equals(\"{segments[segments.Length - 1]}\", StringComparison.Ordinal)) return false;");
         for (int i = segments.Length - 2; i >= 0; i--)
         {
             var seg = segments[i];
             sb.AppendLine("        ns = ns.ContainingNamespace;");
-            sb.AppendLine($"        if (ns is null || !ns.Name.Equals(\"{seg}\", StringComparison.Ordinal)) return false;");
+            sb.AppendLine(
+                $"        if (ns is null || !ns.Name.Equals(\"{seg}\", StringComparison.Ordinal)) return false;");
         }
+
         sb.AppendLine("        ns = ns.ContainingNamespace;");
         sb.AppendLine("        return ns != null && ns.IsGlobalNamespace;");
         sb.AppendLine("    }");
@@ -345,54 +350,4 @@ public sealed class SymbolExtensionsGenerator : IIncrementalGenerator
         normalized = string.Join(".", parts);
         return true;
     }
-
-    private readonly record struct TypeToGenerate(
-        string ClassName,
-        string Namespace,
-        Accessibility Accessibility,
-        FieldToGenerate[] Fields,
-        List<Diagnostic> Diagnostics,
-        Location TypeLocation);
-
-    private readonly record struct FieldToGenerate(
-        FieldKind Kind,
-        string MethodName,
-        string[] NamespaceSegments,
-        TypeSegment[]? TypeSegments,
-        Location Location);
-
-    private sealed class FieldInfo
-    {
-        public FieldInfo(FieldKind kind, string methodBaseName, string[] namespaceSegments,
-            TypeSegment[]? typeSegments, string normalizedTarget, Location location)
-        {
-            Kind = kind;
-            MethodBaseName = methodBaseName;
-            NamespaceSegments = namespaceSegments;
-            TypeSegments = typeSegments;
-            NormalizedTarget = normalizedTarget;
-            Location = location;
-            Generate = true;
-        }
-
-        public FieldKind Kind { get; }
-        public string MethodBaseName { get; }
-        public string? MethodName { get; set; }
-        public string[] NamespaceSegments { get; }
-        public TypeSegment[]? TypeSegments { get; }
-        public string NormalizedTarget { get; }
-        public Location Location { get; }
-        public bool Generate { get; set; }
-    }
-
-    private enum FieldKind
-    {
-        Type,
-        Namespace
-    }
-
-    private readonly record struct TypeSegment(string Value, bool UseMetadataName);
-
-    private readonly record struct TypeFqn(string[] NamespaceSegments, TypeSegment[] TypeSegments, string Normalized);
 }
-

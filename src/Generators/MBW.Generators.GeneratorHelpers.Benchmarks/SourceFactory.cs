@@ -1,3 +1,5 @@
+namespace MBW.Generators.GeneratorHelpers.Benchmarks;
+
 static class SourceFactory
 {
     // Build your exact namespace/type using raw strings + interpolation (C# 11)

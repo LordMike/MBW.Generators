@@ -1,6 +1,6 @@
 using System;
 
-namespace MBW.Generators.GeneratorHelpers;
+namespace MBW.Generators.GeneratorHelpers.Attributes;
 
 /// <summary>Generates extension methods for a fully qualified type name.</summary>
 [AttributeUsage(AttributeTargets.Field, AllowMultiple = false, Inherited = false)]

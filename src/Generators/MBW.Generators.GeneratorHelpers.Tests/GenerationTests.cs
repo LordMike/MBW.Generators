@@ -16,17 +16,18 @@ public class GenerationTests
     public async Task TypeExactMatch_Unrolled()
     {
         var (output, diags) = await TestsHelper.RunHelperAsync("""
-            [GenerateSymbolExtensions]
-            public static class Known
-            {
-                [SymbolNameExtension(MethodName="Test")]
-                public const string Target = "MBW.Generators.OverloadGenerator.Attributes.TransformOverloadAttribute";
-            }
-            """);
+                                                               [GenerateSymbolExtensions]
+                                                               public static class Known
+                                                               {
+                                                                   [SymbolNameExtension(MethodName="Test")]
+                                                                   public const string Target = "MBW.Generators.OverloadGenerator.Attributes.TransformOverloadAttribute";
+                                                               }
+                                                               """);
 
         Assert.NotNull(output);
         Assert.Empty(diags);
-        Assert.Contains("if (!symbol.Name.Equals(\"TransformOverloadAttribute\", StringComparison.Ordinal)) return false;", output);
+        Assert.Contains(
+            "if (!symbol.Name.Equals(\"TransformOverloadAttribute\", StringComparison.Ordinal)) return false;", output);
         Assert.Contains("ns.Name.Equals(\"Attributes\", StringComparison.Ordinal)", output);
         Assert.Contains("ns.Name.Equals(\"OverloadGenerator\", StringComparison.Ordinal)", output);
         Assert.Contains("ns.Name.Equals(\"Generators\", StringComparison.Ordinal)", output);
@@ -38,13 +39,13 @@ public class GenerationTests
     public async Task NestedType_Unrolled()
     {
         var (output, diags) = await TestsHelper.RunHelperAsync("""
-            [GenerateSymbolExtensions]
-            public static class Known
-            {
-                [SymbolNameExtension(MethodName="Nested")]
-                public const string Target = "System.IO.Compression.ZipArchive+Entry";
-            }
-            """);
+                                                               [GenerateSymbolExtensions]
+                                                               public static class Known
+                                                               {
+                                                                   [SymbolNameExtension(MethodName="Nested")]
+                                                                   public const string Target = "System.IO.Compression.ZipArchive+Entry";
+                                                               }
+                                                               """);
 
         Assert.NotNull(output);
         Assert.Empty(diags);
@@ -57,13 +58,13 @@ public class GenerationTests
     public async Task GenericType_UsesMetadataName()
     {
         var (output, diags) = await TestsHelper.RunHelperAsync("""
-            [GenerateSymbolExtensions]
-            public static class Known
-            {
-                [SymbolNameExtension(MethodName="Dict")]
-                public const string Target = "System.Collections.Generic.Dictionary`2";
-            }
-            """);
+                                                               [GenerateSymbolExtensions]
+                                                               public static class Known
+                                                               {
+                                                                   [SymbolNameExtension(MethodName="Dict")]
+                                                                   public const string Target = "System.Collections.Generic.Dictionary`2";
+                                                               }
+                                                               """);
 
         Assert.NotNull(output);
         Assert.Empty(diags);
@@ -74,13 +75,13 @@ public class GenerationTests
     public async Task NamespaceMethods_Unrolled()
     {
         var (output, diags) = await TestsHelper.RunHelperAsync("""
-            [GenerateSymbolExtensions]
-            public static class Known
-            {
-                [NamespaceNameExtension(MethodName="SystemCollections")]
-                public const string Target = "System.Collections";
-            }
-            """);
+                                                               [GenerateSymbolExtensions]
+                                                               public static class Known
+                                                               {
+                                                                   [NamespaceNameExtension(MethodName="SystemCollections")]
+                                                                   public const string Target = "System.Collections";
+                                                               }
+                                                               """);
 
         Assert.NotNull(output);
         Assert.Empty(diags);
@@ -95,26 +96,26 @@ public class GenerationTests
     public async Task VisibilityMatches()
     {
         var (outputPub, diagsPub) = await TestsHelper.RunHelperAsync("""
-            [GenerateSymbolExtensions]
-            public class KnownPublic
-            {
-                [NamespaceNameExtension]
-                public const string Ns = "System";
-            }
-            """);
+                                                                     [GenerateSymbolExtensions]
+                                                                     public class KnownPublic
+                                                                     {
+                                                                         [NamespaceNameExtension]
+                                                                         public const string Ns = "System";
+                                                                     }
+                                                                     """);
 
         Assert.NotNull(outputPub);
         Assert.Empty(diagsPub);
         Assert.Contains("public static class KnownPublicExtensions", outputPub);
 
         var (outputInt, diagsInt) = await TestsHelper.RunHelperAsync("""
-            [GenerateSymbolExtensions]
-            internal class KnownInternal
-            {
-                [NamespaceNameExtension]
-                public const string Ns = "System";
-            }
-            """);
+                                                                     [GenerateSymbolExtensions]
+                                                                     internal class KnownInternal
+                                                                     {
+                                                                         [NamespaceNameExtension]
+                                                                         public const string Ns = "System";
+                                                                     }
+                                                                     """);
 
         Assert.NotNull(outputInt);
         Assert.Empty(diagsInt);
@@ -125,43 +126,44 @@ public class GenerationTests
     public async Task RuntimeCorrectness()
     {
         var source = """
-            using Microsoft.CodeAnalysis;
+                     using Microsoft.CodeAnalysis;
 
-            [GenerateSymbolExtensions]
-            public static class Known
-            {
-                [SymbolNameExtension]
-                public const string ExceptionType = "System.Exception";
-                [NamespaceNameExtension]
-                public const string SystemNs = "System";
-            }
-            """;
+                     [GenerateSymbolExtensions]
+                     public static class Known
+                     {
+                         [SymbolNameExtension]
+                         public const string ExceptionType = "System.Exception";
+                         [NamespaceNameExtension]
+                         public const string SystemNs = "System";
+                     }
+                     """;
 
         var (generated, diags) = await TestsHelper.RunHelperAsync(source);
         Assert.NotNull(generated);
         Assert.Empty(diags);
 
-        var harness = @"
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-public static class RuntimeHarness
-{
-    public static bool[] Run()
-    {
-        var compilation = CSharpCompilation.Create(""X"");
-        var exceptionType = compilation.GetTypeByMetadataName(""System.Exception"");
-        var intType = compilation.GetTypeByMetadataName(""System.Int32"");
-        var ns = exceptionType!.ContainingNamespace;
-        var global = ns.ContainingNamespace;
-        return new[]{
-            exceptionType!.IsNamedExactlyTypeExceptionType(),
-            intType!.IsNamedExactlyTypeExceptionType(),
-            exceptionType!.IsInNamespaceSystemNs(),
-            global.IsInNamespaceSystemNs(),
-            ns.IsExactlyNamespaceSystemNs(),
-            global.IsExactlyNamespaceSystemNs()};
-    }
-}";
+        var harness = """
+                      using Microsoft.CodeAnalysis;
+                      using Microsoft.CodeAnalysis.CSharp;
+                      public static class RuntimeHarness
+                      {
+                          public static bool[] Run()
+                          {
+                              var compilation = CSharpCompilation.Create("X");
+                              var exceptionType = compilation.GetTypeByMetadataName("System.Exception");
+                              var intType = compilation.GetTypeByMetadataName("System.Int32");
+                              var ns = exceptionType!.ContainingNamespace;
+                              var global = ns.ContainingNamespace;
+                              return new[]{
+                                  exceptionType!.IsNamedExactlyTypeExceptionType(),
+                                  intType!.IsNamedExactlyTypeExceptionType(),
+                                  exceptionType!.IsInNamespaceSystemNs(),
+                                  global.IsInNamespaceSystemNs(),
+                                  ns.IsExactlyNamespaceSystemNs(),
+                                  global.IsExactlyNamespaceSystemNs()};
+                          }
+                      }
+                      """;
 
         var syntaxTrees = new[]
         {
@@ -193,4 +195,3 @@ public static class RuntimeHarness
         Assert.False(arr[5]);
     }
 }
-
