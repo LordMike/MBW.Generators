@@ -111,7 +111,7 @@ public sealed class NonTryGenerator : GeneratorBase<NonTryGenerator>
                     }
                 }
 
-                var options = Gen.GetEffectiveOptions(knownSymbols!, typeSymbol);
+                var options = NonTryCodeGen.GetEffectiveOptions(knownSymbols!, typeSymbol);
 
                 if (res == null)
                     return ImmutableArray<TypeSpec>.Empty;
@@ -129,11 +129,11 @@ public sealed class NonTryGenerator : GeneratorBase<NonTryGenerator>
 
                 try
                 {
-                    TypeEmissionPlan plan = Gen.DetermineTypeStrategy(typeSpec);
+                    TypeEmissionPlan plan = NonTryCodeGen.DetermineTypeStrategy(typeSpec);
                     ImmutableArray<PlannedMethod>
-                        planned = Gen.PlanAllMethods(ref diagnostics, typeSpec, plan);
+                        planned = NonTryCodeGen.PlanAllMethods(ref diagnostics, typeSpec, plan);
                     ImmutableArray<PlannedMethod> filtered =
-                        Gen.FilterCollisionsAndDuplicates(ref diagnostics, typeSpec, planned);
+                        NonTryCodeGen.FilterCollisionsAndDuplicates(ref diagnostics, typeSpec, planned);
 
                     Logger.Log(
                         $"Generating for {typeSpec.Type.Name}, plan: {plan}, methods: [{string.Join(", ", filtered.Select(x => x.Source.Method.Name))}]. Diagnostics: {diagnostics?.Count ?? 0}");
@@ -145,7 +145,7 @@ public sealed class NonTryGenerator : GeneratorBase<NonTryGenerator>
                         return;
                     }
 
-                    CompilationUnitSyntax cu = Gen.BuildCompilationUnit(typeSpec, filtered,
+                    CompilationUnitSyntax cu = NonTryCodeGen.BuildCompilationUnit(typeSpec, filtered,
                         needsTasks: filtered.Any(pm => pm.IsAsync));
 
                     string hintName = GenerationHelpers.GetHintName("NonTry", typeSpec.Type);
