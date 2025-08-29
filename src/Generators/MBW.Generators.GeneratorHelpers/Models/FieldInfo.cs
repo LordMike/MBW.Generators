@@ -2,7 +2,7 @@ using Microsoft.CodeAnalysis;
 
 namespace MBW.Generators.GeneratorHelpers.Models;
 
-sealed class FieldInfo
+internal sealed class FieldInfo
 {
     public FieldInfo(FieldKind kind, string methodBaseName, string[] namespaceSegments,
         TypeSegment[]? typeSegments, string normalizedTarget, Location location)

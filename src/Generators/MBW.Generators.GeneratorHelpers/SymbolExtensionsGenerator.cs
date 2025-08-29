@@ -103,7 +103,7 @@ public sealed class SymbolExtensionsGenerator : IIncrementalGenerator
         if (fields.Count == 0)
         {
             return new TypeToGenerate(className, namespaceName, accessibility,
-                Array.Empty<FieldToGenerate>(), diagnostics, typeSymbol.Locations[0]);
+                [], diagnostics, typeSymbol.Locations[0]);
         }
 
         var byTarget = fields.GroupBy(f => f.NormalizedTarget);
@@ -341,7 +341,7 @@ public sealed class SymbolExtensionsGenerator : IIncrementalGenerator
         var parts = fqn.Split('.');
         if (parts.Length == 0 || parts.Any(s => string.IsNullOrWhiteSpace(s)))
         {
-            segments = Array.Empty<string>();
+            segments = [];
             normalized = string.Empty;
             return false;
         }

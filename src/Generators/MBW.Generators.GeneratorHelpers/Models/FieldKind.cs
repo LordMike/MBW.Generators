@@ -1,6 +1,6 @@
 namespace MBW.Generators.GeneratorHelpers.Models;
 
-enum FieldKind
+internal enum FieldKind
 {
     Type,
     Namespace

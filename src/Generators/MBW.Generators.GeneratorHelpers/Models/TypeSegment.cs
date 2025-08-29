@@ -1,3 +1,3 @@
 namespace MBW.Generators.GeneratorHelpers.Models;
 
-readonly record struct TypeSegment(string Value, bool UseMetadataName);
+internal readonly record struct TypeSegment(string Value, bool UseMetadataName);

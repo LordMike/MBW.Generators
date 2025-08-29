@@ -3,7 +3,7 @@ using Microsoft.CodeAnalysis;
 
 namespace MBW.Generators.GeneratorHelpers.Models;
 
-readonly record struct TypeToGenerate(
+internal readonly record struct TypeToGenerate(
     string ClassName,
     string Namespace,
     Accessibility Accessibility,

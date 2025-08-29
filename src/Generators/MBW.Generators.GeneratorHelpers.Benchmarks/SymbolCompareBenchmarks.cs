@@ -24,8 +24,8 @@ public class SymbolCompareBenchmarks
 
         _comp = CSharpCompilation.Create(
             "BenchAsm",
-            new[] { tree },
-            new[] { MetadataReference.CreateFromFile(typeof(object).Assembly.Location) },
+            [tree],
+            [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)],
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
         var model = _comp.GetSemanticModel(tree, ignoreAccessibility: true);

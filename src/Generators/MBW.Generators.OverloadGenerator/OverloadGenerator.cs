@@ -86,7 +86,7 @@ public sealed class OverloadGenerator : IIncrementalGenerator
         if (context.SemanticModel.GetDeclaredSymbol(methodSyntax) is not { } methodSymbol)
             return null;
 
-        List<Rule> rules = new List<Rule>();
+        List<Rule> rules = [];
 
         // class-level attributes
         foreach (AttributeData? attr in methodSymbol.ContainingType.GetAttributes())
@@ -124,7 +124,7 @@ public sealed class OverloadGenerator : IIncrementalGenerator
         if (rules.Count == 0)
             return null;
 
-        return new MethodModel(methodSymbol, ImmutableArray.CreateRange(rules));
+        return new MethodModel(methodSymbol, [..rules]);
     }
 
     private static TransformRule? ParseTransform(AttributeData attr)
@@ -154,8 +154,10 @@ public sealed class OverloadGenerator : IIncrementalGenerator
                 kv.Key == nameof(DefaultOverloadAttribute.Usings))
             {
                 if (kv.Value.Values is { } vals)
-                    return vals.Select(v => v.Value?.ToString() ?? string.Empty)
-                        .Where(s => !string.IsNullOrWhiteSpace(s)).ToImmutableArray();
+                    return [
+                        ..vals.Select(v => v.Value?.ToString() ?? string.Empty)
+                            .Where(s => !string.IsNullOrWhiteSpace(s))
+                    ];
             }
         }
 
@@ -286,10 +288,10 @@ public sealed class OverloadGenerator : IIncrementalGenerator
             }
         }
 
-        List<string> parameters = new List<string>();
-        List<string> arguments = new List<string>();
+        List<string> parameters = [];
+        List<string> arguments = [];
         List<(ITypeSymbol type, RefKind kind, bool isParams)> signature =
-            new List<(ITypeSymbol type, RefKind kind, bool isParams)>();
+            [];
 
         foreach (var p in method.Parameters)
         {
@@ -449,7 +451,7 @@ public sealed class OverloadGenerator : IIncrementalGenerator
 
         // Compose: "<mods> partial <kind> <Name><T...>"
         // Example: "static partial class Foo<T>"
-        var head = string.Join(" ", mods.Concat(new[] { "partial", kind })).Trim();
+        var head = string.Join(" ", mods.Concat(["partial", kind])).Trim();
         return $"{head} {t.Name}{typeParams}";
     }
 
@@ -512,10 +514,10 @@ public sealed class OverloadGenerator : IIncrementalGenerator
         if (!method.IsGenericMethod)
             return string.Empty;
 
-        List<string> clauses = new List<string>();
+        List<string> clauses = [];
         foreach (ITypeParameterSymbol? tp in method.TypeParameters)
         {
-            List<string> c = new List<string>();
+            List<string> c = [];
             if (tp.HasReferenceTypeConstraint)
                 c.Add("class");
             if (tp.HasValueTypeConstraint)
