@@ -2,15 +2,15 @@
 
 A small collection of Roslyn source generators.
 
-Each generator ships as two NuGet packages: the generator itself and a companion
-`*.Attributes` package containing only the attributes. Reference both packages
-to run the generator, or reference just the attributes package when you merely
-want the annotations available without executing the generator.
+Each generator ships as a single NuGet package containing both the generator
+and its attributes. Install the package to get the annotations and run the
+generator, or reference it with `<PrivateAssets>all</PrivateAssets>` if you
+only need the attributes.
 
 ## Generators
 
 | Generator | Description |
 |-----------|-------------|
-| [NonTryMethods](src/MBW.Generators.NonTryMethods/README.md#readme) [![NuGet](https://img.shields.io/nuget/v/MBW.Generators.NonTryMethods.svg)](https://www.nuget.org/packages/MBW.Generators.NonTryMethods) | Creates non-try wrappers for Try-pattern methods |
-| [OverloadGenerator](src/MBW.Generators.OverloadGenerator/README.md#readme) [![NuGet](https://img.shields.io/nuget/v/MBW.Generators.OverloadGenerator.svg)](https://www.nuget.org/packages/MBW.Generators.OverloadGenerator) | Generates overloads based on declarative attributes |
-| [GeneratorHelpers](src/MBW.Generators.GeneratorHelpers/README.md#readme) [![NuGet](https://img.shields.io/nuget/v/MBW.Generators.GeneratorHelpers.svg)](https://www.nuget.org/packages/MBW.Generators.GeneratorHelpers) | Generates allocation-free Roslyn symbol helpers |
+| [NonTryMethods](src/Generators/NonTryMethods.Generator/README.md#readme) [![NuGet](https://img.shields.io/nuget/v/MBW.Generators.NonTryMethods.svg)](https://www.nuget.org/packages/MBW.Generators.NonTryMethods) | Creates non-try wrappers for Try-pattern methods |
+| [OverloadGenerator](src/Generators/OverloadGenerator.Generator/README.md#readme) [![NuGet](https://img.shields.io/nuget/v/MBW.Generators.OverloadGenerator.svg)](https://www.nuget.org/packages/MBW.Generators.OverloadGenerator) | Generates overloads based on declarative attributes |
+| [GeneratorHelpers](src/Generators/GeneratorHelpers.Generator/README.md#readme) [![NuGet](https://img.shields.io/nuget/v/MBW.Generators.GeneratorHelpers.svg)](https://www.nuget.org/packages/MBW.Generators.GeneratorHelpers) | Generates allocation-free Roslyn symbol helpers |

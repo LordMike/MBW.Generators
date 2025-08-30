@@ -4,7 +4,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <Description>Test</Description>
+    <Description>Provides allocation-free Roslyn symbol helpers based on predefined type and namespace strings.</Description>
   </PropertyGroup>
   
 </Project>

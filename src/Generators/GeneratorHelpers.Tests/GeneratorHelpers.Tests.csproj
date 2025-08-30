@@ -4,7 +4,6 @@
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
-    <RootNamespace>MBW.Generators.GeneratorHelpers.Generator.Tests</RootNamespace>
   </PropertyGroup>
 
 </Project>

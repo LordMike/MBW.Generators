@@ -4,7 +4,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <Description>Test</Description>
+    <Description>Generates method overloads from attributes, replacing parameters or supplying defaults.</Description>
   </PropertyGroup>
 
 </Project>

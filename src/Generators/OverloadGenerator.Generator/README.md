@@ -6,11 +6,11 @@ Generates overloads for methods based on declarative attributes. Apply attribute
 Imagine an API that accepts a string kind and an optional retry flag. Callers might prefer passing an `OrderKind` enum instead of remembering the string representation, and most will keep the retry flag at its default.
 
 ## Quick Start
-- Install the `MBW.Generators.OverloadGenerator` and `MBW.Generators.OverloadGenerator.Attributes` packages.
+- Install the `MBW.Generators.OverloadGenerator` package.
 - Decorate your partial class or individual methods with `[TransformOverload]` or `[DefaultOverload]`.
 - The generator emits overloads for decorated methods, preserving visibility, parameter names, generic constraints, and default parameter values while keeping extension methods as extensions.
 
-Attributes and generator are in separate packages so you can reference the attributes without running the generator.
+The package includes both the attributes and the source generator.
 
 ## Example
 ```csharp
@@ -66,4 +66,4 @@ Removing the `this` receiver of an extension method is not supported and will tr
 Both attributes may appear multiple times and are not inherited.
 
 ## More information
-This project is provided as-is without support. Further usage examples can be found in the [tests](../MBW.Generators.OverloadGenerator.Tests).
+This project is provided as-is without support. Further usage examples can be found in the [tests](../OverloadGenerator.Tests).

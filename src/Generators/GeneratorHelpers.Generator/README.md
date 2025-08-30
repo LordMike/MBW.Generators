@@ -6,12 +6,12 @@ Provides allocation-free extension methods for Roslyn symbols based on predefine
 Useful when analyzing large code bases where repeated string construction would otherwise hurt performance.
 
 ## Quick Start
-- Install the `MBW.Generators.GeneratorHelpers` and `MBW.Generators.GeneratorHelpers.Attributes` packages.
+- Install the `MBW.Generators.GeneratorHelpers` package.
 - Apply `[GenerateSymbolExtensions]` to a `class` or `struct` containing annotated `const string` fields.
 - Override the generated extensions class name and namespace via the attribute’s `Name` and `Namespace` properties. Defaults to `<TypeName>Extensions` in `Microsoft.CodeAnalysis`.
 - Per-field `MethodName` overrides customise the method suffix for `[SymbolNameExtension]` and `[NamespaceNameExtension]`.
 - Fully qualified strings support the `global::` prefix, nested types using `+`, and generic metadata names like ``Dictionary`2``.
-- Attributes and generator ship in separate packages so you can opt out of running the generator.
+- The package includes both the attributes and the source generator.
 
 ## Example
 ```csharp
@@ -71,4 +71,4 @@ internal static class KnownExtensions
     - `IsExactlyNamespaceN(this INamespaceSymbol)` - tests if the namespace symbol is exactly the namespace N
 
 ## More information
-This project is provided as-is without support. Additional examples will be available in the [tests](../MBW.Generators.GeneratorHelpers.Tests).
+This project is provided as-is without support. Additional examples will be available in the [tests](../GeneratorHelpers.Tests).

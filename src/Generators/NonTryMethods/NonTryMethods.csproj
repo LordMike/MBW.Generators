@@ -4,7 +4,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <Description>Test</Description>
+    <Description>Creates non-try wrappers for Try-pattern methods, returning the value or throwing on failure.</Description>
   </PropertyGroup>
 
 </Project>

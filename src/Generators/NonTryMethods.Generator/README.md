@@ -6,11 +6,11 @@ Creates non-try wrappers for methods that follow the `TryX` pattern. The generat
 Picture a repository with a `TryFind` method that returns a `bool` and an `out` value. Consumers often just want the value and are fine with an exception when it is missing.
 
 ## Quick Start
-- Install the `MBW.Generators.NonTryMethods` and `MBW.Generators.NonTryMethods.Attributes` packages.
+- Install the `MBW.Generators.NonTryMethods` package.
 - Add `[GenerateNonTryMethod]` (and optionally `[GenerateNonTryOptions]`) at the assembly or type level.
 - By default, methods matching the regex `^[Tt]ry(.*)` with a `bool` return and an `out` parameter are wrapped, as are async methods returning `Task<(bool, T)>` or `ValueTask<(bool, T)>`. Generated methods return the success value or throw `InvalidOperationException`. Generated members are emitted into partial types; set `MethodsGenerationStrategy.Extensions` to produce extension methods instead.
 
-Attributes and generator are in separate packages so you can reference the attributes without running the generator.
+The package includes both the attributes and the source generator.
 
 ## Example
 ```csharp
@@ -75,4 +75,4 @@ partial class Repository
 `GenerateNonTryMethodAttribute` may be used multiple times. `GenerateNonTryOptionsAttribute` is single-use. Neither attribute is inherited.
 
 ## More information
-This project is provided as-is without support. Additional examples are available in the [tests](../MBW.Generators.NonTryMethods.Tests).
+This project is provided as-is without support. Additional examples are available in the [tests](../NonTryMethods.Tests).

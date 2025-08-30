@@ -4,12 +4,6 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <Description>Overload source generator driven by attributes</Description>
   </PropertyGroup>
-
-  <ItemGroup>
-<!--    <PackageReference Include="MBW.Generators.GeneratorHelpers" Version="0.2.3-alpha.0.18" />-->
-<!--    <PackageReference Include="MBW.Generators.GeneratorHelpers.Attributes" Version="0.2.3-alpha.0.18" />-->
-  </ItemGroup>
   
 </Project>
