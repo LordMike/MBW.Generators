@@ -17,6 +17,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_Imports", "_Imports", "{E9
 		_Imports\SourceGenerator.targets = _Imports\SourceGenerator.targets
 		_Imports\Attributes.targets = _Imports\Attributes.targets
 		_Imports\Tests.targets = _Imports\Tests.targets
+		_Imports\Package.targets = _Imports\Package.targets
+		_Imports\Package.nuspec = _Imports\Package.nuspec
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Common", "Common", "{E23EDACB-61B0-F8ED-599D-1E4DFAC281EF}"

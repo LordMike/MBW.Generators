@@ -1,0 +1,38 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <IncludeSymbols>true</IncludeSymbols>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <NoPackageAnalysis>true</NoPackageAnalysis>
+
+    <NuspecFile>$(MSBuildThisFileDirectory)/Package.nuspec</NuspecFile>
+    <BaseProjectName>$(MSBuildProjectName)</BaseProjectName>
+    <NuspecBasePath>$(MSBuildProjectDirectory)</NuspecBasePath>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)/Package.nuspec" Visible="true" />
+  </ItemGroup>
+
+  <Target Name="_SetNuspecParams" AfterTargets="MinVer" BeforeTargets="CoreCompile">
+    <PropertyGroup>
+      <NuspecProperties>
+        id=MBW.Generators.$(BaseProjectName);
+        baseName=$(BaseProjectName);
+        version=$(PackageVersion);
+        authors=$(Authors);
+        description=$(Description);
+        copyright=$(Copyright)
+      </NuspecProperties>
+    </PropertyGroup>
+  </Target>
+
+  <!-- Reference the real projects just for build ordering -->
+  <ItemGroup>
+    <ProjectReference Include="..\$(BaseProjectName).Attributes\$(BaseProjectName).Attributes.csproj" />
+    <ProjectReference Include="..\$(BaseProjectName).Generator\$(BaseProjectName).Generator.csproj" />
+  </ItemGroup>
+
+</Project>

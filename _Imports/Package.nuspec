@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+    <metadata>
+        <id>$id$</id>
+        <version>$version$</version>
+        <authors>$authors$</authors>
+        <license type="expression">MIT</license>
+        <description>$description$</description>
+        <projectUrl>https://github.com/LordMike/MBW.Generators</projectUrl>
+        <repository type="git" url="https://github.com/LordMike/MBW.Generators.git" branch="master" />
+        <readme>readme.md</readme>
+        <description>$description$</description>
+        <tags>roslyn analyzer generator</tags>
+        <copyright>$copyright$</copyright>
+
+        <packageTypes>
+            <packageType name="Analyzer"/>
+        </packageTypes>
+
+        <dependencies>
+            <group targetFramework=".NETStandard2.0"/>
+        </dependencies>
+    </metadata>
+
+    <files>
+        <file src="..\$baseName$.Generator\README.md" target="" />
+        <file src="..\$baseName$.Attributes\bin\Release\netstandard2.0\$id$.Attributes.dll"
+              target="ref\netstandard2.0\"/>
+        <file src="..\$baseName$.Attributes\bin\Release\netstandard2.0\$id$.Attributes.pdb"
+              target="ref\netstandard2.0\"/>
+        <file src="..\$baseName$.Attributes\bin\Release\netstandard2.0\$id$.Attributes.xml"
+              target="ref\netstandard2.0\"/>
+        <file src="..\$baseName$.Generator\bin\Release\netstandard2.0\$id$.Generator.dll"
+              target="analyzers\dotnet\cs\"/>
+    </files>
+</package>

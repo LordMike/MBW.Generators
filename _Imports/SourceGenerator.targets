@@ -3,6 +3,7 @@
   <PropertyGroup>
     <IsRoslynComponent>true</IsRoslynComponent>
     <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <BaseProjectName>$([System.String]::Copy('$(MSBuildProjectName)').Replace('.Generator',''))</BaseProjectName>
     <AttributesProject>$(BaseProjectName).Attributes</AttributesProject>
