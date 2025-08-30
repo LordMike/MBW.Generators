@@ -24,10 +24,6 @@ public sealed class NonTryGenerator : IIncrementalGenerator
 
     private void InitializeInternal(ref IncrementalGeneratorInitializationContext context)
     {
-#if ENABLE_PIPE_LOGGING
-        context.RegisterSourceOutput(context.CompilationProvider, (_, _) => { Logger.Log("## Compilation run"); });
-#endif
-
         // Known types by reference, empty if not present
         IncrementalValueProvider<KnownSymbols?> knownSymbolsProvider =
             context.CompilationProvider.Select((comp, _) =>

@@ -35,11 +35,6 @@
 
     </When>
     <Otherwise>
-      <!-- Only when dev: enable logging output -->
-      <PropertyGroup>
-        <DefineConstants>$(DefineConstants);ENABLE_PIPE_LOGGING</DefineConstants>
-      </PropertyGroup>
-
       <!-- Only in dev: reference attributes/common project directly -->
       <ItemGroup>
         <ProjectReference Include="$(MSBuildThisFileDirectory)/../src/Common/Common/Common.csproj"/>

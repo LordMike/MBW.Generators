@@ -5,7 +5,7 @@ namespace MBW.Generators.MBW.Generators.Tool.LogReader;
 
 static class Program
 {
-    const string PipeName = "MBW.GeneratorsLogPipe";
+    const string PipeName = "MBW.Generators.Log";
 
     static async Task Main()
     {

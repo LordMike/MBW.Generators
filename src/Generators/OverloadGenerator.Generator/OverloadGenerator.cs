@@ -19,10 +19,6 @@ public sealed class OverloadGenerator : IIncrementalGenerator
 
     private void InitializeInternal(ref IncrementalGeneratorInitializationContext context)
     {
-#if ENABLE_PIPE_LOGGING
-        context.RegisterSourceOutput(context.CompilationProvider, (_, _) => { Logger.Log("## Compilation run"); });
-#endif
-
         IncrementalValueProvider<KnownSymbols?> knownSymbolsProvider =
             context.CompilationProvider.Select((comp, _) => KnownSymbols.TryCreateInstance(comp));
 

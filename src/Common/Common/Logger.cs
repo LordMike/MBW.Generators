@@ -10,28 +10,36 @@ namespace MBW.Generators.Common;
 [SuppressMessage("MicrosoftCodeAnalysisCorrectness", "RS1035:Do not use APIs banned for analyzers")]
 internal static class Logger
 {
-    private const string PipeName = "MBW.GeneratorsLogPipe";
     private static readonly Process Proc = Process.GetCurrentProcess();
 
-    // Lazy connect; if it fails once we stay "disabled".
-    private static readonly Lazy<NamedPipeClientStream?> Pipe = new(() =>
-    {
-        try
-        {
-            var client = new NamedPipeClientStream(".", PipeName, PipeDirection.Out);
-            client.Connect(50); // fail fast; don't hang the compiler
-            return client;
-        }
-        catch
-        {
-            return null;
-        }
-    }, LazyThreadSafetyMode.ExecutionAndPublication);
+    private static NamedPipeClientStream? NoLogger() => null;
+    private static Lazy<NamedPipeClientStream?> Pipe = new(NoLogger, LazyThreadSafetyMode.ExecutionAndPublication);
 
-    [Conditional("ENABLE_PIPE_LOGGING")]
+    public static void Configure(bool enable, string pipeName)
+    {
+        if (!enable)
+        {
+            Pipe = new(NoLogger, LazyThreadSafetyMode.ExecutionAndPublication);
+            return;
+        }
+        
+        Pipe = new(() =>
+        {
+            try
+            {
+                var client = new NamedPipeClientStream(".", pipeName, PipeDirection.Out);
+                client.Connect(50); // fail fast; don't hang the compiler
+                return client;
+            }
+            catch
+            {
+                return null;
+            }
+        }, LazyThreadSafetyMode.ExecutionAndPublication);
+    }
+    
     internal static void Log(string message) => TrySend($"{Proc.Id}: {message}");
 
-    [Conditional("ENABLE_PIPE_LOGGING")]
     internal static void Log(Exception e, string message = "An error occurred") =>
         TrySend($"""
                  {Proc.Id}: {message}

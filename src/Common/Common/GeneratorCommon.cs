@@ -7,14 +7,35 @@ internal delegate void GeneratorCommonInitialize(ref IncrementalGeneratorInitial
 
 internal static class GeneratorCommon
 {
-    public static void Initialize<TGenerator>(ref IncrementalGeneratorInitializationContext context, GeneratorCommonInitialize @delegate)
+    public static void Initialize<TGenerator>(ref IncrementalGeneratorInitializationContext context,
+        GeneratorCommonInitialize @delegate)
     {
+        // Configure logger, when options change
+        var logOptionProvider = context.AnalyzerConfigOptionsProvider.Select((provider, _) =>
+        {
+            bool enabled = false;
+            if (provider.GlobalOptions.TryGetValue("mbw_generators_logging_enabled", out var enabledStr) &&
+                bool.TryParse(enabledStr, out var newEnabled))
+                enabled = newEnabled;
+
+            string pipeName = "MBW.Generators.Log";
+            if (provider.GlobalOptions.TryGetValue("mbw_generators_logging_pipeName", out var newPipeName))
+                pipeName = newPipeName;
+
+            return (enabled, pipeName);
+        });
+
+        context.RegisterSourceOutput(logOptionProvider,
+            (_, tuple) => { Logger.Configure(tuple.enabled, tuple.pipeName); });
+
+        context.RegisterSourceOutput(context.CompilationProvider, (_, _) => { Logger.Log("## Compilation run"); });
+
         try
         {
             Logger.Log(string.Empty);
-            Logger.Log("Initializing");
+            Logger.Log("Initializing " + typeof(TGenerator).Name);
             @delegate(ref context);
-            Logger.Log("Initialized");
+            Logger.Log("Initialized " + typeof(TGenerator).Name);
         }
         catch (Exception e)
         {
