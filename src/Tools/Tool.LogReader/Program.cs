@@ -1,7 +1,7 @@
 ﻿using System.IO.Pipes;
 using System.Text;
 
-namespace MBW.Generators.MBW.Generators.Tool.LogReader;
+namespace MBW.Generators.Tool.LogReader;
 
 static class Program
 {

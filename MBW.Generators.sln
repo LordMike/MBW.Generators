@@ -43,7 +43,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OverloadGenerator.Attribute
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{FCCF4D17-FED2-4B68-82E2-CC5EDF23770D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MBW.Generators.Tool.LogReader", "src\Tools\MBW.Generators.Tool.LogReader\MBW.Generators.Tool.LogReader.csproj", "{D77E952C-D647-489D-9368-C87EDF779DB1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tool.LogReader", "src\Tools\Tool.LogReader\Tool.LogReader.csproj", "{D77E952C-D647-489D-9368-C87EDF779DB1}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GeneratorHelpers.Generator", "src\Generators\GeneratorHelpers.Generator\GeneratorHelpers.Generator.csproj", "{1281F7F5-0F06-4E35-ACBF-9855C9DA2702}"
 EndProject
