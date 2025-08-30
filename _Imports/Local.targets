@@ -1,19 +1,25 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
+  <PropertyGroup>
+    <!-- Prefix all projects with MBW.Generators -->
+    <AssemblyName>MBW.Generators.$(MSBuildProjectName)</AssemblyName>
+    <RootNamespace>MBW.Generators.$(MSBuildProjectName)</RootNamespace>
+  </PropertyGroup>
+
   <!-- Package -->
   <PropertyGroup>
     <Product>MBW.Generators</Product>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/LordMike/MBW.Generators</PackageProjectUrl>
   </PropertyGroup>
-  
+
   <PropertyGroup>
     <RepositoryUrl>https://github.com/LordMike/MBW.Generators</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="JetBrains.Annotations" Version="2025.2.1" PrivateAssets="all" />
+    <PackageReference Include="JetBrains.Annotations" Version="2025.2.1" PrivateAssets="all"/>
   </ItemGroup>
 
 </Project>

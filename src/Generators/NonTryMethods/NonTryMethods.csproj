@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.Build.NoTargets/3.7.0">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <IsPackable>true</IsPackable>
+    <IncludeSymbols>false</IncludeSymbols>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <NoPackageAnalysis>true</NoPackageAnalysis>
+    <Description>Test</Description>
+
+    <BaseProjectName>$(MSBuildProjectName)</BaseProjectName>
+    <NuspecFile>Test.nuspec</NuspecFile>
+  </PropertyGroup>
+  
+  <Target Name="_SetNuspecParams" AfterTargets="MinVer" BeforeTargets="CoreCompile">
+    <PropertyGroup>
+      <NuspecProperties>
+        id=$(BaseProjectName);
+        version=$(PackageVersion);
+        authors=$(Authors);
+        description=$(Description)
+      </NuspecProperties>
+    </PropertyGroup>
+  </Target>
+
+  <!-- Reference the real projects just for build ordering -->
+  <ItemGroup>
+    <ProjectReference Include="..\NonTryMethods.Attributes\NonTryMethods.Attributes.csproj" />
+    <ProjectReference Include="..\NonTryMethods.Generator\NonTryMethods.Generator.csproj" />
+  </ItemGroup>
+
+</Project>
