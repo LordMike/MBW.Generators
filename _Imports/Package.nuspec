@@ -12,10 +12,6 @@
         <tags>roslyn analyzer generator</tags>
         <copyright>$copyright$</copyright>
 
-        <packageTypes>
-            <packageType name="Analyzer"/>
-        </packageTypes>
-
         <dependencies>
             <group targetFramework=".NETStandard2.0"/>
         </dependencies>

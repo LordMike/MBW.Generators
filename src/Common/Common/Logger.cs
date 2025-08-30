@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO.Pipes;
 using System.Text;
-using System.Threading;
 
 namespace MBW.Generators.Common;
 
@@ -11,33 +10,28 @@ namespace MBW.Generators.Common;
 internal static class Logger
 {
     private static readonly Process Proc = Process.GetCurrentProcess();
-
-    private static NamedPipeClientStream? NoLogger() => null;
-    private static Lazy<NamedPipeClientStream?> Pipe = new(NoLogger, LazyThreadSafetyMode.ExecutionAndPublication);
+    private static NamedPipeClientStream? Pipe;
 
     public static void Configure(bool enable, string pipeName)
     {
         if (!enable)
         {
-            Pipe = new(NoLogger, LazyThreadSafetyMode.ExecutionAndPublication);
+            Pipe = null;
             return;
         }
-        
-        Pipe = new(() =>
+
+        try
         {
-            try
-            {
-                var client = new NamedPipeClientStream(".", pipeName, PipeDirection.Out);
-                client.Connect(50); // fail fast; don't hang the compiler
-                return client;
-            }
-            catch
-            {
-                return null;
-            }
-        }, LazyThreadSafetyMode.ExecutionAndPublication);
+            var client = new NamedPipeClientStream(".", pipeName, PipeDirection.Out);
+            client.Connect(50); // fail fast; don't hang the compiler
+            Pipe = client;
+        }
+        catch
+        {
+            Pipe = null;
+        }
     }
-    
+
     internal static void Log(string message) => TrySend($"{Proc.Id}: {message}");
 
     internal static void Log(Exception e, string message = "An error occurred") =>
@@ -53,7 +47,7 @@ internal static class Logger
     {
         try
         {
-            var p = Pipe.Value;
+            var p = Pipe;
             if (p is null)
                 return;
 

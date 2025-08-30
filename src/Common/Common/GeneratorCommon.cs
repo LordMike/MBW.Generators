@@ -11,7 +11,7 @@ internal static class GeneratorCommon
         GeneratorCommonInitialize @delegate)
     {
         // Configure logger, when options change
-        var logOptionProvider = context.AnalyzerConfigOptionsProvider.Select((provider, _) =>
+        var logOptionProvider = context.AnalyzerConfigOptionsProvider.Select(static (provider, _) =>
         {
             bool enabled = false;
             if (provider.GlobalOptions.TryGetValue("mbw_generators_logging_enabled", out var enabledStr) &&
@@ -26,9 +26,15 @@ internal static class GeneratorCommon
         });
 
         context.RegisterSourceOutput(logOptionProvider,
-            (_, tuple) => { Logger.Configure(tuple.enabled, tuple.pipeName); });
+            static (_, tuple) =>
+            {
+                Logger.Configure(tuple.enabled, tuple.pipeName);
+                Logger.Log("Loaded new log configuration. Current assembly version: " +
+                           typeof(GeneratorCommon).Assembly.GetName().Version);
+            });
 
-        context.RegisterSourceOutput(context.CompilationProvider, (_, _) => { Logger.Log("## Compilation run"); });
+        context.RegisterSourceOutput(context.CompilationProvider,
+            static (_, _) => { Logger.Log("## Compilation run for " + typeof(TGenerator).Name); });
 
         try
         {
