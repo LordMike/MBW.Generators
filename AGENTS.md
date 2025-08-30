@@ -33,6 +33,8 @@
   dotnet test src/Generators/MBW.Generators.{Feature}.Tests/MBW.Generators.{Feature}.Tests.csproj
   ```
 
+When making new tests, ensure we test likely scenarios a user might encounter or use the Generators in. Avoid testing invalid code, that is, if something wouldn't be syntactically valid code, the user will fix that first before the generator can be expected to produce a valid output.
+
 ## Documentation
 - The repository root `README.md` introduces the project and lists all generators in a table. Each entry links to the generator's `README.md` using a relative path with the `#readme` fragment.
 - Each generator project under `src/Generators/MBW.Generators.{Feature}` must have a `README.md` with these sections in order:

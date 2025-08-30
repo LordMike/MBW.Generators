@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 
 namespace MBW.Generators.GeneratorHelpers.Attributes;
 
@@ -10,6 +11,7 @@ namespace MBW.Generators.GeneratorHelpers.Attributes;
 /// The containing type must also be annotated with <see cref="GenerateSymbolExtensionsAttribute"/> for this attribute to
 /// have an effect.
 /// </remarks>
+[Conditional("NEVER_RENDER")]
 [AttributeUsage(AttributeTargets.Field, AllowMultiple = false, Inherited = false)]
 public sealed class NamespaceNameExtensionAttribute : Attribute
 {

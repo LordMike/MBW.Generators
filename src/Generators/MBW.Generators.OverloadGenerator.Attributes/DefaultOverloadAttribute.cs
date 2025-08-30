@@ -1,19 +1,18 @@
 using System;
 using System.Diagnostics;
+using JetBrains.Annotations;
 
 namespace MBW.Generators.OverloadGenerator.Attributes;
 
-[AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = true, Inherited = false)]
+[AttributeUsage(
+    AttributeTargets.Assembly | AttributeTargets.Class | AttributeTargets.Interface | AttributeTargets.Struct,
+    AllowMultiple = true, Inherited = false)]
 [Conditional("NEVER_RENDER")]
-public sealed class DefaultOverloadAttribute : Attribute
+public sealed class DefaultOverloadAttribute([RegexPattern] string parameterNameRegex, string defaultExpression) : Attribute
 {
-    public DefaultOverloadAttribute(string parameter, string defaultExpression)
-    {
-        Parameter = parameter;
-        DefaultExpression = defaultExpression;
-    }
-
-    public string Parameter { get; }
-    public string DefaultExpression { get; }
-    public string[]? Usings { get; set; }
+    [RegexPattern] public string ParameterNameRegex { get; } = parameterNameRegex;
+    public Type? ParameterType { get; set; }
+    public string DefaultExpression { get; } = defaultExpression;
+    [RegexPattern] public string MethodNameRegex { get; set; } = "^(.*)$";
+    public string? MethodNameReplace { get; set; }
 }

@@ -15,7 +15,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace MBW.Generators.NonTryMethods;
 
-internal static class Gen
+internal static class NonTryCodeGen
 {
     public static ImmutableArray<PlannedMethod> PlanAllMethods(ref List<Diagnostic>? diagnostics, TypeSpec spec,
         TypeEmissionPlan plan)

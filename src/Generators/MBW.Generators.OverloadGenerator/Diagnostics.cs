@@ -23,4 +23,13 @@ internal static class Diagnostics
     public static readonly DiagnosticDescriptor CannotRemoveThis = new("OG006", "Cannot remove 'this' parameter",
         "Method '{0}': cannot remove the 'this' receiver parameter '{1}' on an extension method", "OverloadGenerator",
         DiagnosticSeverity.Warning, true);
+
+    public static readonly DiagnosticDescriptor RegularExpressionIsInvalid = new("OG007",
+        "An invalid regular expression was supplied",
+        "The regular expression '{0}' is invalid", "OverloadGenerator", DiagnosticSeverity.Error, true);
+
+    public static readonly DiagnosticDescriptor InvalidTransformExpression = new("OG008",
+        "Transform expression invalid",
+        "Transform expression '{1}' for parameter '{0}' is not a valid C# expression",
+        "OverloadGenerator", DiagnosticSeverity.Error, true);
 }

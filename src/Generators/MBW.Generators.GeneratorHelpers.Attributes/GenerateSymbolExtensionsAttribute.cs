@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 
 namespace MBW.Generators.GeneratorHelpers.Attributes;
 
@@ -10,6 +11,7 @@ namespace MBW.Generators.GeneratorHelpers.Attributes;
 /// <see cref="NamespaceNameExtensionAttribute"/>. Both this attribute and one of the field attributes are required for
 /// generation to occur.
 /// </remarks>
+[Conditional("NEVER_RENDER")]
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, AllowMultiple = false, Inherited = false)]
 public sealed class GenerateSymbolExtensionsAttribute : Attribute
 {

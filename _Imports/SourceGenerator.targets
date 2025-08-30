@@ -2,15 +2,12 @@
 
   <PropertyGroup>
     <IsRoslynComponent>true</IsRoslynComponent>
-
-    <!-- Source generator guidelines indicates to ignore this -->
-    <NoWarn>$(NoWarn);RS2008</NoWarn>
-  </PropertyGroup>
-
-  <PropertyGroup>
     <Nullable>enable</Nullable>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <AttributesProject>$(MSBuildProjectName).Attributes</AttributesProject>
+
+    <!-- Source generator guidelines indicates to ignore this -->
+    <NoWarn>$(NoWarn);RS2008</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

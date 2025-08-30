@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using MBW.Generators.Common;
 using MBW.Generators.Common.Helpers;
 using MBW.Generators.GeneratorHelpers.Attributes;
 using MBW.Generators.GeneratorHelpers.Models;
@@ -15,6 +16,11 @@ namespace MBW.Generators.GeneratorHelpers;
 public sealed class SymbolExtensionsGenerator : IIncrementalGenerator
 {
     public void Initialize(IncrementalGeneratorInitializationContext context)
+    {
+        GeneratorCommon.Initialize<SymbolExtensionsGenerator>(ref context, InitializeInternal);
+    }
+
+    private void InitializeInternal(ref IncrementalGeneratorInitializationContext context)
     {
         var types = context.SyntaxProvider.ForAttributeWithMetadataName(
                 KnownSymbols.GenerateSymbolExtensionsAttributeName,
@@ -378,4 +384,5 @@ public sealed class SymbolExtensionsGenerator : IIncrementalGenerator
         normalized = string.Join(".", parts);
         return true;
     }
+
 }

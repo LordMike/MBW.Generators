@@ -3,15 +3,17 @@ using Microsoft.CodeAnalysis;
 
 namespace MBW.Generators.Common;
 
-public abstract class GeneratorBase<TGenerator> : IIncrementalGenerator where TGenerator : GeneratorBase<TGenerator>
+internal delegate void GeneratorCommonInitialize(ref IncrementalGeneratorInitializationContext context);
+
+internal static class GeneratorCommon
 {
-    public void Initialize(IncrementalGeneratorInitializationContext context)
+    public static void Initialize<TGenerator>(ref IncrementalGeneratorInitializationContext context, GeneratorCommonInitialize @delegate)
     {
         try
         {
             Logger.Log(string.Empty);
             Logger.Log("Initializing");
-            InitializeInternal(context);
+            @delegate(ref context);
             Logger.Log("Initialized");
         }
         catch (Exception e)
@@ -23,12 +25,10 @@ public abstract class GeneratorBase<TGenerator> : IIncrementalGenerator where TG
                 {
                     // "The {0} Generator encountered an issue when generating, exception: {1}, message: {2}, Stack: {3}",
                     productionContext.ReportDiagnostic(Diagnostic.Create(
-                        Diagnostics.ExceptionError,
+                        Common.Diagnostics.ExceptionError,
                         Location.None,
                         typeof(TGenerator).Name, e.GetType().Name, e.Message, e.StackTrace));
                 });
         }
     }
-
-    protected abstract void InitializeInternal(IncrementalGeneratorInitializationContext context);
 }

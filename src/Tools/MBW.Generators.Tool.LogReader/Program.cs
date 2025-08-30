@@ -1,6 +1,8 @@
 ﻿using System.IO.Pipes;
 using System.Text;
 
+namespace MBW.Generators.Tool.LogReader;
+
 static class Program
 {
     const string PipeName = "MBW.GeneratorsLogPipe";
