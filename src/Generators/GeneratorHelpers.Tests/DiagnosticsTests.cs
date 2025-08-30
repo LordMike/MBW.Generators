@@ -1,8 +1,9 @@
 using System.Threading.Tasks;
-using MBW.Generators.GeneratorHelpers.Generator.Tests.Helpers;
+using MBW.Generators.GeneratorHelpers.Generator;
+using MBW.Generators.GeneratorHelpers.Tests.Helpers;
 using Xunit;
 
-namespace MBW.Generators.GeneratorHelpers.Generator.Tests;
+namespace MBW.Generators.GeneratorHelpers.Tests;
 
 public class DiagnosticsTests
 {

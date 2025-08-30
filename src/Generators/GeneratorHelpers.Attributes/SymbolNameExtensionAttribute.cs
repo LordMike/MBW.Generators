@@ -10,6 +10,7 @@ namespace MBW.Generators.GeneratorHelpers.Attributes;
 /// The containing type must also be annotated with <see cref="GenerateSymbolExtensionsAttribute"/> for this attribute to
 /// have an effect.
 /// </remarks>
+[PublicAPI]
 [AttributeUsage(AttributeTargets.Field, AllowMultiple = false, Inherited = false)]
 public sealed class SymbolNameExtensionAttribute : Attribute
 {

@@ -24,6 +24,7 @@ namespace MBW.Generators.NonTryMethods.Attributes;
 /// return as implying a non-null value and emit the new methods as
 /// extension methods.
 /// </example>
+[PublicAPI]
 [AttributeUsage(
     AttributeTargets.Assembly | AttributeTargets.Class | AttributeTargets.Interface | AttributeTargets.Struct,
     Inherited = false)]

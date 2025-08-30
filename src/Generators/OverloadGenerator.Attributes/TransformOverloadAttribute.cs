@@ -1,9 +1,9 @@
 using System;
 using System.Diagnostics;
-using JetBrains.Annotations;
 
 namespace MBW.Generators.OverloadGenerator.Attributes;
 
+[PublicAPI]
 [AttributeUsage(
     AttributeTargets.Assembly | AttributeTargets.Class | AttributeTargets.Interface | AttributeTargets.Struct,
     AllowMultiple = true, Inherited = false)]

@@ -8,7 +8,7 @@
     <BaseProjectName>$([System.String]::Copy('$(MSBuildProjectName)').Replace('.Generator',''))</BaseProjectName>
     <AttributesProject>$(BaseProjectName).Attributes</AttributesProject>
 
-    <!-- Source generator guidelines indicates to ignore this -->
+    <!-- RS2008 - analyzer release tracking -->
     <NoWarn>$(NoWarn);RS2008</NoWarn>
   </PropertyGroup>
 

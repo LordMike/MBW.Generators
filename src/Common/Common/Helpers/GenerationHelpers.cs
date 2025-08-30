@@ -33,7 +33,6 @@ internal class GenerationHelpers
     {
         if (value is null)
             return LiteralExpression(SyntaxKind.NullLiteralExpression);
-        ;
         if (value is string s)
             return LiteralExpression(SyntaxKind.StringLiteralExpression, Literal(s));
         if (value is char ch)

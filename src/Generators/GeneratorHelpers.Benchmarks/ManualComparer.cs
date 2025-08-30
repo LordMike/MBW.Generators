@@ -33,8 +33,9 @@ static class ManualComparer
 
             if (dot < 0) break; // matched outermost type name
 
-            current = current.ContainingType!;
-            if (current is null) return false;
+            current = current.ContainingType;
+            if (current is null)
+                return false;
 
             typeSpan = typeSpan[..dot];
         }

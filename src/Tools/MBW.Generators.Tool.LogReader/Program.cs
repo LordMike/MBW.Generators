@@ -96,7 +96,7 @@ static class Program
         }
     }
 
-    static int _nextClientId = 0;
+    static int _nextClientId;
 
     static void Log(string msg) =>
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] {msg}");

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Immutable;
-using System.Threading;
 using MBW.Generators.NonTryMethods.Generator.Helpers;
 using MBW.Generators.NonTryMethods.Generator.Models;
 using Microsoft.CodeAnalysis;
@@ -43,27 +42,26 @@ public sealed class NonTryAttributeValidatorAnalyzer : DiagnosticAnalyzer
             startCtx.RegisterCompilationEndAction(context =>
             {
                 AnalyzeAttributeList(
-                    ks, context.Compilation,
+                    ks,
                     context.Compilation.Assembly.GetAttributes(),
                     exceptionBase,
-                    context.ReportDiagnostic, context.CancellationToken);
+                    context.ReportDiagnostic);
             });
 
             // 2) Validate attributes on symbols (types/methods/fields/props/events/params, etc.)
             // Register a single symbol action that covers common attribute targets.
             startCtx.RegisterSymbolAction(
-                context => AnalyzeAttributeList(ks, context.Compilation, context.Symbol.GetAttributes(), exceptionBase,
-                    context.ReportDiagnostic,
-                    context.CancellationToken),
+                context => AnalyzeAttributeList(ks, context.Symbol.GetAttributes(), exceptionBase,
+                    context.ReportDiagnostic),
                 SymbolKind.NamedType
             );
         });
     }
 
-    private static void AnalyzeAttributeList(KnownSymbols ks, Compilation compilation,
+    private static void AnalyzeAttributeList(KnownSymbols ks,
         ImmutableArray<AttributeData> attrs,
         INamedTypeSymbol exceptionBase,
-        Action<Diagnostic> report, CancellationToken token)
+        Action<Diagnostic> report)
     {
         foreach (var attr in attrs)
         {

@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using MBW.Generators.GeneratorHelpers.Attributes;
+using MBW.Generators.GeneratorHelpers.Generator;
 using MBW.Generators.Tests.Common;
 using Microsoft.CodeAnalysis;
 
-namespace MBW.Generators.GeneratorHelpers.Generator.Tests.Helpers;
+namespace MBW.Generators.GeneratorHelpers.Tests.Helpers;
 
 internal static class TestsHelper
 {

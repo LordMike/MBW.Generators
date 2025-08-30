@@ -4,6 +4,9 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+
+    <!-- RS2008 - analyzer release tracking -->
+    <NoWarn>$(NoWarn);RS2008</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

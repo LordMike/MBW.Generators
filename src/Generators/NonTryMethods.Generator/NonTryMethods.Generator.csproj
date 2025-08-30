@@ -9,5 +9,5 @@
   <ItemGroup>
     <PackageReference Include="System.Collections.Immutable" Version="9.0.0" PrivateAssets="all"/>
   </ItemGroup>
-
+  
 </Project>

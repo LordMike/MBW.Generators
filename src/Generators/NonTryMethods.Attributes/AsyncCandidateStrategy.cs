@@ -7,6 +7,7 @@ namespace MBW.Generators.NonTryMethods.Attributes;
 /// Determines which asynchronous <c>Try</c> method shapes are considered for
 /// generating non-<c>Try</c> counterparts. Values can be combined.
 /// </summary>
+[PublicAPI]
 [Flags]
 [SuppressMessage("ReSharper", "RedundantNameQualifier")]
 public enum AsyncCandidateStrategy

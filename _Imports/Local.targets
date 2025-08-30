@@ -21,5 +21,9 @@
   <ItemGroup>
     <PackageReference Include="JetBrains.Annotations" Version="2025.2.1" PrivateAssets="all"/>
   </ItemGroup>
+  
+  <ItemGroup>
+    <Using Include="JetBrains.Annotations" />
+  </ItemGroup>
 
 </Project>

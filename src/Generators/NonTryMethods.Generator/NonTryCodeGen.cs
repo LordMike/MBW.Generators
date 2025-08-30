@@ -239,7 +239,7 @@ internal static class NonTryCodeGen
 
         // We need to know if we should append ".Value" when returning the captured value.
         // That’s only for nullable *value types* with TrueMeansNotNull.
-        bool unwrapNullable = false;
+        bool unwrapNullable;
 
         if (!isAsync)
         {

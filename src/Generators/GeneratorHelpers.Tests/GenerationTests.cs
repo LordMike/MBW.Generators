@@ -3,13 +3,13 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using MBW.Generators.GeneratorHelpers.Generator.Tests.Helpers;
+using MBW.Generators.GeneratorHelpers.Tests.Helpers;
 using MBW.Generators.Tests.Common;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Xunit;
 
-namespace MBW.Generators.GeneratorHelpers.Generator.Tests;
+namespace MBW.Generators.GeneratorHelpers.Tests;
 
 public class GenerationTests
 {

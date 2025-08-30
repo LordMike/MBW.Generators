@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Immutable;
-using System.Threading;
 using MBW.Generators.OverloadGenerator.Generator.Helpers;
 using MBW.Generators.OverloadGenerator.Generator.Models;
 using Microsoft.CodeAnalysis;
@@ -31,18 +30,18 @@ public sealed class OverloadAttributeValidatorAnalyzer : DiagnosticAnalyzer
 
             startCtx.RegisterCompilationEndAction(ctx =>
             {
-                AnalyzeAttributeList(ks, ctx.Compilation, ctx.Compilation.Assembly.GetAttributes(), ctx.ReportDiagnostic, ctx.CancellationToken);
+                AnalyzeAttributeList(ks, ctx.Compilation.Assembly.GetAttributes(), ctx.ReportDiagnostic);
             });
 
             startCtx.RegisterSymbolAction(ctx =>
-                AnalyzeAttributeList(ks, ctx.Compilation, ctx.Symbol.GetAttributes(), ctx.ReportDiagnostic, ctx.CancellationToken),
+                AnalyzeAttributeList(ks, ctx.Symbol.GetAttributes(), ctx.ReportDiagnostic),
                 SymbolKind.NamedType);
         });
     }
 
-    private static void AnalyzeAttributeList(KnownSymbols ks, Compilation compilation,
+    private static void AnalyzeAttributeList(KnownSymbols ks,
         ImmutableArray<AttributeData> attrs,
-        Action<Diagnostic> report, CancellationToken token)
+        Action<Diagnostic> report)
     {
         foreach (var attr in attrs)
         {

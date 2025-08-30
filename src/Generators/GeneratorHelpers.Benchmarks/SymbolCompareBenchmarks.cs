@@ -9,8 +9,8 @@ namespace MBW.Generators.GeneratorHelpers.Benchmarks;
 [MemoryDiagnoser]
 public class SymbolCompareBenchmarks
 {
-    public Compilation _comp = default!;
-    public INamedTypeSymbol _symbol = default!;
+    public Compilation Comp = default!;
+    public INamedTypeSymbol Symbol = default!;
 
     // Use your actual target type
     public const string FullyQualified =
@@ -22,31 +22,31 @@ public class SymbolCompareBenchmarks
         var code = SourceFactory.MakeYourExample();
         var tree = CSharpSyntaxTree.ParseText(code, new CSharpParseOptions(LanguageVersion.Latest));
 
-        _comp = CSharpCompilation.Create(
+        Comp = CSharpCompilation.Create(
             "BenchAsm",
             [tree],
             [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)],
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
-        var model = _comp.GetSemanticModel(tree, ignoreAccessibility: true);
+        var model = Comp.GetSemanticModel(tree, ignoreAccessibility: true);
         var root = tree.GetRoot();
         var cls = root.DescendantNodes().OfType<ClassDeclarationSyntax>()
             .First(c => c.Identifier.ValueText == "TransformOverloadAttribute"); // our type
-        _symbol = model.GetDeclaredSymbol(cls)!;
+        Symbol = model.GetDeclaredSymbol(cls)!;
     }
 
     [Benchmark(Baseline = true)]
     public bool ToDisplayString_FullyQualified_Equals()
     {
-        var s = _symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        var s = Symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         return string.Equals(s, FullyQualified, StringComparison.Ordinal);
     }
 
     [Benchmark]
     public bool IsNamedExactlyType_SpanVersion()
-        => ManualComparer.IsNamedExactlyType_SpanVersion(_symbol, FullyQualified);
+        => ManualComparer.IsNamedExactlyType_SpanVersion(Symbol, FullyQualified);
 
     [Benchmark]
     public bool IsNamedExactlyType_GeneratedByGenerator()
-        => ManualComparer.IsNamedExactlyType_GeneratedByGenerator(_symbol);
+        => ManualComparer.IsNamedExactlyType_GeneratedByGenerator(Symbol);
 }

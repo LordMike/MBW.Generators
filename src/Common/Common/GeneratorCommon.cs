@@ -25,7 +25,7 @@ internal static class GeneratorCommon
                 {
                     // "The {0} Generator encountered an issue when generating, exception: {1}, message: {2}, Stack: {3}",
                     productionContext.ReportDiagnostic(Diagnostic.Create(
-                        Common.Diagnostics.ExceptionError,
+                        Diagnostics.ExceptionError,
                         Location.None,
                         typeof(TGenerator).Name, e.GetType().Name, e.Message, e.StackTrace));
                 });

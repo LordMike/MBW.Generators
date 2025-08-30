@@ -5,6 +5,7 @@ namespace MBW.Generators.NonTryMethods.Attributes;
 /// <summary>
 /// Specifies where generated non-<c>Try</c> methods should be placed.
 /// </summary>
+[PublicAPI]
 [SuppressMessage("ReSharper", "RedundantNameQualifier")]
 public enum MethodsGenerationStrategy
 {

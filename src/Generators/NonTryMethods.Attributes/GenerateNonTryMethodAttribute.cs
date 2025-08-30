@@ -1,7 +1,6 @@
 using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using JetBrains.Annotations;
 
 namespace MBW.Generators.NonTryMethods.Attributes;
 
@@ -34,6 +33,7 @@ namespace MBW.Generators.NonTryMethods.Attributes;
 /// The attribute can also be applied at the assembly level to affect
 /// multiple types.
 /// </example>
+[PublicAPI]
 [AttributeUsage(
     AttributeTargets.Assembly | AttributeTargets.Class | AttributeTargets.Interface | AttributeTargets.Struct,
     AllowMultiple = true, Inherited = false)]

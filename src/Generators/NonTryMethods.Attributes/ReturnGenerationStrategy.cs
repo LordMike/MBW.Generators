@@ -6,6 +6,7 @@ namespace MBW.Generators.NonTryMethods.Attributes;
 /// Controls how the return type of generated non-<c>Try</c> methods is
 /// inferred from the original method's <c>out</c> parameter.
 /// </summary>
+[PublicAPI]
 [SuppressMessage("ReSharper", "RedundantNameQualifier")]
 public enum ReturnGenerationStrategy
 {
