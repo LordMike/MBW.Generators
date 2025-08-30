@@ -24,13 +24,13 @@
 
     <files>
         <file src="../$baseName$.Generator/README.md" target="" />
-        <file src="../$baseName$.Attributes/bin/Release/netstandard2.0/$id$.Attributes.dll"
+        <file src="../$baseName$.Attributes/bin/$configuration$/netstandard2.0/$id$.Attributes.dll"
               target="ref/netstandard2.0/"/>
-        <file src="../$baseName$.Attributes/bin/Release/netstandard2.0/$id$.Attributes.pdb"
+        <file src="../$baseName$.Attributes/bin/$configuration$/netstandard2.0/$id$.Attributes.pdb"
               target="ref/netstandard2.0/"/>
-        <file src="../$baseName$.Attributes/bin/Release/netstandard2.0/$id$.Attributes.xml"
+        <file src="../$baseName$.Attributes/bin/$configuration$/netstandard2.0/$id$.Attributes.xml"
               target="ref/netstandard2.0/"/>
-        <file src="../$baseName$.Generator/bin/Release/netstandard2.0/$id$.Generator.dll"
+        <file src="../$baseName$.Generator/bin/$configuration$/netstandard2.0/$id$.Generator.dll"
               target="analyzers/dotnet/cs/"/>
     </files>
 </package>

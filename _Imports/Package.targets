@@ -24,7 +24,8 @@
         version=$(PackageVersion);
         authors=$(Authors);
         description=$(Description);
-        copyright=$(Copyright)
+        copyright=$(Copyright);
+        configuration=$(Configuration)
       </NuspecProperties>
     </PropertyGroup>
   </Target>
