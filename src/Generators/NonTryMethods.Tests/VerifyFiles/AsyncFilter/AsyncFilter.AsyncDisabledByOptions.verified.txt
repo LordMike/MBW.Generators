@@ -1,0 +1,7 @@
+﻿{
+  diagnostics: [
+    {
+      Description: (7,39): info NT004: Method 'Task<(bool ok, string? v)> TestClass.TryMethodAsync()' matched [GenerateNonTryMethod] pattern '^[Tt]ry(.*)' but is excluded by async candidate strategy 'None' from [GenerateNonTryOptions] (expected Task<(bool,T)> or ValueTask<(bool,T)>)
+    }
+  ]
+}

@@ -1,5 +1,4 @@
 using System.Threading.Tasks;
-using MBW.Generators.GeneratorHelpers.Generator;
 using MBW.Generators.GeneratorHelpers.Tests.Helpers;
 using Xunit;
 
@@ -14,9 +13,7 @@ public class DiagnosticsTests
             [GenerateSymbolExtensions]
             public class Known { }
             """);
-
-        Assert.Null(output);
-        Assert.Collection(diags, d => Assert.Equal(Diagnostics.TypeMissingFields.Id, d.Id));
+        await VerifyHelper.VerifyGeneratorAsync(output, diags);
     }
 
     [Fact]
@@ -29,9 +26,7 @@ public class DiagnosticsTests
                 public const string Ex = "System.Exception";
             }
             """);
-
-        Assert.Null(output);
-        Assert.Collection(diags, d => Assert.Equal(Diagnostics.FieldWithoutOptIn.Id, d.Id));
+        await VerifyHelper.VerifyGeneratorAsync(output, diags);
     }
 
     [Fact]
@@ -45,9 +40,7 @@ public class DiagnosticsTests
                 public static readonly string Ex = "System.Exception";
             }
             """);
-
-        Assert.Null(output);
-        Assert.Collection(diags, d => Assert.Equal(Diagnostics.InvalidFieldTarget.Id, d.Id));
+        await VerifyHelper.VerifyGeneratorAsync(output, diags);
     }
 
     [Fact]
@@ -61,9 +54,7 @@ public class DiagnosticsTests
                 public const string Ex = "Foo";
             }
             """);
-
-        Assert.Null(output);
-        Assert.Collection(diags, d => Assert.Equal(Diagnostics.InvalidTypeFqn.Id, d.Id));
+        await VerifyHelper.VerifyGeneratorAsync(output, diags);
     }
 
     [Fact]
@@ -77,9 +68,7 @@ public class DiagnosticsTests
                 public const string Ns = "System..";
             }
             """);
-
-        Assert.Null(output);
-        Assert.Collection(diags, d => Assert.Equal(Diagnostics.InvalidNamespaceFqn.Id, d.Id));
+        await VerifyHelper.VerifyGeneratorAsync(output, diags);
     }
 
     [Fact]
@@ -95,11 +84,7 @@ public class DiagnosticsTests
                 public const string Ex2 = "global::System.Exception";
             }
             """);
-
-        Assert.NotNull(output);
-        Assert.Collection(diags, d => Assert.Equal(Diagnostics.DuplicateTarget.Id, d.Id));
-        Assert.Contains("IsNamedExactlyTypeEx1", output);
-        Assert.DoesNotContain("IsNamedExactlyTypeEx2", output);
+        await VerifyHelper.VerifyGeneratorAsync(output, diags);
     }
 
     [Fact]
@@ -115,11 +100,7 @@ public class DiagnosticsTests
                 public const string Ex2 = "System.ArgumentException";
             }
             """);
-
-        Assert.NotNull(output);
-        Assert.Collection(diags, d => Assert.Equal(Diagnostics.DuplicateMethodName.Id, d.Id));
-        Assert.Contains("IsNamedExactlyTypeDup(", output);
-        Assert.Contains("IsNamedExactlyTypeDup_2(", output);
+        await VerifyHelper.VerifyGeneratorAsync(output, diags);
     }
 }
 

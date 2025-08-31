@@ -1,0 +1,7 @@
+﻿{
+  diagnostics: [
+    {
+      Description: (7,17): warning OG001: Method 'Call' has a colliding overload
+    }
+  ]
+}

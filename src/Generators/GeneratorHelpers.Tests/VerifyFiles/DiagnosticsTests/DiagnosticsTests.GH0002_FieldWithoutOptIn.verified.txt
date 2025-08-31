@@ -1,0 +1,7 @@
+﻿{
+  diagnostics: [
+    {
+      Description: (4,25): warning GH0002: Field 'Ex' has a symbol extension attribute but its containing type lacks [GenerateSymbolExtensions]
+    }
+  ]
+}

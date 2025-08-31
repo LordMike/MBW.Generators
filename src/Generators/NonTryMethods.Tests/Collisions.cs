@@ -1,9 +1,5 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using MBW.Generators.NonTryMethods.Generator;
 using MBW.Generators.NonTryMethods.Tests.Helpers;
 using Microsoft.CodeAnalysis;
-using Xunit;
 
 namespace MBW.Generators.NonTryMethods.Tests;
 
@@ -12,7 +8,7 @@ public class Collisions
     [Fact]
     public async Task GeneratedVsExisting_SignatureCollision()
     {
-        (string? _, IReadOnlyList<Diagnostic> diags) =
+        (string? output, IReadOnlyList<Diagnostic> diags) =
             await TestsHelper.RunHelperAsync("""
                                   [GenerateNonTryMethod]
                                   [GenerateNonTryOptions]
@@ -24,14 +20,13 @@ public class Collisions
                                       public int Method() => 0;
                                   }
                                   """);
-        Assert.Collection(diags,
-            d => Assert.Equal(Diagnostics.SignatureCollision.Id, d.Id));
+        await VerifyHelper.VerifyGeneratorAsync(output, diags);
     }
 
     [Fact]
     public async Task MultipleAttributes_DuplicateSignature()
     {
-        (string? _, IReadOnlyList<Diagnostic> diags) =
+        (string? output, IReadOnlyList<Diagnostic> diags) =
             await TestsHelper.RunHelperAsync("""
                                   using System.Threading.Tasks;
                                   
@@ -44,7 +39,6 @@ public class Collisions
                                           => Task.FromResult((true, "x"));
                                   }
                                   """);
-        Assert.Collection(diags,
-            d => Assert.Equal(Diagnostics.MultiplePatternsMatchMethod.Id, d.Id));
+        await VerifyHelper.VerifyGeneratorAsync(output, diags);
     }
 }

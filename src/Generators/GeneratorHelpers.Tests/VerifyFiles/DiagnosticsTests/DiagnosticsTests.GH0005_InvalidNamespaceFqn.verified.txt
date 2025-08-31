@@ -1,0 +1,7 @@
+﻿{
+  diagnostics: [
+    {
+      Description: (5,25): error GH0005: Field 'Ns' has invalid namespace name 'System..'
+    }
+  ]
+}

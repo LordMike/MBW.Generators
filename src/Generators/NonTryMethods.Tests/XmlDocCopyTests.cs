@@ -1,9 +1,6 @@
-using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using MBW.Generators.NonTryMethods.Tests.Helpers;
 using Microsoft.CodeAnalysis;
-using Xunit;
 
 namespace MBW.Generators.NonTryMethods.Tests;
 
@@ -37,18 +34,19 @@ public class XmlDocCopyTests
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
             await TestsHelper.RunHelperAsync($$"""
-                                    {{(useNamespace ? "namespace TestNamespace;" : "")}}
+                                               {{(useNamespace ? "namespace TestNamespace;" : "")}}
 
-                                    [GenerateNonTryMethod]
-                                    internal partial class TestClass
-                                    {
-                                        internal {{originalMethod}}
-                                        {
-                                            value = "ok";
-                                            return true;
-                                        }
-                                    }
-                                    """);
+                                               [GenerateNonTryMethod]
+                                               internal partial class TestClass
+                                               {
+                                                   internal {{originalMethod}}
+                                                   {
+                                                       value = "ok";
+                                                       return true;
+                                                   }
+                                               }
+                                               """);
+        await VerifyHelper.VerifyGeneratorAsync(output, diags, name: useNamespace + "_" + expected);
 
         Assert.Empty(diags);
         Assert.NotNull(output);

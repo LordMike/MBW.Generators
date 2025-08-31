@@ -1,0 +1,7 @@
+﻿{
+  diagnostics: [
+    {
+      Description: (2,14): warning GH0001: Type 'Known' has [GenerateSymbolExtensions] but no fields with [SymbolNameExtension] or [NamespaceNameExtension]
+    }
+  ]
+}

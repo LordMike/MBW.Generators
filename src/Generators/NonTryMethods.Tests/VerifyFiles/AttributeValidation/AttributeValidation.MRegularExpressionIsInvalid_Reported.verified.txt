@@ -1,0 +1,7 @@
+﻿{
+  diagnostics: [
+    {
+      Description: (1,2): error NT009: The regular expression '^(Try)(.*)$' is invalid, it should be valid and have have exactly one capture group which indicates what the non-try method name will be
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+﻿{
+  diagnostics: [
+    {
+      Description: (5,35): error GH0003: Field 'Ex' must be a non-empty const string to be used for symbol extensions
+    }
+  ]
+}

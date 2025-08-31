@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using MBW.Generators.NonTryMethods.Attributes;
 using MBW.Generators.NonTryMethods.Generator;
 using MBW.Generators.Tests.Common;

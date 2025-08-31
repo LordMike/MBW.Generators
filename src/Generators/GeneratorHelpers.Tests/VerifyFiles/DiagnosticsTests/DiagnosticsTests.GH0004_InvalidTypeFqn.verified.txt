@@ -1,0 +1,7 @@
+﻿{
+  diagnostics: [
+    {
+      Description: (5,25): error GH0004: Field 'Ex' has invalid type name 'Foo'
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+﻿{
+  diagnostics: [
+    {
+      Description: (1,2): error NT002: Exception type 'Int32' specified via [GenerateNonTryMethod] must derive from System.Exception
+    }
+  ]
+}

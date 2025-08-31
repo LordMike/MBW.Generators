@@ -1,0 +1,7 @@
+﻿{
+  diagnostics: [
+    {
+      Description: (6,17): info NT003: Method 'bool TestClass.TryMethod(out int a, out int b)' matched [GenerateNonTryMethod] pattern '^[Tt]ry(.*)' but is not eligible: must return 'bool' and have exactly one 'out' parameter
+    }
+  ]
+}

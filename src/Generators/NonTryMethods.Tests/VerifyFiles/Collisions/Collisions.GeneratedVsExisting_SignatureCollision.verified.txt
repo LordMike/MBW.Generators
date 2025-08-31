@@ -1,0 +1,7 @@
+﻿{
+  diagnostics: [
+    {
+      Description: (5,17): warning NT005: Generated method 'Method' from [GenerateNonTryMethod] would collide with an existing member in 'TestClass'; skipping
+    }
+  ]
+}

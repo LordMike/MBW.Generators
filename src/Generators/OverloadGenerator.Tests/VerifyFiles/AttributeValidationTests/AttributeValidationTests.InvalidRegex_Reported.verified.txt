@@ -1,0 +1,7 @@
+﻿{
+  diagnostics: [
+    {
+      Description: (3,2): error OG007: The regular expression '[' is invalid
+    }
+  ]
+}

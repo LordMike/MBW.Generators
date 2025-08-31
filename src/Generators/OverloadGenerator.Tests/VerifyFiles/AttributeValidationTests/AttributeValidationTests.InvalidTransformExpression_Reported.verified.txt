@@ -1,0 +1,7 @@
+﻿{
+  diagnostics: [
+    {
+      Description: (3,2): error OG008: Transform expression 'int.Parse({value}' for parameter 'id' is not a valid C# expression
+    }
+  ]
+}

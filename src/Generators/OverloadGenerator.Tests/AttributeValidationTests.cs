@@ -1,5 +1,4 @@
 using System.Threading.Tasks;
-using MBW.Generators.OverloadGenerator.Generator;
 using MBW.Generators.OverloadGenerator.Tests.Helpers;
 using Xunit;
 
@@ -16,8 +15,7 @@ public class AttributeValidationTests
                               [DefaultOverload("[", "1")]
                               public partial class Api { public void M(int a) { } }
                               """);
-
-        Assert.Collection(diags, d => Assert.Equal(Diagnostics.RegularExpressionIsInvalid.Id, d.Id));
+        await VerifyHelper.VerifyGeneratorAsync(null, diags);
     }
 
     [Fact]
@@ -29,7 +27,6 @@ public class AttributeValidationTests
                               [TransformOverload("id", typeof(int), "int.Parse({value}")]
                               public partial class Api { public void M(string id) { } }
                               """);
-
-        Assert.Collection(diags, d => Assert.Equal(Diagnostics.InvalidTransformExpression.Id, d.Id));
+        await VerifyHelper.VerifyGeneratorAsync(null, diags);
     }
 }

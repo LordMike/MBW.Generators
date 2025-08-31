@@ -1,0 +1,7 @@
+﻿{
+  diagnostics: [
+    {
+      Description: (7,23): info NT004: Method 'Task<bool> TestClass.TryMethodAsync()' matched [GenerateNonTryMethod] pattern '^[Tt]ry(.*)' but is excluded by async candidate strategy 'TupleBooleanAndValue' from [GenerateNonTryOptions] (expected Task<(bool,T)> or ValueTask<(bool,T)>)
+    }
+  ]
+}

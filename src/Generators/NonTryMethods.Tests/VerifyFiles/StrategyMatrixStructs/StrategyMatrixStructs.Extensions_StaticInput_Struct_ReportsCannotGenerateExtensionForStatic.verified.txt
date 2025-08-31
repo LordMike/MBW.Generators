@@ -1,0 +1,7 @@
+﻿{
+  diagnostics: [
+    {
+      Description: (6,24): warning NT008: Method 'bool TestClass.TryMethod(out int v)' in 'TryMethod' is static; cannot generate an extension method that requires an instance receiver; skipping
+    }
+  ]
+}
