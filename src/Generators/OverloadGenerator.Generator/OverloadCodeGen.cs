@@ -23,12 +23,9 @@ internal static class OverloadCodeGen
 
         foreach (var method in spec.Methods)
         {
-            foreach (Rule rule in method.Rules)
-            {
-                string? generated = GenerateMethodSource(method.Method, rule, methodIndent, ref diagnostics);
-                if (generated is not null)
-                    methodsText.Append(generated);
-            }
+            string? generated = GenerateMethodSource(method.Method, method.Rule, methodIndent, ref diagnostics);
+            if (generated is not null)
+                methodsText.Append(generated);
         }
 
         if (methodsText.Length == 0)

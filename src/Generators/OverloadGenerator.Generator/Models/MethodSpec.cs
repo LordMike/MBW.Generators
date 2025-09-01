@@ -5,11 +5,11 @@ using Microsoft.CodeAnalysis;
 
 namespace MBW.Generators.OverloadGenerator.Generator.Models;
 
-internal readonly record struct MethodSpec(IMethodSymbol Method, ImmutableArray<Rule> Rules)
+internal readonly record struct MethodSpec(IMethodSymbol Method, Rule Rule)
 {
-    public int Key { get; } = ComputeKey(Method, Rules);
+    public int Key { get; } = ComputeKey(Method, Rule);
 
-    private static int ComputeKey(IMethodSymbol method, ImmutableArray<Rule> rules)
+    private static int ComputeKey(IMethodSymbol method, Rule rule)
     {
         var hc = new HashCode();
         hc.Add(method.Name, StringComparer.Ordinal);
@@ -28,21 +28,20 @@ internal readonly record struct MethodSpec(IMethodSymbol Method, ImmutableArray<
             if (p.HasExplicitDefaultValue)
                 hc.Add(HashHelper.HashConstant(p.ExplicitDefaultValue));
         }
+
         hc.HashTypeParameters(method.TypeParameters);
 
-        foreach (Rule r in rules)
+        // Rule
+        hc.Add(rule.Parameter, StringComparer.Ordinal);
+        if (rule is TransformRule tr)
         {
-            hc.Add(r.Parameter, StringComparer.Ordinal);
-            if (r is TransformRule tr)
-            {
-                hc.HashTypeIdentity(tr.Accept!);
-                hc.Add(tr.Transform, StringComparer.Ordinal);
-                hc.Add((int)tr.Nullability);
-            }
-            else if (r is DefaultRule dr)
-            {
-                hc.Add(dr.Expression, StringComparer.Ordinal);
-            }
+            hc.HashTypeIdentity(tr.Accept!);
+            hc.Add(tr.Transform, StringComparer.Ordinal);
+            hc.Add((int)tr.Nullability);
+        }
+        else if (rule is DefaultRule dr)
+        {
+            hc.Add(dr.Expression, StringComparer.Ordinal);
         }
 
         return hc.ToHashCode();

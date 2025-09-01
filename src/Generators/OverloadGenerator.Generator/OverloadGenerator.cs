@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Text.RegularExpressions;
 using MBW.Generators.Common;
 using MBW.Generators.Common.Helpers;
 using MBW.Generators.OverloadGenerator.Generator.Models;
@@ -58,68 +59,62 @@ public sealed class OverloadGenerator : IIncrementalGenerator
                 if (!hasAnyAttributes)
                     return ImmutableArray<TypeSpec>.Empty;
 
-                ImmutableArray<DefaultOverloadAttributeInfoWithRegex> defaultAttrs = classAttributes.DefaultAttributes;
-                if (!assemblyAttributes.DefaultAttributes.IsDefaultOrEmpty)
-                    defaultAttrs = defaultAttrs.AddRange(assemblyAttributes.DefaultAttributes);
-
-                ImmutableArray<TransformOverloadAttributeInfoWithRegex> transformAttrs =
-                    classAttributes.TransformAttributes;
-                if (!assemblyAttributes.TransformAttributes.IsDefaultOrEmpty)
-                    transformAttrs = transformAttrs.AddRange(assemblyAttributes.TransformAttributes);
-
                 List<MethodSpec>? methods = null;
                 foreach (IMethodSymbol method in typeSymbol.GetMembers().OfType<IMethodSymbol>())
                 {
-                    List<Rule>? rules = null;
-
-                    foreach (var attr in defaultAttrs)
+                    foreach (var attr in assemblyAttributes.DefaultAttributes)
                     {
-                        if (!attr.MethodNamePattern.IsMatch(method.Name))
-                            continue;
-
-                        foreach (var p in method.Parameters)
+                        var param = TryFindMatchingParameter(method, attr.MethodNamePattern, attr.ParameterNamePattern,
+                            attr.ParameterType);
+                        if (param != null)
                         {
-                            if (!attr.ParameterNamePattern.IsMatch(p.Name))
-                                continue;
-                            if (attr.ParameterType != null &&
-                                !SymbolEqualityComparer.Default.Equals(p.Type, attr.ParameterType))
-                                continue;
-
-                            rules ??= new();
-                            rules.Add(new DefaultRule(p.Name, attr.DefaultExpression));
+                            methods ??= new();
+                            methods.Add(new MethodSpec(method, new DefaultRule(param, attr.DefaultExpression)));
                         }
                     }
 
-                    foreach (var attr in transformAttrs)
+                    foreach (var attr in classAttributes.DefaultAttributes)
                     {
-                        if (!attr.MethodNamePattern.IsMatch(method.Name))
-                            continue;
-
-                        foreach (var p in method.Parameters)
+                        var param = TryFindMatchingParameter(method, attr.MethodNamePattern, attr.ParameterNamePattern,
+                            attr.ParameterType);
+                        if (param != null)
                         {
-                            if (!attr.ParameterNamePattern.IsMatch(p.Name))
-                                continue;
-                            if (attr.ParameterType != null &&
-                                !SymbolEqualityComparer.Default.Equals(p.Type, attr.ParameterType))
-                                continue;
-
-                            rules ??= new();
-                            rules.Add(new TransformRule(p.Name, attr.NewType, attr.TransformExpression,
-                                attr.NewTypeNullability));
+                            methods ??= new();
+                            methods.Add(new MethodSpec(method, new DefaultRule(param, attr.DefaultExpression)));
                         }
                     }
 
-                    if (rules != null)
+                    foreach (var attr in assemblyAttributes.TransformAttributes)
                     {
-                        methods ??= new();
-                        methods.Add(new MethodSpec(method, [..rules]));
+                        var param = TryFindMatchingParameter(method, attr.MethodNamePattern, attr.ParameterNamePattern,
+                            attr.ParameterType);
+                        if (param != null)
+                        {
+                            methods ??= new();
+                            methods.Add(new MethodSpec(method,
+                                new TransformRule(param, attr.NewType, attr.TransformExpression,
+                                    attr.NewTypeNullability)));
+                        }
+                    }
+
+                    foreach (var attr in classAttributes.TransformAttributes)
+                    {
+                        var param = TryFindMatchingParameter(method, attr.MethodNamePattern, attr.ParameterNamePattern,
+                            attr.ParameterType);
+                        if (param != null)
+                        {
+                            methods ??= new();
+                            methods.Add(new MethodSpec(method,
+                                new TransformRule(param, attr.NewType, attr.TransformExpression,
+                                    attr.NewTypeNullability)));
+                        }
                     }
                 }
 
                 if (methods == null)
                     return ImmutableArray<TypeSpec>.Empty;
 
-                return [new TypeSpec(knownSymbols, typeSymbol, [..methods])];
+                return [new TypeSpec(typeSymbol, [..methods])];
             });
 
         context.RegisterSourceOutput(includedTypesProvider, static (spc, typeSpec) =>
@@ -136,5 +131,26 @@ public sealed class OverloadGenerator : IIncrementalGenerator
                 foreach (var d in diagnostics)
                     spc.ReportDiagnostic(d);
         });
+    }
+
+    static string? TryFindMatchingParameter(IMethodSymbol method,
+        Regex attrMethodNamePattern,
+        Regex attrParameterNamePattern, INamedTypeSymbol? attrParameterType)
+    {
+        if (!attrMethodNamePattern.IsMatch(method.Name))
+            return null;
+
+        foreach (var p in method.Parameters)
+        {
+            if (!attrParameterNamePattern.IsMatch(p.Name))
+                continue;
+            if (attrParameterType != null &&
+                !SymbolEqualityComparer.Default.Equals(p.Type, attrParameterType))
+                continue;
+
+            return p.Name;
+        }
+
+        return null;
     }
 }

@@ -4,7 +4,7 @@ using Microsoft.CodeAnalysis;
 
 namespace MBW.Generators.OverloadGenerator.Generator.Models;
 
-internal readonly record struct TypeSpec(KnownSymbols Symbols, INamedTypeSymbol Type, ImmutableArray<MethodSpec> Methods)
+internal readonly record struct TypeSpec(INamedTypeSymbol Type, ImmutableArray<MethodSpec> Methods)
 {
     public int Key { get; } = ComputeKey(Type, Methods);
 
