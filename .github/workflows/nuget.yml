@@ -29,7 +29,7 @@ jobs:
       run: ls -alh Build/
     
     - name: Nuget push (github)
-      run: dotnet nuget push --no-symbols 1 --skip-duplicate -k ${{ secrets.GITHUB_TOKEN }} -s "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" Build/*.nupkg
+      run: dotnet nuget push --no-symbols --skip-duplicate -k ${{ secrets.GITHUB_TOKEN }} -s "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" Build/*.nupkg
       
     - name: Nuget push 
       run: dotnet nuget push --skip-duplicate -k ${{secrets.NUGET_KEY}} -s https://api.nuget.org/v3/index.json Build/*.nupkg
