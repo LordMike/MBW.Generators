@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using MBW.Generators.Common;
 using MBW.Generators.Common.Helpers;
+using MBW.Generators.OverloadGenerator.Attributes;
 using MBW.Generators.OverloadGenerator.Generator.Models;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -53,6 +54,8 @@ internal static class OverloadCodeGen
 
         TransformRule? trRule = rule as TransformRule;
         DefaultRule? drRule = rule as DefaultRule;
+        string ruleType;
+        string docDescription;
 
         if (trRule is not null)
         {
@@ -90,6 +93,9 @@ internal static class OverloadCodeGen
                     trRule.Parameter, trRule.Transform));
                 return null;
             }
+
+            ruleType = "[TransformOverload]";
+            docDescription = $"accepts a {trRule.Accept.Name} value in the {rule.Parameter} parameter";
         }
         else if (drRule is not null)
         {
@@ -109,7 +115,12 @@ internal static class OverloadCodeGen
                     method.Name, drRule.Parameter));
                 return null;
             }
+
+            ruleType = "[DefaultOverload]";
+            docDescription = $"has a default value for the {rule.Parameter} parameter";
         }
+        else
+            throw new InvalidOperationException("Unsupported rule type");
 
         List<string> parameters = new();
         List<string> arguments = new();
@@ -173,6 +184,7 @@ internal static class OverloadCodeGen
             ? "<" + string.Join(", ", method.TypeParameters.Select(tp => tp.Name)) + ">"
             : string.Empty;
         string constraints = BuildConstraints(method);
+        string xmlDocs = "";
 
         string paramList = string.Join(", ", parameters);
         string argList = string.Join(", ", arguments);
@@ -182,10 +194,14 @@ internal static class OverloadCodeGen
             : $"\n{indent}    {constraints}";
 
         return $"""
-{indent}{accessibility}{modifiers} {returnType} {methodName}{typeParams}({paramList}){constraintsText}
-{indent}    => {methodName}{typeParams}({argList});
+                {indent}/// <summary>
+                {indent}/// Overload of <see cref="{method.ToDisplayString(DisplayFormats.CrefFormat)}">{method.Name}</see> which {docDescription}.
+                {indent}/// </summary>
+                {indent}/// <remarks>Auto-generated variant, based on a {ruleType} rule</remarks>
+                {indent}{accessibility}{modifiers} {returnType} {methodName}{typeParams}({paramList}){constraintsText}
+                {indent}    => {methodName}{typeParams}({argList});
 
-""";
+                """;
     }
 
     private static (string openers, string closers, string methodIndent) BuildTypeBlocks(
