@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using MBW.Generators.GeneratorHelpers.Generator.Models;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
@@ -30,7 +29,7 @@ public sealed class SymbolExtensionsAnalyzer : DiagnosticAnalyzer
 
         foreach (var attr in type.GetAttributes())
         {
-            if (attr.AttributeClass?.ToDisplayString() == KnownSymbols.GenerateSymbolExtensionsAttributeName)
+            if (attr.AttributeClass.IsNamedExactlyTypeGenerateSymbolExtensionsAttribute())
             {
                 hasTypeAttr = true;
                 break;
@@ -44,9 +43,8 @@ public sealed class SymbolExtensionsAnalyzer : DiagnosticAnalyzer
 
             foreach (var attr in field.GetAttributes())
             {
-                var attrName = attr.AttributeClass?.ToDisplayString();
-                if (attrName == KnownSymbols.SymbolNameExtensionAttributeName ||
-                    attrName == KnownSymbols.NamespaceNameExtensionAttributeName)
+                if (attr.AttributeClass.IsNamedExactlyTypeSymbolNameExtensionAttribute() ||
+                    attr.AttributeClass.IsNamedExactlyTypeNamespaceNameExtensionAttribute())
                 {
                     hasFieldAttr = true;
                     if (!hasTypeAttr)

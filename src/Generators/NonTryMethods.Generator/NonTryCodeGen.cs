@@ -75,7 +75,7 @@ internal static class NonTryCodeGen
     }
 
     private static MethodClassification ClassifyMethodShape(IMethodSymbol method,
-        GenerateNonTryOptionsAttributeInfo opts, KnownSymbols ks)
+        GenerateNonTryOptionsAttributeInfo opts)
     {
         // sync bool + out T
         if (method.ReturnType.SpecialType == SpecialType.System_Boolean)
@@ -86,16 +86,16 @@ internal static class NonTryCodeGen
                 if (p.RefKind == RefKind.Out)
                 {
                     if (outParam != null)
-                        return new MethodClassification(MethodShape.NotEligible, null, isValueTask: false,
-                            payloadType: null);
+                        return new MethodClassification(MethodShape.NotEligible, null, payloadType: null,
+                            wrapperType: null);
                     outParam = p;
                 }
             }
 
             if (outParam != null)
-                return new MethodClassification(MethodShape.SyncBoolOut, outParam, isValueTask: false,
-                    payloadType: null);
-            return new MethodClassification(MethodShape.NotEligible, null, isValueTask: false, payloadType: null);
+                return new MethodClassification(MethodShape.SyncBoolOut, outParam, payloadType: null,
+                    wrapperType: null);
+            return new MethodClassification(MethodShape.NotEligible, null, payloadType: null, wrapperType: null);
         }
 
         // async Task<(bool,T)> / ValueTask<(bool,T)>
@@ -103,26 +103,25 @@ internal static class NonTryCodeGen
         {
             if (method.ReturnType is INamedTypeSymbol rt && rt.IsGenericType)
             {
-                if (ks.TaskOfT is not null && SymbolEqualityComparer.Default.Equals(rt.OriginalDefinition, ks.TaskOfT))
+                if (rt.OriginalDefinition.IsNamedExactlyTypeTaskOfT())
                 {
                     var tArg = rt.TypeArguments[0];
                     if (TryGetTupleBoolPayload(tArg, out var payload))
-                        return new MethodClassification(MethodShape.AsyncTuple, null, isValueTask: false,
-                            payloadType: payload);
+                        return new MethodClassification(MethodShape.AsyncTuple, null, payload,
+                            rt.OriginalDefinition);
                 }
 
-                if (ks.ValueTaskOfT is not null &&
-                    SymbolEqualityComparer.Default.Equals(rt.OriginalDefinition, ks.ValueTaskOfT))
+                if (rt.OriginalDefinition.IsNamedExactlyTypeValueTaskOfT())
                 {
                     var tArg = rt.TypeArguments[0];
                     if (TryGetTupleBoolPayload(tArg, out var payload))
-                        return new MethodClassification(MethodShape.AsyncTuple, null, isValueTask: true,
-                            payloadType: payload);
+                        return new MethodClassification(MethodShape.AsyncTuple, null, payload,
+                            rt.OriginalDefinition);
                 }
             }
         }
 
-        return new MethodClassification(MethodShape.NotEligible, null, isValueTask: false, payloadType: null);
+        return new MethodClassification(MethodShape.NotEligible, null, payloadType: null, wrapperType: null);
 
         static bool TryGetTupleBoolPayload(ITypeSymbol t, out ITypeSymbol? payload)
         {
@@ -178,7 +177,6 @@ internal static class NonTryCodeGen
     {
         planned = default;
         var method = methodSpec.Method;
-        var ks = typeSpec.Symbols;
 
         // 1) pick attribute (report NT007 MultiplePatternsMatchMethod if >1)
         GenerateNonTryMethodAttributeInfoWithValidPattern attrib;
@@ -201,7 +199,7 @@ internal static class NonTryCodeGen
         }
 
         var opts = typeSpec.Options;
-        var cls = ClassifyMethodShape(method, opts, ks);
+        var cls = ClassifyMethodShape(method, opts);
         if (cls.Shape == MethodShape.NotEligible)
         {
             var looksSync = method.ReturnType.SpecialType == SpecialType.System_Boolean ||
@@ -232,7 +230,6 @@ internal static class NonTryCodeGen
         }
 
         bool isAsync = cls.Shape == MethodShape.AsyncTuple;
-        bool isValueTask = cls.IsValueTask;
 
         ITypeSymbol returnType;
         ImmutableArray<IParameterSymbol> parameters;
@@ -252,13 +249,11 @@ internal static class NonTryCodeGen
         }
         else
         {
-            Debug.Assert(ks is { ValueTaskOfT: not null, TaskOfT: not null });
-
             // cls.PayloadType is the T (possibly nullable) from (bool success, T value)
             unwrapNullable = ShouldUnwrapNullable(cls.PayloadType!, opts.ReturnGenerationStrategy);
 
             var payload = AdjustForReturnStrategy(cls.PayloadType!, opts.ReturnGenerationStrategy);
-            INamedTypeSymbol wrapper = isValueTask ? ks.ValueTaskOfT! : ks.TaskOfT!;
+            INamedTypeSymbol wrapper = cls.WrapperType!;
             returnType = wrapper.Construct(payload);
             parameters = [..method.Parameters];
         }
@@ -274,7 +269,7 @@ internal static class NonTryCodeGen
         var sig = new PlannedSignature(kind, newName, returnType, parameters, genIsStatic);
 
         // NOTE: PlannedMethod needs a new ctor param for unwrapNullable
-        planned = new PlannedMethod(methodSpec, sig, attrib.ExceptionType, isAsync, unwrapNullable);
+        planned = new PlannedMethod(methodSpec, sig, attrib.ExceptionTypeName, isAsync, unwrapNullable);
         return true;
 
         static string ComputeGeneratedName(string original, GenerateNonTryMethodAttributeInfoWithValidPattern info)
@@ -367,13 +362,13 @@ internal static class NonTryCodeGen
         return [..deduped];
     }
 
-    internal static GenerateNonTryOptionsAttributeInfo GetEffectiveOptions(KnownSymbols ks, INamedTypeSymbol type)
+    internal static GenerateNonTryOptionsAttributeInfo GetEffectiveOptions(INamedTypeSymbol type)
     {
         foreach (var ad in type.GetAttributes())
-            if (SymbolEqualityComparer.Default.Equals(ad.AttributeClass, ks.GenerateNonTryOptionsAttribute))
+            if (ad.AttributeClass.IsNamedExactlyTypeGenerateNonTryOptionsAttribute())
                 return AttributeConverters.ToOptions(ad);
         foreach (var ad in type.ContainingAssembly.GetAttributes())
-            if (SymbolEqualityComparer.Default.Equals(ad.AttributeClass, ks.GenerateNonTryOptionsAttribute))
+            if (ad.AttributeClass.IsNamedExactlyTypeGenerateNonTryOptionsAttribute())
                 return AttributeConverters.ToOptions(ad);
         return new GenerateNonTryOptionsAttributeInfo();
     }
@@ -517,8 +512,7 @@ internal static class NonTryCodeGen
     private static ThrowStatementSyntax BuildThrow(PlannedMethod pm)
         => SyntaxFactory.ThrowStatement(
             SyntaxFactory.ObjectCreationExpression(
-                    SyntaxFactory.ParseTypeName(
-                        pm.ExceptionType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)))
+                    SyntaxFactory.ParseTypeName(pm.ExceptionTypeName))
                 .WithArgumentList(SyntaxFactory.ArgumentList()));
 
     // [public] [static] T Foo([this C self,] ...) { if (target.TryFoo(..., out outParam)) return outParam; throw new Ex(); }

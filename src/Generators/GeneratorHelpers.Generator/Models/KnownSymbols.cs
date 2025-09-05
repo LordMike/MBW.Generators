@@ -1,13 +1,20 @@
+using MBW.Generators.GeneratorHelpers;
+using MBW.Generators.GeneratorHelpers.Attributes;
+
 namespace MBW.Generators.GeneratorHelpers.Generator.Models;
 
-internal static class KnownSymbols
+[GenerateSymbolExtensions]
+internal static partial class KnownSymbols
 {
-    public const string GenerateSymbolExtensionsAttributeName =
+    [SymbolNameExtension]
+    public const string GenerateSymbolExtensionsAttribute =
         "MBW.Generators.GeneratorHelpers.Attributes.GenerateSymbolExtensionsAttribute";
 
-    public const string SymbolNameExtensionAttributeName =
+    [SymbolNameExtension]
+    public const string SymbolNameExtensionAttribute =
         "MBW.Generators.GeneratorHelpers.Attributes.SymbolNameExtensionAttribute";
 
-    public const string NamespaceNameExtensionAttributeName =
+    [SymbolNameExtension]
+    public const string NamespaceNameExtensionAttribute =
         "MBW.Generators.GeneratorHelpers.Attributes.NamespaceNameExtensionAttribute";
 }

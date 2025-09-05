@@ -20,12 +20,8 @@ public sealed class OverloadGenerator : IIncrementalGenerator
 
     private void InitializeInternal(ref IncrementalGeneratorInitializationContext context)
     {
-        IncrementalValueProvider<KnownSymbols?> knownSymbolsProvider =
-            context.CompilationProvider.Select((comp, _) => KnownSymbols.TryCreateInstance(comp));
-
-        IncrementalValueProvider<AttributesCollection> assemblyAttributesProvider = knownSymbolsProvider
-            .Combine(context.CompilationProvider)
-            .Select((t, _) => AttributesCollection.From(t.Left, t.Right.Assembly));
+        IncrementalValueProvider<AttributesCollection> assemblyAttributesProvider = context.CompilationProvider
+            .Select((comp, _) => AttributesCollection.From(comp.Assembly));
 
         IncrementalValuesProvider<INamedTypeSymbol> allTypesProvider = context.SyntaxProvider
             .CreateSyntaxProvider(
@@ -38,17 +34,12 @@ public sealed class OverloadGenerator : IIncrementalGenerator
                 static (ctx, _) => (INamedTypeSymbol)ctx.SemanticModel.GetDeclaredSymbol(ctx.Node)!);
 
         IncrementalValuesProvider<TypeSpec> includedTypesProvider = allTypesProvider
-            .Combine(knownSymbolsProvider)
             .Combine(assemblyAttributesProvider)
             .SelectMany(static (tuple, _) =>
             {
-                ((INamedTypeSymbol? typeSymbol, KnownSymbols? knownSymbols), AttributesCollection assemblyAttributes) =
-                    tuple;
+                (INamedTypeSymbol typeSymbol, AttributesCollection assemblyAttributes) = tuple;
 
-                if (knownSymbols == null)
-                    return ImmutableArray<TypeSpec>.Empty;
-
-                AttributesCollection classAttributes = AttributesCollection.From(knownSymbols, typeSymbol);
+                AttributesCollection classAttributes = AttributesCollection.From(typeSymbol);
 
                 bool hasAnyAttributes =
                     !assemblyAttributes.DefaultAttributes.IsDefaultOrEmpty ||

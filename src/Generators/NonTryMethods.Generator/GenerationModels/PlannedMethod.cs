@@ -7,20 +7,20 @@ internal readonly struct PlannedMethod
 {
     public readonly MethodSpec Source; // your existing MethodSpec
     public readonly PlannedSignature Signature;
-    public readonly INamedTypeSymbol ExceptionType;
+    public readonly string ExceptionTypeName;
     public readonly bool IsAsync;
     public readonly bool UnwrapNullable;
 
     public PlannedMethod(
         MethodSpec source,
         PlannedSignature signature,
-        INamedTypeSymbol exceptionType,
+        string exceptionTypeName,
         bool isAsync,
         bool unwrapNullable)
     {
         Source = source;
         Signature = signature;
-        ExceptionType = exceptionType;
+        ExceptionTypeName = exceptionTypeName;
         IsAsync = isAsync;
         UnwrapNullable = unwrapNullable;
     }
