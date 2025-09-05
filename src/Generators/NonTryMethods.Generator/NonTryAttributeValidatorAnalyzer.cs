@@ -26,46 +26,35 @@ public sealed class NonTryAttributeValidatorAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(static startCtx =>
         {
-            // Lift known symbols once per compilation
-            var ks = KnownSymbols.TryCreateInstance(startCtx.Compilation);
-            if (ks is null)
+            if (startCtx.Compilation.GetTypeByMetadataName(KnownSymbols.GenerateNonTryMethodAttribute) is null)
                 return;
 
-            // Resolve System.Exception once
-            var exceptionBase = startCtx.Compilation.GetTypeByMetadataName("System.Exception");
-
-            // If we can’t get the attribute or Exception, nothing to do
+            var exceptionBase = startCtx.Compilation.GetTypeByMetadataName(KnownSymbols.ExceptionBase);
             if (exceptionBase is null || exceptionBase.Kind == SymbolKind.ErrorType)
                 return;
 
-            // 1) Validate assembly-level attributes
             startCtx.RegisterCompilationEndAction(context =>
             {
                 AnalyzeAttributeList(
-                    ks,
                     context.Compilation.Assembly.GetAttributes(),
                     exceptionBase,
                     context.ReportDiagnostic);
             });
 
-            // 2) Validate attributes on symbols (types/methods/fields/props/events/params, etc.)
-            // Register a single symbol action that covers common attribute targets.
-            startCtx.RegisterSymbolAction(
-                context => AnalyzeAttributeList(ks, context.Symbol.GetAttributes(), exceptionBase,
-                    context.ReportDiagnostic),
-                SymbolKind.NamedType
-            );
+            startCtx.RegisterSymbolAction(ctx =>
+                    AnalyzeAttributeList(ctx.Symbol.GetAttributes(), exceptionBase, ctx.ReportDiagnostic),
+                SymbolKind.NamedType);
         });
     }
 
-    private static void AnalyzeAttributeList(KnownSymbols ks,
+    private static void AnalyzeAttributeList(
         ImmutableArray<AttributeData> attrs,
         INamedTypeSymbol exceptionBase,
         Action<Diagnostic> report)
     {
         foreach (var attr in attrs)
         {
-            if (!SymbolEqualityComparer.Default.Equals(attr.AttributeClass, ks.GenerateNonTryMethodAttribute))
+            if (!attr.AttributeClass.IsNamedExactlyTypeGenerateNonTryMethodAttribute())
                 continue;
 
             // Reuse your converter; it already understands your attribute shape

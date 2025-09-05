@@ -8,16 +8,19 @@ namespace MBW.Generators.NonTryMethods.Generator.Models;
 
 internal static class AttributesCollection
 {
-    public static ImmutableArray<GenerateNonTryMethodAttributeInfoWithValidPattern> From(KnownSymbols? knownSymbols,
+    public static ImmutableArray<GenerateNonTryMethodAttributeInfoWithValidPattern> From(Compilation compilation,
         ISymbol symbol)
     {
-        if (knownSymbols is null)
+        var exceptionBase = compilation.GetTypeByMetadataName(KnownSymbols.ExceptionBase);
+        var invalidOperation = compilation.GetTypeByMetadataName(KnownSymbols.InvalidOperationException);
+
+        if (exceptionBase is null || invalidOperation is null)
             return ImmutableArray<GenerateNonTryMethodAttributeInfoWithValidPattern>.Empty;
 
         List<GenerateNonTryMethodAttributeInfoWithValidPattern>? res = null;
         foreach (AttributeData attr in symbol.GetAttributes())
         {
-            if (!SymbolEqualityComparer.Default.Equals(attr.AttributeClass, knownSymbols.GenerateNonTryMethodAttribute))
+            if (!attr.AttributeClass.IsNamedExactlyTypeGenerateNonTryMethodAttribute())
                 continue;
 
             var info = AttributeConverters.ToNonTry(attr);
@@ -27,13 +30,12 @@ internal static class AttributesCollection
             if (info.ExceptionType == null ||
                 (
                     providedExceptionType != null &&
-                    providedExceptionType.IsDerivedFrom(knownSymbols.ExceptionBase)
+                    providedExceptionType.IsDerivedFrom(exceptionBase)
                 ))
             {
                 if (AttributeValidation.IsValidRegexPattern(info.MethodNamePattern, out var methodNamePatternRegex))
                 {
-                    // Fall back to InvalidOperationException
-                    var exceptionType = providedExceptionType ?? knownSymbols.InvalidOperationException;
+                    var exceptionType = providedExceptionType ?? invalidOperation;
 
                     res ??= [];
                     res.Add(new GenerateNonTryMethodAttributeInfoWithValidPattern(info, exceptionType,

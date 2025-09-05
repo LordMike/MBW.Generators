@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using MBW.Generators.Common;
 using MBW.Generators.Common.Helpers;
+using MBW.Generators.NonTryMethods.Generator.Helpers;
 using MBW.Generators.NonTryMethods.Generator.GenerationModels;
 using MBW.Generators.NonTryMethods.Generator.Models;
 using Microsoft.CodeAnalysis;
@@ -24,20 +25,10 @@ public sealed class NonTryGenerator : IIncrementalGenerator
 
     private void InitializeInternal(ref IncrementalGeneratorInitializationContext context)
     {
-        // Known types by reference, empty if not present
-        IncrementalValueProvider<KnownSymbols?> knownSymbolsProvider =
-            context.CompilationProvider.Select((comp, _) =>
-            {
-                KnownSymbols? tryCreateInstance = KnownSymbols.TryCreateInstance(comp);
-                Logger.Log($"Symbols: {tryCreateInstance}");
-                return tryCreateInstance;
-            });
-
         // Discover assembly-level attributes, once
         IncrementalValueProvider<ImmutableArray<GenerateNonTryMethodAttributeInfoWithValidPattern>>
-            assemblyRuleProvider = knownSymbolsProvider
-                .Combine(context.CompilationProvider)
-                .Select((t, _) => AttributesCollection.From(t.Left, t.Right.Assembly));
+            assemblyRuleProvider = context.CompilationProvider
+                .Select((comp, _) => AttributesCollection.From(comp, comp.Assembly));
 
         // Find all classes+interfaces
         IncrementalValuesProvider<INamedTypeSymbol> allTypesProvider = context.SyntaxProvider
@@ -52,30 +43,23 @@ public sealed class NonTryGenerator : IIncrementalGenerator
 
         // Filter all types, to those with assembly-level or type-level attributes
         IncrementalValuesProvider<TypeSpec> includedTypesProvider = allTypesProvider
-            .Combine(knownSymbolsProvider)
+            .Combine(context.CompilationProvider)
             .Combine(assemblyRuleProvider)
             .Where(static tuple =>
             {
-                // Evaluate if the type should be considered for generation
-                ((INamedTypeSymbol? typeSymbol, KnownSymbols? knownSymbols),
+                ((INamedTypeSymbol typeSymbol, Compilation _),
                     ImmutableArray<GenerateNonTryMethodAttributeInfoWithValidPattern> assemblyAttributes) = tuple;
-
-                if (knownSymbols == null)
-                    return false;
 
                 Logger.Log($"Considering: {typeSymbol.Name}");
 
-                // If assembly has attribute => include
                 if (assemblyAttributes.Length > 0)
                 {
                     Logger.Log($"  Including because assembly attrib: {typeSymbol.Name}");
                     return true;
                 }
 
-                // If type has attribute => include
                 if (typeSymbol.GetAttributes().Any(a =>
-                        a.AttributeClass?.Equals(knownSymbols.GenerateNonTryMethodAttribute,
-                            SymbolEqualityComparer.Default) ?? false))
+                        a.AttributeClass.IsNamedExactlyTypeGenerateNonTryMethodAttribute()))
                 {
                     Logger.Log($"  Including because type attrib: {typeSymbol.Name}");
                     return true;
@@ -85,11 +69,11 @@ public sealed class NonTryGenerator : IIncrementalGenerator
             })
             .SelectMany(static (tuple, _) =>
             {
-                // Produce a type-spec, if any, for this type
-                ((INamedTypeSymbol? typeSymbol, KnownSymbols? knownSymbols),
+                ((INamedTypeSymbol typeSymbol, Compilation compilation),
                     ImmutableArray<GenerateNonTryMethodAttributeInfoWithValidPattern> assemblyAttributes) = tuple;
+
                 ImmutableArray<GenerateNonTryMethodAttributeInfoWithValidPattern> classAttributes =
-                    AttributesCollection.From(knownSymbols, typeSymbol);
+                    AttributesCollection.From(compilation, typeSymbol);
 
                 Logger.Log($"  Determining methods for {typeSymbol.Name}");
                 List<MethodSpec>? res = null;
@@ -112,12 +96,12 @@ public sealed class NonTryGenerator : IIncrementalGenerator
                     }
                 }
 
-                var options = NonTryCodeGen.GetEffectiveOptions(knownSymbols!, typeSymbol);
+                var options = NonTryCodeGen.GetEffectiveOptions(typeSymbol);
 
                 if (res == null)
                     return ImmutableArray<TypeSpec>.Empty;
 
-                TypeSpec typeSpec = new TypeSpec(knownSymbols!, typeSymbol, [..res], options);
+                TypeSpec typeSpec = new TypeSpec(typeSymbol, [..res], options);
                 Logger.Log($"Type {typeSymbol.Name}, spec: {res.Count} methods, key: {typeSpec.Key}");
                 return [typeSpec];
             });
