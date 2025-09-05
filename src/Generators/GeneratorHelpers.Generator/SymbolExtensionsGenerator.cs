@@ -94,13 +94,17 @@ public sealed class SymbolExtensionsGenerator : IIncrementalGenerator
 
             foreach (var fa in field.GetAttributes())
             {
-                FieldKind? kind = fa.AttributeClass switch
+                FieldKind? kind;
+                if (fa.AttributeClass is not null)
                 {
-                    { } attr when attr.IsNamedExactlyTypeSymbolNameExtensionAttribute() => FieldKind.Type,
-                    { } attr when attr.IsNamedExactlyTypeNamespaceNameExtensionAttribute() => FieldKind.Namespace,
-                    _ => null
-                };
-                if (kind is null)
+                    if (fa.AttributeClass.IsNamedExactlyTypeSymbolNameExtensionAttribute())
+                        kind = FieldKind.Type;
+                    else if (fa.AttributeClass.IsNamedExactlyTypeNamespaceNameExtensionAttribute())
+                        kind = FieldKind.Namespace;
+                    else
+                        continue;
+                }
+                else
                     continue;
 
                 if (!(field.IsConst && field.Type.SpecialType == SpecialType.System_String &&
@@ -383,5 +387,4 @@ public sealed class SymbolExtensionsGenerator : IIncrementalGenerator
         normalized = string.Join(".", parts);
         return true;
     }
-
 }

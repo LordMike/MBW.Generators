@@ -5,5 +5,10 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
+  
+  <ItemGroup>
+    <!-- We have a cyclic issue in this project, as the package holds the same attributes this project will have. So we exclude the compile-assets (the attributes), but keep the generator. -->
+    <PackageReference Update="MBW.Generators.GeneratorHelpers" ExcludeAssets="compile"/>
+  </ItemGroup>
 
 </Project>
