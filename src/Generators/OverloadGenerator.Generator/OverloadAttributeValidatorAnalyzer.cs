@@ -24,34 +24,34 @@ public sealed class OverloadAttributeValidatorAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(static startCtx =>
         {
-            var ks = KnownSymbols.TryCreateInstance(startCtx.Compilation);
-            if (ks is null)
+            if (startCtx.Compilation.GetTypeByMetadataName(KnownSymbols.DefaultOverloadAttribute) is null &&
+                startCtx.Compilation.GetTypeByMetadataName(KnownSymbols.TransformOverloadAttribute) is null)
                 return;
 
             startCtx.RegisterCompilationEndAction(ctx =>
             {
-                AnalyzeAttributeList(ks, ctx.Compilation.Assembly.GetAttributes(), ctx.ReportDiagnostic);
+                AnalyzeAttributeList(ctx.Compilation.Assembly.GetAttributes(), ctx.ReportDiagnostic);
             });
 
             startCtx.RegisterSymbolAction(ctx =>
-                AnalyzeAttributeList(ks, ctx.Symbol.GetAttributes(), ctx.ReportDiagnostic),
+                AnalyzeAttributeList(ctx.Symbol.GetAttributes(), ctx.ReportDiagnostic),
                 SymbolKind.NamedType);
         });
     }
 
-    private static void AnalyzeAttributeList(KnownSymbols ks,
+    private static void AnalyzeAttributeList(
         ImmutableArray<AttributeData> attrs,
         Action<Diagnostic> report)
     {
         foreach (var attr in attrs)
         {
-            if (SymbolEqualityComparer.Default.Equals(attr.AttributeClass, ks.DefaultOverloadAttribute))
+            if (attr.AttributeClass.IsNamedExactlyTypeDefaultOverloadAttribute())
             {
                 var info = AttributeConverters.ToDefault(attr);
                 ValidateRegex(info.ParameterNamePattern, attr, report);
                 ValidateRegex(info.MethodNamePattern, attr, report);
             }
-            else if (SymbolEqualityComparer.Default.Equals(attr.AttributeClass, ks.TransformOverloadAttribute))
+            else if (attr.AttributeClass.IsNamedExactlyTypeTransformOverloadAttribute())
             {
                 var info = AttributeConverters.ToTransform(attr);
                 ValidateRegex(info.ParameterNamePattern, attr, report);

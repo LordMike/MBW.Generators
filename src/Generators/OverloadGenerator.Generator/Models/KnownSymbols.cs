@@ -1,32 +1,14 @@
-using Microsoft.CodeAnalysis;
+using MBW.Generators.GeneratorHelpers;
+using MBW.Generators.GeneratorHelpers.Attributes;
 
 namespace MBW.Generators.OverloadGenerator.Generator.Models;
 
-internal sealed class KnownSymbols
+[GenerateSymbolExtensions]
+internal static partial class KnownSymbols
 {
-    public const string DefaultOverloadAttributeName = "MBW.Generators.OverloadGenerator.Attributes.DefaultOverloadAttribute";
-    public const string TransformOverloadAttributeName = "MBW.Generators.OverloadGenerator.Attributes.TransformOverloadAttribute";
+    [SymbolNameExtension]
+    public const string DefaultOverloadAttribute = "MBW.Generators.OverloadGenerator.Attributes.DefaultOverloadAttribute";
 
-    public readonly INamedTypeSymbol DefaultOverloadAttribute;
-    public readonly INamedTypeSymbol TransformOverloadAttribute;
-
-    private KnownSymbols(INamedTypeSymbol defaultOverloadAttribute, INamedTypeSymbol transformOverloadAttribute)
-    {
-        DefaultOverloadAttribute = defaultOverloadAttribute;
-        TransformOverloadAttribute = transformOverloadAttribute;
-    }
-
-    public static KnownSymbols? TryCreateInstance(Compilation compilation)
-    {
-        var defaultAttribute =
-            compilation.GetTypeByMetadataName(DefaultOverloadAttributeName);
-        var transformAttribute =
-            compilation.GetTypeByMetadataName(
-                TransformOverloadAttributeName);
-
-        if (defaultAttribute == null || transformAttribute == null)
-            return null;
-
-        return new KnownSymbols(defaultAttribute, transformAttribute);
-    }
+    [SymbolNameExtension]
+    public const string TransformOverloadAttribute = "MBW.Generators.OverloadGenerator.Attributes.TransformOverloadAttribute";
 }

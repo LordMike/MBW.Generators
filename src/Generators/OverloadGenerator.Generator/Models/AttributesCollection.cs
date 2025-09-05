@@ -9,18 +9,14 @@ internal readonly record struct AttributesCollection(
     ImmutableArray<DefaultOverloadAttributeInfoWithRegex> DefaultAttributes,
     ImmutableArray<TransformOverloadAttributeInfoWithRegex> TransformAttributes)
 {
-    public static AttributesCollection From(KnownSymbols? knownSymbols, ISymbol symbol)
+    public static AttributesCollection From(ISymbol symbol)
     {
-        if (knownSymbols is null)
-            return new AttributesCollection(ImmutableArray<DefaultOverloadAttributeInfoWithRegex>.Empty,
-                ImmutableArray<TransformOverloadAttributeInfoWithRegex>.Empty);
-
         List<DefaultOverloadAttributeInfoWithRegex>? defaults = null;
         List<TransformOverloadAttributeInfoWithRegex>? transforms = null;
 
         foreach (AttributeData attr in symbol.GetAttributes())
         {
-            if (SymbolEqualityComparer.Default.Equals(attr.AttributeClass, knownSymbols.DefaultOverloadAttribute))
+            if (attr.AttributeClass.IsNamedExactlyTypeDefaultOverloadAttribute())
             {
                 var info = AttributeConverters.ToDefault(attr);
                 if (AttributeValidation.IsValidRegexPattern(info.ParameterNamePattern, out var paramRegex) &&
@@ -30,7 +26,7 @@ internal readonly record struct AttributesCollection(
                     defaults.Add(new DefaultOverloadAttributeInfoWithRegex(info, paramRegex, methodRegex));
                 }
             }
-            else if (SymbolEqualityComparer.Default.Equals(attr.AttributeClass, knownSymbols.TransformOverloadAttribute))
+            else if (attr.AttributeClass.IsNamedExactlyTypeTransformOverloadAttribute())
             {
                 var info = AttributeConverters.ToTransform(attr);
                 if (AttributeValidation.IsValidRegexPattern(info.ParameterNamePattern, out var paramRegex) &&
