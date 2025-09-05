@@ -23,7 +23,7 @@ public sealed class SymbolExtensionsGenerator : IIncrementalGenerator
     private void InitializeInternal(ref IncrementalGeneratorInitializationContext context)
     {
         var types = context.SyntaxProvider.ForAttributeWithMetadataName(
-                KnownSymbols.GenerateSymbolExtensionsAttributeName,
+                KnownSymbols.GenerateSymbolExtensionsAttribute,
                 static (node, _) => node is TypeDeclarationSyntax,
                 static (ctx, _) => GetTypeToGenerate(ctx))
             .Where(static t => t.HasValue)
@@ -94,11 +94,10 @@ public sealed class SymbolExtensionsGenerator : IIncrementalGenerator
 
             foreach (var fa in field.GetAttributes())
             {
-                var attrName = fa.AttributeClass?.ToDisplayString();
-                FieldKind? kind = attrName switch
+                FieldKind? kind = fa.AttributeClass switch
                 {
-                    KnownSymbols.SymbolNameExtensionAttributeName => FieldKind.Type,
-                    KnownSymbols.NamespaceNameExtensionAttributeName => FieldKind.Namespace,
+                    { } attr when attr.IsNamedExactlyTypeSymbolNameExtensionAttribute() => FieldKind.Type,
+                    { } attr when attr.IsNamedExactlyTypeNamespaceNameExtensionAttribute() => FieldKind.Namespace,
                     _ => null
                 };
                 if (kind is null)
