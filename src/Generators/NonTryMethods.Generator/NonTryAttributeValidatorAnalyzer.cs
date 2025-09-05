@@ -29,27 +29,21 @@ public sealed class NonTryAttributeValidatorAnalyzer : DiagnosticAnalyzer
             if (startCtx.Compilation.GetTypeByMetadataName(KnownSymbols.GenerateNonTryMethodAttribute) is null)
                 return;
 
-            var exceptionBase = startCtx.Compilation.GetTypeByMetadataName(KnownSymbols.ExceptionBase);
-            if (exceptionBase is null || exceptionBase.Kind == SymbolKind.ErrorType)
-                return;
-
             startCtx.RegisterCompilationEndAction(context =>
             {
                 AnalyzeAttributeList(
                     context.Compilation.Assembly.GetAttributes(),
-                    exceptionBase,
                     context.ReportDiagnostic);
             });
 
             startCtx.RegisterSymbolAction(ctx =>
-                    AnalyzeAttributeList(ctx.Symbol.GetAttributes(), exceptionBase, ctx.ReportDiagnostic),
+                    AnalyzeAttributeList(ctx.Symbol.GetAttributes(), ctx.ReportDiagnostic),
                 SymbolKind.NamedType);
         });
     }
 
     private static void AnalyzeAttributeList(
         ImmutableArray<AttributeData> attrs,
-        INamedTypeSymbol exceptionBase,
         Action<Diagnostic> report)
     {
         foreach (var attr in attrs)
@@ -76,7 +70,7 @@ public sealed class NonTryAttributeValidatorAnalyzer : DiagnosticAnalyzer
 
             // Exception type validation (only when a type argument was provided)
             if (info.ExceptionType is INamedTypeSymbol provided &&
-                !IsDerivedFrom(provided, exceptionBase))
+                !IsDerivedFromException(provided))
             {
                 var loc = attr.ApplicationSyntaxReference?.GetSyntax().GetLocation()
                           ?? Location.None;
@@ -89,11 +83,11 @@ public sealed class NonTryAttributeValidatorAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private static bool IsDerivedFrom(INamedTypeSymbol type, INamedTypeSymbol baseType)
+    private static bool IsDerivedFromException(INamedTypeSymbol type)
     {
         for (var cur = type; cur is not null; cur = cur.BaseType)
         {
-            if (SymbolEqualityComparer.Default.Equals(cur, baseType))
+            if (cur.IsNamedExactlyTypeExceptionBase())
                 return true;
         }
 

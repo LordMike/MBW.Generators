@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using MBW.Generators.Common.Helpers;
 using MBW.Generators.NonTryMethods.Generator.Helpers;
 using Microsoft.CodeAnalysis;
 
@@ -8,15 +7,8 @@ namespace MBW.Generators.NonTryMethods.Generator.Models;
 
 internal static class AttributesCollection
 {
-    public static ImmutableArray<GenerateNonTryMethodAttributeInfoWithValidPattern> From(Compilation compilation,
-        ISymbol symbol)
+    public static ImmutableArray<GenerateNonTryMethodAttributeInfoWithValidPattern> From(ISymbol symbol)
     {
-        var exceptionBase = compilation.GetTypeByMetadataName(KnownSymbols.ExceptionBase);
-        var invalidOperation = compilation.GetTypeByMetadataName(KnownSymbols.InvalidOperationException);
-
-        if (exceptionBase is null || invalidOperation is null)
-            return ImmutableArray<GenerateNonTryMethodAttributeInfoWithValidPattern>.Empty;
-
         List<GenerateNonTryMethodAttributeInfoWithValidPattern>? res = null;
         foreach (AttributeData attr in symbol.GetAttributes())
         {
@@ -24,22 +16,17 @@ internal static class AttributesCollection
                 continue;
 
             var info = AttributeConverters.ToNonTry(attr);
-
             var providedExceptionType = info.ExceptionType as INamedTypeSymbol;
 
             if (info.ExceptionType == null ||
-                (
-                    providedExceptionType != null &&
-                    providedExceptionType.IsDerivedFrom(exceptionBase)
-                ))
+                (providedExceptionType != null && IsDerivedFromException(providedExceptionType)))
             {
                 if (AttributeValidation.IsValidRegexPattern(info.MethodNamePattern, out var methodNamePatternRegex))
                 {
-                    var exceptionType = providedExceptionType ?? invalidOperation;
+                    var exceptionName = info.ExceptionTypeName ?? KnownSymbols.InvalidOperationException;
 
                     res ??= [];
-                    res.Add(new GenerateNonTryMethodAttributeInfoWithValidPattern(info, exceptionType,
-                        methodNamePatternRegex));
+                    res.Add(new GenerateNonTryMethodAttributeInfoWithValidPattern(exceptionName, info.MethodNamePattern, methodNamePatternRegex));
                 }
             }
         }
@@ -48,5 +35,13 @@ internal static class AttributesCollection
             return ImmutableArray<GenerateNonTryMethodAttributeInfoWithValidPattern>.Empty;
 
         return [..res];
+
+        static bool IsDerivedFromException(INamedTypeSymbol type)
+        {
+            for (INamedTypeSymbol? cur = type; cur is not null; cur = cur.BaseType)
+                if (cur.IsNamedExactlyTypeExceptionBase())
+                    return true;
+            return false;
+        }
     }
 }

@@ -20,8 +20,9 @@ internal static partial class KnownSymbols
     [SymbolNameExtension]
     public const string ValueTaskOfT = "System.Threading.Tasks.ValueTask`1";
 
+    [SymbolNameExtension]
     public const string ExceptionBase = "System.Exception";
 
-    public const string InvalidOperationException = "System.InvalidOperationException";
+    public const string InvalidOperationException = "InvalidOperationException";
 }
 

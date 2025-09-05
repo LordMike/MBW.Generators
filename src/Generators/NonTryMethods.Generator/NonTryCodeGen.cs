@@ -269,7 +269,7 @@ internal static class NonTryCodeGen
         var sig = new PlannedSignature(kind, newName, returnType, parameters, genIsStatic);
 
         // NOTE: PlannedMethod needs a new ctor param for unwrapNullable
-        planned = new PlannedMethod(methodSpec, sig, attrib.ExceptionType, isAsync, unwrapNullable);
+        planned = new PlannedMethod(methodSpec, sig, attrib.ExceptionTypeName, isAsync, unwrapNullable);
         return true;
 
         static string ComputeGeneratedName(string original, GenerateNonTryMethodAttributeInfoWithValidPattern info)
@@ -512,8 +512,7 @@ internal static class NonTryCodeGen
     private static ThrowStatementSyntax BuildThrow(PlannedMethod pm)
         => SyntaxFactory.ThrowStatement(
             SyntaxFactory.ObjectCreationExpression(
-                    SyntaxFactory.ParseTypeName(
-                        pm.ExceptionType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)))
+                    SyntaxFactory.ParseTypeName(pm.ExceptionTypeName))
                 .WithArgumentList(SyntaxFactory.ArgumentList()));
 
     // [public] [static] T Foo([this C self,] ...) { if (target.TryFoo(..., out outParam)) return outParam; throw new Ex(); }

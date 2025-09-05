@@ -27,8 +27,13 @@ public sealed class NonTryGenerator : IIncrementalGenerator
     {
         // Discover assembly-level attributes, once
         IncrementalValueProvider<ImmutableArray<GenerateNonTryMethodAttributeInfoWithValidPattern>>
-            assemblyRuleProvider = context.CompilationProvider
-                .Select((comp, _) => AttributesCollection.From(comp, comp.Assembly));
+            assemblyRuleProvider = context.SyntaxProvider
+                .ForAttributeWithMetadataName(
+                    KnownSymbols.GenerateNonTryMethodAttribute,
+                    static (node, _) => node is AttributeSyntax { Parent: AttributeListSyntax { Target: { Identifier.ValueText: "assembly" } } },
+                    static (ctx, _) => AttributesCollection.From(ctx.TargetSymbol))
+                .SelectMany(static (arr, _) => arr)
+                .Collect();
 
         // Find all classes+interfaces
         IncrementalValuesProvider<INamedTypeSymbol> allTypesProvider = context.SyntaxProvider
@@ -43,11 +48,10 @@ public sealed class NonTryGenerator : IIncrementalGenerator
 
         // Filter all types, to those with assembly-level or type-level attributes
         IncrementalValuesProvider<TypeSpec> includedTypesProvider = allTypesProvider
-            .Combine(context.CompilationProvider)
             .Combine(assemblyRuleProvider)
             .Where(static tuple =>
             {
-                ((INamedTypeSymbol typeSymbol, Compilation _),
+                (INamedTypeSymbol typeSymbol,
                     ImmutableArray<GenerateNonTryMethodAttributeInfoWithValidPattern> assemblyAttributes) = tuple;
 
                 Logger.Log($"Considering: {typeSymbol.Name}");
@@ -69,11 +73,11 @@ public sealed class NonTryGenerator : IIncrementalGenerator
             })
             .SelectMany(static (tuple, _) =>
             {
-                ((INamedTypeSymbol typeSymbol, Compilation compilation),
+                (INamedTypeSymbol typeSymbol,
                     ImmutableArray<GenerateNonTryMethodAttributeInfoWithValidPattern> assemblyAttributes) = tuple;
 
                 ImmutableArray<GenerateNonTryMethodAttributeInfoWithValidPattern> classAttributes =
-                    AttributesCollection.From(compilation, typeSymbol);
+                    AttributesCollection.From(typeSymbol);
 
                 Logger.Log($"  Determining methods for {typeSymbol.Name}");
                 List<MethodSpec>? res = null;

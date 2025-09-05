@@ -10,17 +10,23 @@ internal static class AttributeConverters
     public static GenerateNonTryMethodAttributeInfo ToNonTry(in AttributeData a)
     {
         ITypeSymbol? exceptionType = null;
+        string? exceptionTypeName = null;
         string pattern = "^[Tt]ry(.*)";
 
         ImmutableArray<TypedConstant> args = a.ConstructorArguments;
         if (args.Length >= 1 && args[0].Kind == TypedConstantKind.Type && args[0].Value is ITypeSymbol et)
+        {
             exceptionType = et;
+            exceptionTypeName = et.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
+        }
         if (args.Length >= 2 && args[1].Value is string p && p.Length != 0)
             pattern = p;
 
         return new GenerateNonTryMethodAttributeInfo(
             a.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? Location.None,
-            exceptionType, pattern);
+            exceptionType,
+            exceptionTypeName,
+            pattern);
     }
 
     public static GenerateNonTryOptionsAttributeInfo ToOptions(in AttributeData a)
