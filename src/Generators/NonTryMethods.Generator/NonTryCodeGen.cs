@@ -396,11 +396,10 @@ internal static class NonTryCodeGen
         decl = decl.WithModifiers(SyntaxFactory.TokenList(mods));
 
         // Add XML docs
-        var crefName = pm.Source.Method.ToDisplayString(DisplayFormats.CrefFormat);
         var lines = new[]
         {
             "/// <summary>",
-            $"/// This is a non-try variant of <see cref=\"{crefName}\"/>.",
+            $"/// This is a non-try variant of <see cref=\"{DisplayFormats.RenderCrefFormatEncoded(pm.Source.Method)}\"/>.",
             "/// </summary>",
             "/// <remarks>This was auto-generated.</remarks>",
         };

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Web;
 using MBW.Generators.Common;
 using MBW.Generators.Common.Helpers;
 using MBW.Generators.OverloadGenerator.Attributes;
@@ -192,7 +193,7 @@ internal static class OverloadCodeGen
 
         return $"""
                 {indent}/// <summary>
-                {indent}/// Overload of <see cref="{method.ToDisplayString(DisplayFormats.CrefFormat)}">{method.Name}</see> which {docDescription}.
+                {indent}/// Overload of <see cref="{DisplayFormats.RenderCrefFormatEncoded(method)}">{method.Name}</see> which {docDescription}.
                 {indent}/// </summary>
                 {indent}/// <remarks>Auto-generated variant, based on a {ruleType} rule</remarks>
                 {indent}{accessibility}{modifiers} {returnType} {methodName}{typeParams}({paramList}){constraintsText}

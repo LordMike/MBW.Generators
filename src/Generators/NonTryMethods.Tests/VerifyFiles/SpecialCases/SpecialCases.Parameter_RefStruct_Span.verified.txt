@@ -7,7 +7,7 @@ using System;
 partial class TestClass
 {
     /// <summary>
-    /// This is a non-try variant of <see cref="TestClass.TryWrite(Span<int>, out int)"/>.
+    /// This is a non-try variant of <see cref="TestClass.TryWrite(Span&lt;int&gt;, out int)"/>.
     /// </summary>
     /// <remarks>This was auto-generated.</remarks>
     public int Write(Span<int> data)

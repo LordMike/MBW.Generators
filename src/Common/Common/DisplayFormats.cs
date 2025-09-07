@@ -4,7 +4,9 @@ namespace MBW.Generators.Common;
 
 internal static class DisplayFormats
 {
-    public static readonly SymbolDisplayFormat CrefFormat =
+    public static string RenderCrefFormatEncoded(ISymbol sourceMethod) => System.Net.WebUtility.HtmlEncode(sourceMethod.ToDisplayString(CrefFormat));
+
+    private static readonly SymbolDisplayFormat CrefFormat =
         new(
             globalNamespaceStyle: SymbolDisplayGlobalNamespaceStyle.OmittedAsContaining,
             typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypes,

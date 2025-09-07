@@ -4,16 +4,15 @@
 #nullable enable
 using System;
 
-namespace TestNamespace;
 partial class TestClass
 {
     /// <summary>
-    /// This is a non-try variant of <see cref="TestClass.TryMethod(ref int, in ReadOnlySpan<int>, out string)"/>.
+    /// This is a non-try variant of <see cref="TestClass.TryMethod(Func&lt;int, string, bool&gt;, out string)"/>.
     /// </summary>
     /// <remarks>This was auto-generated.</remarks>
-    internal string Method(ref int x, in ReadOnlySpan<int> span)
+    internal string Method(Func<int, string, bool> f)
     {
-        if (TryMethod(ref x, in span, out var value))
+        if (TryMethod(f, out var value))
         {
             return value;
         }

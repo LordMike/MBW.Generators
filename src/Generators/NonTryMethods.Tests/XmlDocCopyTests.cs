@@ -23,13 +23,13 @@ public class XmlDocCopyTests
 
     // Generic types with multiple type arguments
     [InlineData(false, "bool TryMethod(global::System.Func<int, string, bool> f, out string value)",
-        "TestClass.TryMethod(Func<int, string, bool>, out string)")]
+        "TestClass.TryMethod(Func&lt;int, string, bool&gt;, out string)")]
 
     // Mixed qualifiers & namespace
     [InlineData(true, "bool TryMethod(out string value)", "TestClass.TryMethod(out string)")]
     [InlineData(true,
         "bool TryMethod(ref global::System.Int32 x, in global::System.ReadOnlySpan<int> span, out string value)",
-        "TestClass.TryMethod(ref int, in ReadOnlySpan<int>, out string)")]
+        "TestClass.TryMethod(ref int, in ReadOnlySpan&lt;int&gt;, out string)")]
     public async Task XmlDocs_ReferenceToOriginal(bool useNamespace, string originalMethod, string expected)
     {
         (string? output, IReadOnlyList<Diagnostic> diags) =
