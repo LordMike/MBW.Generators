@@ -1,0 +1,17 @@
+{
+  "$schema": "https://github.com/LordMike/MBW.Tools.GhStandardContent/spec/StandardContent.json",
+  "meta": {
+    "repo": "LordMike/MBW.Generators",
+    "profiles": [
+      "standardDotnet",
+      "standardNugetPush"
+    ],
+    "files": [
+      ".editorconfig",
+      ".github/workflows/dotnet.yml",
+      ".github/workflows/nuget.yml",
+      "Directory.Build.props"
+    ],
+    "last_updated": "2026-02-01T15:40:14.1301122+00:00"
+  }
+}

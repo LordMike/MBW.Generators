@@ -8,9 +8,6 @@ dotnet_diagnostic.CS1591.severity = silent
 # C# styling
 csharp_style_namespace_declarations=file_scoped:error
 
-# Use LF for C# files
-end_of_line = lf
-
 [*.{targets,csproj}]
 tab_width=2
 indent_style=space

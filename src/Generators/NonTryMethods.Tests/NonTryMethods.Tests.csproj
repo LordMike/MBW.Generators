@@ -3,8 +3,8 @@
   <Import Project="..\..\..\_Imports\Tests.targets" />
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
-    <ImplicitUsings>true</ImplicitUsings>
+    <TargetFramework>$(DefaultTargetFramework)</TargetFramework>
+        <ImplicitUsings>true</ImplicitUsings>
   </PropertyGroup>
   
 </Project>
