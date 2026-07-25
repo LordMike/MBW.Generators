@@ -3,6 +3,7 @@
   <Import Project="..\..\..\_Imports\Package.targets" />
 
   <PropertyGroup>
+    <IsPackable>true</IsPackable>
     <TargetFramework>netstandard2.0</TargetFramework>
     <Description>Creates non-try wrappers for Try-pattern methods, returning the value or throwing on failure.</Description>
   </PropertyGroup>

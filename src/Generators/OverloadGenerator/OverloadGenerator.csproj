@@ -3,6 +3,7 @@
   <Import Project="..\..\..\_Imports\Package.targets" />
 
   <PropertyGroup>
+    <IsPackable>true</IsPackable>
     <TargetFramework>netstandard2.0</TargetFramework>
     <Description>Generates method overloads from attributes, replacing parameters or supplying defaults.</Description>
   </PropertyGroup>

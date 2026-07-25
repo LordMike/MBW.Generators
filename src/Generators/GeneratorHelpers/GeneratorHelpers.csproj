@@ -3,6 +3,7 @@
   <Import Project="..\..\..\_Imports\Package.targets" />
 
   <PropertyGroup>
+    <IsPackable>true</IsPackable>
     <TargetFramework>netstandard2.0</TargetFramework>
     <Description>Provides allocation-free Roslyn symbol helpers based on predefined type and namespace strings.</Description>
   </PropertyGroup>
